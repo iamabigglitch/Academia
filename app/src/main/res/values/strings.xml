@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">Academia</string>
+    <string name="title_activity_login_page">LoginPage</string>
+    <string name="title_activity_login">LoginActivity</string>
+    <string name="title_activity_registration">RegistrationActivity</string>
+    <string name="title_activity_forgot_password">ForgotPasswordActivity</string>
+    <string name="title_activity_dashboard">DashboardActivity</string>
+</resources>
