@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "5427132536",
+    "firebase_url": "https://academia-6e1f2-default-rtdb.firebaseio.com",
+    "project_id": "academia-6e1f2",
+    "storage_bucket": "academia-6e1f2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:5427132536:android:94f49240c53d3f1a5f558d",
+        "android_client_info": {
+          "package_name": "com.example.academia"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB80lpmQTahbNzyMY9PEkb4uk_ezsOWZLU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -5,4 +5,7 @@
     <string name="title_activity_registration">RegistrationActivity</string>
     <string name="title_activity_forgot_password">ForgotPasswordActivity</string>
     <string name="title_activity_dashboard">DashboardActivity</string>
+    <string name="title_activity_splash_screen">SplashScreen</string>
+    <string name="title_activity_splash">SplashActivity</string>
+    <string name="title_activity_splash_activity.kt">SplashActivity.kt</string>
 </resources>

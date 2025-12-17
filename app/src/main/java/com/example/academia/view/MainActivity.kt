@@ -1,4 +1,4 @@
-package com.example.academia
+package com.example.academia.view
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
