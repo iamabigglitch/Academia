@@ -4,30 +4,29 @@ import androidx.lifecycle.ViewModel
 import com.example.academia.model.TaskModel
 import com.example.academia.repository.TaskRepo
 
-
-class TaskViewModel (val repo: TaskRepo): ViewModel() {
+class TaskViewModel(
+    private val repo: TaskRepo
+) : ViewModel() {
 
     fun addTask(
-        task: TaskModel,
+        title: String,
+        description: String,
+        dueDate: String,
         callback: (Boolean, String) -> Unit
     ) {
+        val task = TaskModel(
+            title = title,
+            description = description,
+            dueDate = dueDate
+        )
         repo.addTask(task, callback)
     }
 
     fun getAllTasks(
         callback: (List<TaskModel>?) -> Unit
     ) {
-        repo.getAllTasks { success, _, tasks ->
-            callback(if (success) tasks else null)
-        }
-    }
-
-    fun getTasksByCourse(
-        courseId: String,
-        callback: (List<TaskModel>?) -> Unit
-    ) {
-        repo.getTasksByCourse(courseId) { success, _, tasks ->
-            callback(if (success) tasks else null)
+        repo.getAllTasks { success, _, list ->
+            if (success) callback(list) else callback(emptyList())
         }
     }
 

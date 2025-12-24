@@ -1,85 +1,83 @@
 package com.example.academia.view
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import java.text.SimpleDateFormat
-import java.util.*
 
 @Composable
 @Preview
 
-fun HomeScreen() {
-
-    val calendar = Calendar.getInstance()
-    val hour = calendar.get(Calendar.HOUR_OF_DAY)
-
-    val greeting = when {
-        hour < 12 -> "Good Morning"
-        hour < 17 -> "Good Afternoon"
-        else -> "Good Evening"
-    }
-
-    val currentDateTime = remember {
-        SimpleDateFormat(
-            "dd MMM yyyy • hh:mm a",
-            Locale.getDefault()
-        ).format(calendar.time)
-    }
-
+fun HomeScreen(
+    onAttendanceClick: () -> Unit = {},
+    onRoutineClick: () -> Unit = {}
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
-            .shadow(12.dp, RoundedCornerShape(24.dp))
-            .background(Color.White, RoundedCornerShape(24.dp))
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // White Box
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color.White, RoundedCornerShape(20.dp))
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text("Good Morning, Jay Jay", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+            Text("Today • 24 Dec 2025 • 10:00 AM", fontSize = 14.sp, color = Color.Gray)
 
-        Column {
-            Text(greeting, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-            Text(currentDateTime, fontSize = 14.sp, color = Color.DarkGray)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFFD6ECFF), RoundedCornerShape(16.dp))
+                    .padding(12.dp)
+            ) {
+                Text("Today's Class", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text("Math - Mr. Sharma • 10:00 AM", fontSize = 14.sp, color = Color.DarkGray)
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFFFFE0E6), RoundedCornerShape(16.dp))
+                    .padding(12.dp)
+            ) {
+                Text("Today's Tasks", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                Text("• Complete Assignment\n• Revise Notes", fontSize = 14.sp, color = Color.DarkGray)
+            }
         }
 
-        InfoCard(
-            title = "Today's Class",
-            description = "No class scheduled",
-            background = Color(0xFFD6ECFF)
-        )
+        // Attendance Box
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFF8BC78E), RoundedCornerShape(16.dp))
+                .clickable { onAttendanceClick() }
+                .padding(16.dp)
+        ) {
+            Text("Attendance", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+        }
 
-        InfoCard(
-            title = "Today's Tasks",
-            description = "No tasks due today",
-            background = Color(0xFFFFE0E6)
-        )
-    }
-}
-
-@Composable
-fun InfoCard(
-    title: String,
-    description: String,
-    background: Color
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(background, RoundedCornerShape(16.dp))
-            .padding(16.dp)
-    ) {
-        Column {
-            Text(title, fontWeight = FontWeight.Bold)
-            Text(description, color = Color.DarkGray)
+        // Routine Box
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFFD0C683), RoundedCornerShape(16.dp))
+                .clickable { onRoutineClick() }
+                .padding(16.dp)
+        ) {
+            Text("Routine", fontWeight = FontWeight.Bold, fontSize = 18.sp)
         }
     }
 }

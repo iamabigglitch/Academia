@@ -9,11 +9,6 @@ interface TaskRepo {
         callback: (Boolean, String) -> Unit
     )
 
-    fun getTasksByCourse(
-        courseId: String,
-        callback: (Boolean, String, List<TaskModel>?) -> Unit
-    )
-
     fun getAllTasks(
         callback: (Boolean, String, List<TaskModel>?) -> Unit
     )

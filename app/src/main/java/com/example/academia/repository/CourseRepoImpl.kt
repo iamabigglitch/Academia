@@ -1,92 +1,65 @@
 package com.example.academia.repository
 
 import com.example.academia.model.CourseModel
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.*
 
-class CourseRepoImpl  : CourseRepo {
+class CourseRepoImpl : CourseRepo {
 
     private val database: FirebaseDatabase = FirebaseDatabase.getInstance()
     private val ref: DatabaseReference = database.getReference("courses")
 
-    // ADD COURSE (Teacher)
     override fun addCourse(
         course: CourseModel,
         callback: (Boolean, String) -> Unit
     ) {
-        val courseId = ref.push().key ?: ""
+        val courseId = ref.push().key.toString()
         course.courseId = courseId
 
-        ref.child(courseId).setValue(course)
-            .addOnSuccessListener {
-                callback(true, "Course added successfully")
-            }
-            .addOnFailureListener {
-                callback(false, it.message ?: "Error")
+        ref.child(courseId)
+            .setValue(course.toMap())
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    callback(true, "Course added successfully")
+                } else {
+                    callback(false, it.exception?.message ?: "Error")
+                }
             }
     }
 
-    // GET ALL COURSES (Student + Teacher)
     override fun getAllCourses(
         callback: (Boolean, String, List<CourseModel>?) -> Unit
     ) {
-        ref.get()
-            .addOnSuccessListener { snapshot ->
-                val courseList = mutableListOf<CourseModel>()
+        ref.addListenerForSingleValueEvent(object : ValueEventListener {
 
-                snapshot.children.forEach {
-                    val course = it.getValue(CourseModel::class.java)
-                    course?.let { courseList.add(it) }
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val list = mutableListOf<CourseModel>()
+
+                for (child in snapshot.children) {
+                    val model = child.getValue(CourseModel::class.java)
+                    model?.let { list.add(it) }
                 }
 
-                callback(true, "Success", courseList)
+                callback(true, "Success", list)
             }
-            .addOnFailureListener {
-                callback(false, it.message ?: "Error", null)
+
+            override fun onCancelled(error: DatabaseError) {
+                callback(false, error.message, null)
             }
+        })
     }
 
-    // GET COURSE BY ID
-    override fun getCourseById(
-        courseId: String,
-        callback: (Boolean, String, CourseModel?) -> Unit
-    ) {
-        ref.child(courseId).get()
-            .addOnSuccessListener {
-                val course = it.getValue(CourseModel::class.java)
-                callback(true, "Success", course)
-            }
-            .addOnFailureListener {
-                callback(false, it.message ?: "Error", null)
-            }
-    }
-
-    // UPDATE COURSE (Teacher)
-    override fun updateCourse(
-        courseId: String,
-        course: CourseModel,
-        callback: (Boolean, String) -> Unit
-    ) {
-        ref.child(courseId).updateChildren(course.toMap())
-            .addOnSuccessListener {
-                callback(true, "Course updated")
-            }
-            .addOnFailureListener {
-                callback(false, it.message ?: "Error")
-            }
-    }
-
-    // DELETE COURSE (Teacher)
     override fun deleteCourse(
         courseId: String,
         callback: (Boolean, String) -> Unit
     ) {
-        ref.child(courseId).removeValue()
-            .addOnSuccessListener {
-                callback(true, "Course deleted")
-            }
-            .addOnFailureListener {
-                callback(false, it.message ?: "Error")
+        ref.child(courseId)
+            .removeValue()
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    callback(true, "Course deleted")
+                } else {
+                    callback(false, it.exception?.message ?: "Error")
+                }
             }
     }
 }

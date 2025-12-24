@@ -1,73 +1,65 @@
 package com.example.academia.repository
 
 import com.example.academia.model.TaskModel
-import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.*
 
 class TaskRepoImpl : TaskRepo {
 
-    private val db = FirebaseDatabase.getInstance().getReference("tasks")
+    private val database: FirebaseDatabase = FirebaseDatabase.getInstance()
+    private val ref: DatabaseReference = database.getReference("tasks")
 
     override fun addTask(
         task: TaskModel,
         callback: (Boolean, String) -> Unit
     ) {
-        val taskId = db.push().key ?: return
-        val newTask = task.copy(taskId = taskId)
+        val taskId = ref.push().key.toString()
+        task.taskId = taskId
 
-        db.child(taskId)
-            .setValue(newTask.toMap())
-            .addOnSuccessListener {
-                callback(true, "Task added successfully")
-            }
-            .addOnFailureListener {
-                callback(false, it.message ?: "Failed to add task")
+        ref.child(taskId)
+            .setValue(task.toMap())
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    callback(true, "Task added")
+                } else {
+                    callback(false, it.exception?.message ?: "Error")
+                }
             }
     }
 
     override fun getAllTasks(
         callback: (Boolean, String, List<TaskModel>?) -> Unit
     ) {
-        db.get()
-            .addOnSuccessListener { snapshot ->
-                val tasks = snapshot.children.mapNotNull {
-                    it.getValue(TaskModel::class.java)
-                }
-                callback(true, "Success", tasks)
-            }
-            .addOnFailureListener {
-                callback(false, it.message ?: "Error", null)
-            }
-    }
+        ref.addListenerForSingleValueEvent(object : ValueEventListener {
 
-    override fun getTasksByCourse(
-        courseId: String,
-        callback: (Boolean, String, List<TaskModel>?) -> Unit
-    ) {
-        db.orderByChild("courseId")
-            .equalTo(courseId)
-            .get()
-            .addOnSuccessListener { snapshot ->
-                val tasks = snapshot.children.mapNotNull {
-                    it.getValue(TaskModel::class.java)
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val list = mutableListOf<TaskModel>()
+
+                for (child in snapshot.children) {
+                    val model = child.getValue(TaskModel::class.java)
+                    model?.let { list.add(it) }
                 }
-                callback(true, "Success", tasks)
+
+                callback(true, "Success", list)
             }
-            .addOnFailureListener {
-                callback(false, it.message ?: "Error", null)
+
+            override fun onCancelled(error: DatabaseError) {
+                callback(false, error.message, null)
             }
+        })
     }
 
     override fun deleteTask(
         taskId: String,
         callback: (Boolean, String) -> Unit
     ) {
-        db.child(taskId)
+        ref.child(taskId)
             .removeValue()
-            .addOnSuccessListener {
-                callback(true, "Task deleted")
-            }
-            .addOnFailureListener {
-                callback(false, it.message ?: "Delete failed")
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    callback(true, "Task deleted")
+                } else {
+                    callback(false, it.exception?.message ?: "Error")
+                }
             }
     }
 }

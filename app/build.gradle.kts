@@ -56,6 +56,7 @@ dependencies {
     implementation("androidx.compose.runtime:runtime-livedata:1.10.0")
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.ui.graphics)
+    implementation(libs.androidx.compose.foundation)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
