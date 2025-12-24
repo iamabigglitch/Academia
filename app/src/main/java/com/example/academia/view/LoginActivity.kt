@@ -94,7 +94,7 @@ fun Loginpage() {
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxSize()
-                    .blur(16.dp),
+                    .blur(10.dp),
                 contentScale = ContentScale.Crop,
                 alpha = 0.7f
             )
