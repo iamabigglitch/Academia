@@ -8,39 +8,34 @@ class RoutineRepoImpl : RoutineRepo {
     private val database: FirebaseDatabase = FirebaseDatabase.getInstance()
     private val ref: DatabaseReference = database.getReference("routine")
 
-
     override fun addRoutine(
         routine: RoutineModel,
         callback: (Boolean, String) -> Unit
     ) {
-        val routineId = ref.push().key.toString()
+        val routineId = ref.push().key ?: return
         routine.routineId = routineId
 
-        ref.child(routineId)
-            .setValue(routine)
+        ref.child(routineId).setValue(routine)
             .addOnCompleteListener {
                 if (it.isSuccessful) {
-                    callback(true, "Routine added successfully")
+                    callback(true, "Routine added")
                 } else {
-                    callback(false, it.exception?.message ?: "Failed to add routine")
+                    callback(false, it.exception?.message ?: "Error")
                 }
             }
     }
 
-    override fun getRoutine(
+    override fun getAllRoutine(
         callback: (Boolean, String, List<RoutineModel>?) -> Unit
     ) {
         ref.addListenerForSingleValueEvent(object : ValueEventListener {
-
             override fun onDataChange(snapshot: DataSnapshot) {
-                val routineList = mutableListOf<RoutineModel>()
-
+                val list = mutableListOf<RoutineModel>()
                 for (child in snapshot.children) {
                     val routine = child.getValue(RoutineModel::class.java)
-                    routine?.let { routineList.add(it) }
+                    routine?.let { list.add(it) }
                 }
-
-                callback(true, "Routine fetched successfully", routineList)
+                callback(true, "Success", list)
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -49,17 +44,32 @@ class RoutineRepoImpl : RoutineRepo {
         })
     }
 
+    override fun updateRoutine(
+        routineId: String,
+        routine: RoutineModel,
+        callback: (Boolean, String) -> Unit
+    ) {
+        ref.child(routineId)
+            .updateChildren(routine.toMap())
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    callback(true, "Routine updated")
+                } else {
+                    callback(false, it.exception?.message ?: "Error")
+                }
+            }
+    }
+
     override fun deleteRoutine(
         routineId: String,
         callback: (Boolean, String) -> Unit
     ) {
-        ref.child(routineId)
-            .removeValue()
+        ref.child(routineId).removeValue()
             .addOnCompleteListener {
                 if (it.isSuccessful) {
-                    callback(true, "Routine deleted successfully")
+                    callback(true, "Routine deleted")
                 } else {
-                    callback(false, it.exception?.message ?: "Failed to delete routine")
+                    callback(false, it.exception?.message ?: "Error")
                 }
             }
     }

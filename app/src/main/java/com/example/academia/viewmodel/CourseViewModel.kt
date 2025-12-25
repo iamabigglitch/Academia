@@ -3,31 +3,23 @@ package com.example.academia.viewmodel
 import androidx.lifecycle.ViewModel
 import com.example.academia.model.CourseModel
 import com.example.academia.repository.CourseRepo
+import com.example.academia.repository.CourseRepoImpl
 
 class CourseViewModel(
-    private val repo: CourseRepo
+    private val repo: CourseRepo = CourseRepoImpl()
 ) : ViewModel() {
 
-    fun addCourse(
-        subjectName: String,
-        callback: (Boolean, String) -> Unit
-    ) {
-        val course = CourseModel(subjectName = subjectName)
-        repo.addCourse(course, callback)
+    // Fetch all courses
+    fun getAllCourses(callback: (Boolean, String, List<CourseModel>?) -> Unit) {
+        repo.getAllCourses(callback)
     }
 
-    fun getAllCourses(
-        callback: (List<CourseModel>?) -> Unit
-    ) {
-        repo.getAllCourses { success, _, list ->
-            if (success) callback(list) else callback(emptyList())
-        }
-    }
-
-    fun deleteCourse(
+    // Update a course (optional, for teachers)
+    fun updateCourse(
         courseId: String,
+        updatedCourse: CourseModel,
         callback: (Boolean, String) -> Unit
     ) {
-        repo.deleteCourse(courseId, callback)
+        repo.updateCourse(courseId, updatedCourse, callback)
     }
 }

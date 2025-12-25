@@ -12,14 +12,13 @@ class TaskRepoImpl : TaskRepo {
         task: TaskModel,
         callback: (Boolean, String) -> Unit
     ) {
-        val taskId = ref.push().key.toString()
+        val taskId = ref.push().key ?: return
         task.taskId = taskId
 
-        ref.child(taskId)
-            .setValue(task.toMap())
+        ref.child(taskId).setValue(task)
             .addOnCompleteListener {
                 if (it.isSuccessful) {
-                    callback(true, "Task added")
+                    callback(true, "Task added successfully")
                 } else {
                     callback(false, it.exception?.message ?: "Error")
                 }
@@ -30,16 +29,13 @@ class TaskRepoImpl : TaskRepo {
         callback: (Boolean, String, List<TaskModel>?) -> Unit
     ) {
         ref.addListenerForSingleValueEvent(object : ValueEventListener {
-
             override fun onDataChange(snapshot: DataSnapshot) {
-                val list = mutableListOf<TaskModel>()
-
+                val taskList = mutableListOf<TaskModel>()
                 for (child in snapshot.children) {
-                    val model = child.getValue(TaskModel::class.java)
-                    model?.let { list.add(it) }
+                    val task = child.getValue(TaskModel::class.java)
+                    task?.let { taskList.add(it) }
                 }
-
-                callback(true, "Success", list)
+                callback(true, "Success", taskList)
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -48,12 +44,26 @@ class TaskRepoImpl : TaskRepo {
         })
     }
 
+    override fun updateTask(
+        taskId: String,
+        task: TaskModel,
+        callback: (Boolean, String) -> Unit
+    ) {
+        ref.child(taskId).updateChildren(task.toMap())
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    callback(true, "Task updated")
+                } else {
+                    callback(false, it.exception?.message ?: "Error")
+                }
+            }
+    }
+
     override fun deleteTask(
         taskId: String,
         callback: (Boolean, String) -> Unit
     ) {
-        ref.child(taskId)
-            .removeValue()
+        ref.child(taskId).removeValue()
             .addOnCompleteListener {
                 if (it.isSuccessful) {
                     callback(true, "Task deleted")

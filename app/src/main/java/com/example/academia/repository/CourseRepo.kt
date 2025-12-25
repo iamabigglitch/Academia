@@ -13,6 +13,12 @@ interface CourseRepo {
         callback: (Boolean, String, List<CourseModel>?) -> Unit
     )
 
+    fun updateCourse(
+        courseId: String,
+        course: CourseModel,
+        callback: (Boolean, String) -> Unit
+    )
+
     fun deleteCourse(
         courseId: String,
         callback: (Boolean, String) -> Unit

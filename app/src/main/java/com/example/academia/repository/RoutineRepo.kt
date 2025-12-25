@@ -9,8 +9,14 @@ interface RoutineRepo {
         callback: (Boolean, String) -> Unit
     )
 
-    fun getRoutine(
+    fun getAllRoutine(
         callback: (Boolean, String, List<RoutineModel>?) -> Unit
+    )
+
+    fun updateRoutine(
+        routineId: String,
+        routine: RoutineModel,
+        callback: (Boolean, String) -> Unit
     )
 
     fun deleteRoutine(

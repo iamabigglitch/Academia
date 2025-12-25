@@ -12,11 +12,10 @@ class CourseRepoImpl : CourseRepo {
         course: CourseModel,
         callback: (Boolean, String) -> Unit
     ) {
-        val courseId = ref.push().key.toString()
+        val courseId = ref.push().key ?: return
         course.courseId = courseId
 
-        ref.child(courseId)
-            .setValue(course.toMap())
+        ref.child(courseId).setValue(course)
             .addOnCompleteListener {
                 if (it.isSuccessful) {
                     callback(true, "Course added successfully")
@@ -30,16 +29,13 @@ class CourseRepoImpl : CourseRepo {
         callback: (Boolean, String, List<CourseModel>?) -> Unit
     ) {
         ref.addListenerForSingleValueEvent(object : ValueEventListener {
-
             override fun onDataChange(snapshot: DataSnapshot) {
-                val list = mutableListOf<CourseModel>()
-
+                val courseList = mutableListOf<CourseModel>()
                 for (child in snapshot.children) {
-                    val model = child.getValue(CourseModel::class.java)
-                    model?.let { list.add(it) }
+                    val course = child.getValue(CourseModel::class.java)
+                    course?.let { courseList.add(it) }
                 }
-
-                callback(true, "Success", list)
+                callback(true, "Success", courseList)
             }
 
             override fun onCancelled(error: DatabaseError) {
@@ -48,12 +44,26 @@ class CourseRepoImpl : CourseRepo {
         })
     }
 
+    override fun updateCourse(
+        courseId: String,
+        course: CourseModel,
+        callback: (Boolean, String) -> Unit
+    ) {
+        ref.child(courseId).updateChildren(course.toMap())
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    callback(true, "Course updated")
+                } else {
+                    callback(false, it.exception?.message ?: "Error")
+                }
+            }
+    }
+
     override fun deleteCourse(
         courseId: String,
         callback: (Boolean, String) -> Unit
     ) {
-        ref.child(courseId)
-            .removeValue()
+        ref.child(courseId).removeValue()
             .addOnCompleteListener {
                 if (it.isSuccessful) {
                     callback(true, "Course deleted")

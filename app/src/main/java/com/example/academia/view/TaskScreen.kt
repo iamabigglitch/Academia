@@ -1,5 +1,6 @@
 package com.example.academia.view
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -7,47 +8,62 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
-
-// Sample Task data class for UI
-data class TaskSample(val title: String, val description: String)
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.academia.model.TaskModel
+import com.example.academia.repository.TaskRepoImpl
+import com.example.academia.utils.SessionManager
+import com.example.academia.utils.UserRole
+import com.example.academia.viewmodel.TaskViewModel
 
 @Composable
 @Preview
 
 fun TaskScreen() {
-    val tasks = listOf(
-        TaskSample("Complete Assignment", "Math assignment"),
-        TaskSample("Revise Notes", "Science notes"),
-        TaskSample("Prepare Project", "History project")
-    )
+    val context = LocalContext.current
+    val role = SessionManager.userRole
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
+    val viewModel = remember { TaskViewModel(TaskRepoImpl()) }
+    var tasks by remember { mutableStateOf<List<TaskModel>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        viewModel.getAllTasks { _, _, list ->
+            tasks = list ?: emptyList()
+        }
+    }
+
+    Column(Modifier.fillMaxSize().padding(16.dp)) {
         Text("Tasks", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+        Spacer(Modifier.height(12.dp))
 
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(tasks) { task ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color(0xFFFFE0E6), RoundedCornerShape(16.dp))
-                        .clickable { /* Placeholder: click task */ }
-                        .padding(16.dp)
-                ) {
-                    Column {
-                        Text(task.title, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                        Text(task.description, fontSize = 14.sp, color = Color.DarkGray)
+        if (tasks.isEmpty()) {
+            Text("No tasks assigned", color = Color.Gray)
+        } else {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                items(tasks) { task ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFFFFE0E6), RoundedCornerShape(16.dp))
+                            .clickable(enabled = role == UserRole.TEACHER) {
+                                Toast.makeText(
+                                    context,
+                                    "Edit task: ${task.title}",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+                            .padding(16.dp)
+                    ) {
+                        Column {
+                            Text(task.title, fontWeight = FontWeight.Medium)
+                            Text(task.dueDate, fontSize = 12.sp, color = Color.Gray)
+                        }
                     }
                 }
             }

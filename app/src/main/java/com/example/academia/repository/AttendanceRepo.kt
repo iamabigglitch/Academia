@@ -4,13 +4,23 @@ import com.example.academia.model.AttendanceModel
 
 interface AttendanceRepo {
 
-    fun getAttendance(
+    fun addAttendance(
+        attendance: AttendanceModel,
+        callback: (Boolean, String) -> Unit
+    )
+
+    fun getAllAttendance(
         callback: (Boolean, String, List<AttendanceModel>?) -> Unit
     )
 
-    fun markAttendance(
-        studentId: String,
+    fun updateAttendance(
+        attendanceId: String,
+        attendance: AttendanceModel,
+        callback: (Boolean, String) -> Unit
+    )
+
+    fun deleteAttendance(
+        attendanceId: String,
         callback: (Boolean, String) -> Unit
     )
 }
-

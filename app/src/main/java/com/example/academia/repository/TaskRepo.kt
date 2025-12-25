@@ -13,6 +13,12 @@ interface TaskRepo {
         callback: (Boolean, String, List<TaskModel>?) -> Unit
     )
 
+    fun updateTask(
+        taskId: String,
+        task: TaskModel,
+        callback: (Boolean, String) -> Unit
+    )
+
     fun deleteTask(
         taskId: String,
         callback: (Boolean, String) -> Unit

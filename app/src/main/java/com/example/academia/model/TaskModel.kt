@@ -6,6 +6,7 @@ data class TaskModel(
     var description: String = "",
     var dueDate: String = ""
 ) {
+    // Converts object to Map for Firebase
     fun toMap(): Map<String, Any?> {
         return mapOf(
             "taskId" to taskId,

@@ -5,21 +5,36 @@ import com.google.firebase.database.*
 
 class AttendanceRepoImpl : AttendanceRepo {
 
-    private val ref = FirebaseDatabase.getInstance().getReference("attendance")
+    private val database: FirebaseDatabase = FirebaseDatabase.getInstance()
+    private val ref: DatabaseReference = database.getReference("attendance")
 
-    override fun getAttendance(
+    override fun addAttendance(
+        attendance: AttendanceModel,
+        callback: (Boolean, String) -> Unit
+    ) {
+        val attendanceId = ref.push().key ?: return
+        attendance.attendanceId = attendanceId
+
+        ref.child(attendanceId).setValue(attendance)
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    callback(true, "Attendance added")
+                } else {
+                    callback(false, it.exception?.message ?: "Error")
+                }
+            }
+    }
+
+    override fun getAllAttendance(
         callback: (Boolean, String, List<AttendanceModel>?) -> Unit
     ) {
         ref.addListenerForSingleValueEvent(object : ValueEventListener {
-
             override fun onDataChange(snapshot: DataSnapshot) {
                 val list = mutableListOf<AttendanceModel>()
-
                 for (child in snapshot.children) {
-                    val model = child.getValue(AttendanceModel::class.java)
-                    model?.let { list.add(it) }
+                    val attendance = child.getValue(AttendanceModel::class.java)
+                    attendance?.let { list.add(it) }
                 }
-
                 callback(true, "Success", list)
             }
 
@@ -29,17 +44,30 @@ class AttendanceRepoImpl : AttendanceRepo {
         })
     }
 
-    override fun markAttendance(
-        studentId: String,
+    override fun updateAttendance(
+        attendanceId: String,
+        attendance: AttendanceModel,
         callback: (Boolean, String) -> Unit
     ) {
-        val studentRef = ref.child(studentId)
-
-        studentRef.child("status")
-            .setValue("Present")
+        ref.child(attendanceId)
+            .updateChildren(attendance.toMap())
             .addOnCompleteListener {
                 if (it.isSuccessful) {
-                    callback(true, "Attendance marked")
+                    callback(true, "Attendance updated")
+                } else {
+                    callback(false, it.exception?.message ?: "Error")
+                }
+            }
+    }
+
+    override fun deleteAttendance(
+        attendanceId: String,
+        callback: (Boolean, String) -> Unit
+    ) {
+        ref.child(attendanceId).removeValue()
+            .addOnCompleteListener {
+                if (it.isSuccessful) {
+                    callback(true, "Attendance deleted")
                 } else {
                     callback(false, it.exception?.message ?: "Error")
                 }
