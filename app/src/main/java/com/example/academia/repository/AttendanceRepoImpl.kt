@@ -12,7 +12,12 @@ class AttendanceRepoImpl : AttendanceRepo {
         attendance: AttendanceModel,
         callback: (Boolean, String) -> Unit
     ) {
-        val attendanceId = ref.push().key ?: return
+        val attendanceId = ref.push().key
+        if (attendanceId == null) {
+            callback(false, "Failed to generate attendance ID")
+            return
+        }
+
         attendance.attendanceId = attendanceId
 
         ref.child(attendanceId).setValue(attendance)

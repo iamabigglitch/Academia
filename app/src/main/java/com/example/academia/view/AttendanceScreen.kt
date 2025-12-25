@@ -7,37 +7,72 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.academia.model.AttendanceModel
-import com.example.academia.utils.SessionManager
-import com.example.academia.utils.UserRole
 import com.example.academia.viewmodel.AttendanceViewModel
 
 @Composable
 @Preview
 
 fun AttendanceScreen() {
-    val role = SessionManager.userRole
+    val viewModel = AttendanceViewModel()
+    val context = LocalContext.current
 
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Text("Attendance", fontSize = 22.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(12.dp))
+    var attendanceList by remember { mutableStateOf(listOf<AttendanceModel>()) }
 
-        if (role == UserRole.STUDENT) {
-            Text("You can view your attendance only.", color = Color.Gray)
+    // Load attendance data
+    LaunchedEffect(Unit) {
+        viewModel.getAllAttendance { success, _, list ->
+            if (success) attendanceList = list ?: listOf()
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Text("Attendance")
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (attendanceList.isEmpty()) {
+            Text("No attendance records yet", color = Color.Gray)
         } else {
-            Button(onClick = {
-                // future mark attendance logic
-            }) {
-                Text("Mark Attendance")
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                items(attendanceList) { att ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(
+                                color = if (att.status == "Present") Color(0xFFD6ECFF)
+                                else
+                                    Color(0xFFFFE0E6),
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            .padding(16.dp)
+                            .clickable {
+                                // Toggle Present/Absent
+                                val updatedStatus = if (att.status == "Present") "Absent" else "Present"
+                                val updatedAtt = att.copy(status = updatedStatus)
+
+                                viewModel.updateAttendance(att.attendanceId, updatedAtt) { success, msg ->
+                                    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                    if (success) {
+                                        attendanceList = attendanceList.map {
+                                            if (it.attendanceId == att.attendanceId) updatedAtt else it
+                                        }
+                                    }
+                                }
+                            },
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(att.studentName)
+                        Text(att.status)
+                    }
+                }
             }
         }
     }

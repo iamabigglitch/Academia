@@ -1,118 +1,124 @@
 package com.example.academia.view
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.academia.model.CourseModel
 import com.example.academia.model.TaskModel
-import com.example.academia.repository.CourseRepoImpl
-import com.example.academia.repository.TaskRepoImpl
 import com.example.academia.viewmodel.CourseViewModel
 import com.example.academia.viewmodel.TaskViewModel
-import com.example.academia.utils.SessionManager
-import com.example.academia.utils.UserRole
 import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
 @Preview
-fun HomeScreen(
-    onAttendanceClick: () -> Unit = {},
-    onRoutineClick: () -> Unit = {}
-) {
-    val role = SessionManager.userRole
 
-    // Greeting + Date
-    val calendar = Calendar.getInstance()
-    val hour = calendar.get(Calendar.HOUR_OF_DAY)
-    val greeting = when {
-        hour < 12 -> "Good Morning"
-        hour < 17 -> "Good Afternoon"
-        else -> "Good Evening"
-    }
-    val currentDateTime = SimpleDateFormat("dd MMM yyyy • hh:mm a", Locale.getDefault())
-        .format(calendar.time)
+fun HomeScreen() {
+    val context = LocalContext.current
+    val courseViewModel = CourseViewModel()
+    val taskViewModel = TaskViewModel()
 
-    val courseViewModel = remember { CourseViewModel(CourseRepoImpl()) }
-    val taskViewModel = remember { TaskViewModel(TaskRepoImpl()) }
+    var courses by remember { mutableStateOf(listOf<CourseModel>()) }
+    var tasks by remember { mutableStateOf(listOf<TaskModel>()) }
 
-    var courseList by remember { mutableStateOf<List<CourseModel>>(emptyList()) }
-    var taskList by remember { mutableStateOf<List<TaskModel>>(emptyList()) }
-
+    // Load today's courses & tasks
     LaunchedEffect(Unit) {
-        courseViewModel.getAllCourses { success, _, list -> courseList = list ?: emptyList() }
-        taskViewModel.getAllTasks { success, _, list -> taskList = list ?: emptyList() }
+        courseViewModel.getAllCourses { success, _, list ->
+            courses = if (success && list != null) list else emptyList()
+        }
+        taskViewModel.getAllTasks { success, _, list ->
+            tasks = if (success && list != null) list else emptyList()
+        }
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        // White box: Greeting + Today’s Class + Tasks
-        Column(
+    // Today's date
+    val dateFormat = SimpleDateFormat("EEE, MMM d, yyyy", Locale.getDefault())
+    val todayDate = dateFormat.format(Date())
+
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .padding(16.dp)) {
+
+        // Big white box
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .shadow(8.dp, RoundedCornerShape(20.dp))
-                .background(Color.White, RoundedCornerShape(20.dp))
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .background(Color.White, RoundedCornerShape(16.dp))
+                .padding(16.dp)
         ) {
-            Text(greeting, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-            Text(currentDateTime, fontSize = 14.sp, color = Color.Gray)
+            Column {
+                Text("Hello!", fontSize = 22.sp, color = Color.Black)
+                Text("Today: $todayDate", fontSize = 16.sp, color = Color.Gray)
 
-            // Today’s Class
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFFD6ECFF), RoundedCornerShape(16.dp))
-                    .padding(12.dp)
-            ) {
-                Text("Today's Class", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                if (courseList.isEmpty()) Text("No classes today", fontSize = 14.sp, color = Color.Gray)
-                else courseList.forEach { Text("• ${it.subjectName}", fontSize = 14.sp, color = Color.DarkGray) }
-            }
+                Spacer(modifier = Modifier.height(16.dp))
 
-            // Today’s Tasks
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFFFFE0E6), RoundedCornerShape(16.dp))
-                    .padding(12.dp)
-            ) {
-                Text("Today's Tasks", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                if (taskList.isEmpty()) Text("No tasks assigned", color = Color.Gray, fontSize = 14.sp)
-                else taskList.forEach { Text("• ${it.title}", fontSize = 14.sp, color = Color.DarkGray) }
+                // Two boxes: Today's Classes and Today's Tasks
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .background(Color(0xFFD6ECFF), RoundedCornerShape(12.dp))
+                            .padding(16.dp)
+                    ) {
+                        Text("Today's Classes: ${courses.size}")
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .background(Color(0xFFFFE0E6), RoundedCornerShape(12.dp))
+                            .padding(16.dp)
+                    ) {
+                        Text("Today's Tasks: ${tasks.size}")
+                    }
+                }
             }
         }
 
-        // Attendance button
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color(0xFFD6ECFF), RoundedCornerShape(16.dp))
-                .clickable { onAttendanceClick() }
-                .padding(16.dp)
-        ) { Text("Attendance", fontWeight = FontWeight.Bold, fontSize = 18.sp) }
+        Spacer(modifier = Modifier.height(16.dp))
 
-        // Routine button
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color(0xFFFFF3E0), RoundedCornerShape(16.dp))
-                .clickable { onRoutineClick() }
-                .padding(16.dp)
-        ) { Text("Routine", fontWeight = FontWeight.Bold, fontSize = 18.sp) }
+        // Two boxes: Attendance and Routine
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .background(Color(0xFFD6FFEC), RoundedCornerShape(12.dp))
+                    .clickable {
+                        Toast.makeText(context, "Opening Attendance Screen", Toast.LENGTH_SHORT).show()
+                        // Navigate to AttendanceScreen
+                    }
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Attendance")
+            }
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .background(Color(0xFFFFF3D6), RoundedCornerShape(12.dp))
+                    .clickable {
+                        Toast.makeText(context, "Opening Routine Screen", Toast.LENGTH_SHORT).show()
+                        // Navigate to RoutineScreen
+                    }
+                    .padding(16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Routine")
+            }
+        }
     }
 }
