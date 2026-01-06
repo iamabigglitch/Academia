@@ -1,13 +1,14 @@
 import AboutPage from "../components/AboutPage";
-import React from 'react'
+import React from "react";
+import NavBar from "../components/Navbar";
+import Footer from "../components/Footer";
 
 const About = () => {
     return (
         <div>
-            <Navbar />
+            <NavBar />
             <AboutPage />
             <Footer />
-
         </div>
     )
 }

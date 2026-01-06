@@ -335,35 +335,7 @@ export const aboutUsStyles = {
   valueFeatureItem: "flex items-center gap-3 text-gray-700",
   valueFeatureDot: "w-2 h-2 bg-gradient-to-r rounded-full",
   valueUnderline: "absolute bottom-0 left-0 w-0 group-hover:w-full h-1 bg-gradient-to-r transition-all duration-500",
-  
-  // Team Section
-  teamSection: "py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 to-indigo-100",
-  teamHeader: "text-center mb-16",
-  teamTitle: "text-2xl sm:text-4xl md:text-4xl lg:text-4xl xl:text-4xl font-bold text-gray-900 mb-4 font-serif",
-  teamSubtitle: "text-xl text-gray-600 max-w-2xl mx-auto",
-  teamGrid: "grid md:grid-cols-2 lg:grid-cols-4 gap-8",
-  teamMember: "text-center font-[pacifico] group cursor-pointer",
-  teamImageContainer: "relative mb-6",
-  teamImage: "w-48 h-48 mx-auto rounded-full transform transition-all duration-500",
-  teamName: "text-2xl font-bold text-gray-900 mb-2 transition-colors",
-  teamRole: "text-blue-600 italic font-semibold mb-2",
-  teamBio: "text-gray-600 mb-4",
-  
-  // Testimonials Section
-  testimonialsSection: "py-20 px-4 sm:px-6 lg:px-8 bg-white",
-  testimonialsHeader: "text-center mb-16",
-  testimonialsTitle: "text-2xl sm:text-4xl md:text-4xl lg:text-4xl xl:text-4xl font-bold text-gray-900 mb-4 font-serif",
-  testimonialsSubtitle: "text-xl text-gray-600 max-w-2xl mx-auto",
-  testimonialsGrid: "grid md:grid-cols-3 gap-8",
-  testimonialCard: "bg-gray-50 p-8 rounded-3xl hover:shadow-2xl transition-all duration-300 group border border-gray-100",
-  testimonialStars: "flex items-center gap-2 mb-4",
-  testimonialStar: "w-5 h-5 text-yellow-400 fill-current",
-  testimonialText: "text-gray-700 mb-6 leading-relaxed italic",
-  testimonialAuthor: "flex items-center gap-4",
-  testimonialAvatar: "w-12 h-12 rounded-full object-cover",
-  testimonialAuthorName: "font-semibold text-gray-900",
-  testimonialAuthorRole: "text-gray-600 text-sm",
-  
+
   // CTA Section
   ctaSection: "py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-200 via-purple-500 to-indigo-300 relative overflow-hidden",
   ctaOrb1: "absolute top-0 left-0 w-72 h-72 bg-white/50 rounded-full -translate-x-1/2 -translate-y-1/2 animate-pulse",

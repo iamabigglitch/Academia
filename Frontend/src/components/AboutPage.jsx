@@ -54,13 +54,19 @@ const AboutPage = () => {
   };
 
   return (
+
     <div className={aboutUsStyles.container}>
+
       {/* Hero Section */}
       <section className={aboutUsStyles.heroSection}>
         <div className={aboutUsStyles.heroBackground}>
           <div
-            className={aboutUsStyles.heroImageContainer}
-            style={{ backgroundImage: `url(${AboutBanner})`, opacity: 0.85 }}
+            style={{ 
+              backgroundImage: `url(${AboutBanner})`, 
+              opacity: 0.50 
+            }}
+
+            className={aboutUsStyles.heroImageContainer} 
           />
           <div
             className={aboutUsStyles.heroVignette}
@@ -69,11 +75,14 @@ const AboutPage = () => {
                 "linear-gradient(to bottom, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.0) 30%, rgba(0,0,0,0.0) 70%, rgba(0,0,0,0.72) 100%)",
             }}
           />
-          <div className={aboutUsStyles.heroTint} />
+          <div className={aboutUsStyles.heroTint}></div>
+          </div>
+
           <div className={aboutUsStyles.heroContent}>
             <div className={aboutUsStyles.trustBadge}>
               <Star className={aboutUsStyles.trustIcon} /> Trusted by 50,000+ students worldwide
             </div>
+             
             <h1 className={aboutUsStyles.mainHeading}>About LearnHub</h1>
             <p className={aboutUsStyles.subHeading}>
               Empowering millions to archieve dreams through{" "}
@@ -82,14 +91,17 @@ const AboutPage = () => {
 
             <div className={aboutUsStyles.statsGrid}>
               {statsMeta.slice(0, 4).map((stat, index) => (
-                <div key={index} className={aboutUsStyles.statCard} style={{ minWidth: 120 }}>
+                <div 
+                key={index} 
+                className={aboutUsStyles.statCard} 
+                style={{ minWidth: 120 }}>
+
                   <div className={aboutUsStyles.statNumber}>{formatStatNumber(stat.key)}</div>
                   <div className={aboutUsStyles.statLabel}>{stat.label}</div>
                 </div>
               ))}
             </div>
           </div>
-        </div>
       </section>
 
       {/* Mission / Vision / Values Sections */}
@@ -98,7 +110,8 @@ const AboutPage = () => {
         return (
           <section
             key={section.type}
-            className={`${aboutUsStyles.sectionContainer} ${section.bgColor} ${index % 2 === 1 ? "bg-white" : ""}`}
+            className={`${aboutUsStyles.sectionContainer} ${section.bgColor}`}
+            style={{ backgroundColor: index % 2 === 1 ? "white" : undefined }}
           >
             <div className={aboutUsStyles.sectionGrid}>
               <div
@@ -178,9 +191,12 @@ const AboutPage = () => {
           <p className={aboutUsStyles.ctaDescription}>
             Join millions of learners who have transform their lives with LearnHub. Start your Journey today with a 7-day free trial.
           </p>
+
+          <div className={aboutUsStyles.ctaButtons}>
           <a href="/contact" className={aboutUsStyles.ctaButton}>
             <MessageCircleCode className={aboutUsStyles.ctaButtonIcon} /> Talk to Advisor
           </a>
+        </div>
         </div>
       </section>
 
