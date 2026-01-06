@@ -603,11 +603,12 @@ export const coursePageCustomStyles = `
 
 // Add these to the existing dummyStyles.js file
 export const facultyStyles = {
+
   // Layout & Container
   container: "min-h-screen pt-12 sm:pt-16 bg-gradient-to-br from-blue-50 via-white to-purple-50",
   
   // Header Section
-  header: "relative py-12 sm:py-16 px-4 text-center bg-gradient-to-br from-blue-50 via-white to-purple-50",
+  header: "relative py-12 sm:py-16 px-4 text-center bg-gradient-to-br from-blue-100 via-white to-purple-50",
   headerContent: "relative z-10 max-w-4xl mx-auto",
   title: "text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-blue-500 mb-3 sm:mb-4 font-cinematic tracking-wide",
   titleDivider: "w-20 sm:w-28 h-1 bg-gradient-to-r from-blue-200 to-sky-500 mx-auto mb-4 rounded-full",
@@ -648,12 +649,14 @@ starIcon: "w-5 h-5",
 
   
   // Social Icons
-  socialContainer: "flex justify-center gap-3 sm:gap-4 mt-2",
-  socialIcon: "transform transition-all duration-300 hover:scale-105 hover:-translate-y-1 p-3 sm:p-3.5 rounded-2xl shadow-lg hover:shadow-xl",
-  socialIconEmail: "bg-gradient-to-br from-green-100 to-green-300",
-  socialIconLinkedin: "bg-gradient-to-br from-sky-100 to-blue-300",
-  socialIconInstagram: "bg-gradient-to-br from-purple-200 to-pink-600",
-  socialIconSvg: "w-4 h-4 sm:w-5 sm:h-5 text-gray-900",
+ 
+socialContainer: "flex justify-center gap-3 sm:gap-4 mt-2",
+socialIcon: "transform transition-all duration-300 hover:scale-105 hover:-translate-y-1 p-3 sm:p-3.5 rounded-2xl shadow-md hover:shadow-lg",
+socialIconEmail: "bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300",
+socialIconLinkedin: "bg-gradient-to-br from-sky-100 to-sky-200 hover:from-sky-200 hover:to-sky-300",
+socialIconInstagram: "bg-gradient-to-br from-pink-100 to-purple-200 hover:from-pink-200 hover:to-purple-300",
+socialIconSvg:"w-4 h-4 sm:w-5 sm:h-5 text-gray-900",
+
   
   // CSS Animations and Utilities
   animations: `

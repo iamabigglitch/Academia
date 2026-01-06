@@ -37,15 +37,15 @@ const ContactPage = () => {
 
     setIsSubmitting(true);
 
-    const whatsappMessage =
-      `Name: ${formData.name}%0A` +
-      `Email: ${formData.email}%0A` +
-      `Phone: ${formData.phone}%0A` +
-      `Subject: ${formData.subject}%0A` +
-      `Message: ${formData.message}`;
+    // const whatsappMessage =
+    //   `Name: ${formData.name}%0A` +
+    //   `Email: ${formData.email}%0A` +
+    //   `Phone: ${formData.phone}%0A` +
+    //   `Subject: ${formData.subject}%0A` +
+    //   `Message: ${formData.message}`;
 
-    const whatsappUrl = `https://wa.me/918299431275?text=${whatsappMessage}`;
-    window.open(whatsappUrl, "_blank");
+    // const whatsappUrl = `https://wa.me/918299431275?text=${whatsappMessage}`;
+    // window.open(whatsappUrl, "_blank");
 
     setTimeout(() => {
       setFormData({
@@ -89,6 +89,7 @@ const ContactPage = () => {
                 <div className={contactStyles.formGrid}>
                   <div className={contactStyles.formGroup}>
                     <label className={contactStyles.label}>
+
                       <User className={`
                         ${contactStyles.labelIcon} 
                         ${contactStyles.colors.purple.icon}
@@ -176,15 +177,16 @@ const ContactPage = () => {
                 {/* Message */}
                 <div className={contactStyles.formGroup}>
                   <label className={contactStyles.label}>
-                    <MessageCircleDashed className={`${contactStyles.labelIcon} ${contactStyles.colors.blue.icon}`} />
+                    <MessageCircleDashed className={`
+                        ${contactStyles.labelIcon} 
+                        ${contactStyles.colors.blue.icon}`} />
                     Message 
                   </label>
                   <textarea
                     name="message"
                     value={formData.message}
                     onChange={handleChange}
-                    required 
-                    rows="5"
+                    required rows="5"
                     className={`${contactStyles.textarea} ${contactStyles.colors.blue.focus}`}
                     placeholder="Tell us more about your inquiry..."
                   />
@@ -226,14 +228,14 @@ const ContactPage = () => {
         </div>
 
         {/* Footer info */}
-        <div className={contactStyles.footer}>
+        {/* <div className={contactStyles.footer}>
           <div className={contactStyles.footerBadge}>
             <MessageCircle className={contactStyles.footerIcon} />
             <span className={contactStyles.footerText}>
               All messages are sent directly to our WhatsApp Business account.
             </span>
           </div>
-        </div> 
+        </div>  */}
 
       </div> 
     </div> 
