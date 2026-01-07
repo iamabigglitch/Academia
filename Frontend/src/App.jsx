@@ -5,6 +5,7 @@ import About from "./pages/About.jsx";
 import Contact from "./pages/Contact.jsx";
 import NavBar from "./components/Navbar.jsx";
 import Faculty from "./pages/Faculty.jsx";
+import CoursePage from "./components/CoursePage.jsx";
 
 
 const App = () => {
@@ -16,6 +17,7 @@ const App = () => {
         <Route path = "/about" element={<About/>} />
         <Route path="/contact" element={<Contact/>} />
         <Route path="/faculty" element={<Faculty/>} />
+        <Route path="/courses" element={<CoursePage/>} />
       </Routes>
     </BrowserRouter>
   );
