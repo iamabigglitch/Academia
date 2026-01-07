@@ -10,7 +10,7 @@ const navItems = [
   { name: "Courses", icon: BookOpen, href: "/courses" },
   { name: "About", icon: BookMarked, href: "/about" },
   { name: "Faculty", icon: Users, href: "/faculty" },
-  { name: "Contact", icon: Phone, href: "/contact" },
+//   { name: "Contact", icon: Phone, href: "/contact" },
 ];
 
 
