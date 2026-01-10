@@ -57,12 +57,11 @@ const CoursePage = () => {
     }));
   };
 
-  const filteredCourses = courses.filter(
-    (course) =>
-      course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.instructor.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredCourses = courses.filter((course) =>
+course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+course.instructor.toLowerCase().includes(searchQuery.toLowerCase()) ||
+course.category.toLowerCase().includes(searchQuery.toLowerCase())
+);
 
   // Decide which courses to show (8 by default)
 
