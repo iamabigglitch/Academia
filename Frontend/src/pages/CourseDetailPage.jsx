@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import coursesData from "../assets/dummyCourse";
 import { courseDetailStyles } from "../assets/dummyStyles";
 import { BookOpen, Target, X, Clock, ArrowLeft, User, Play, ChevronDown, ArrowRight, Award, Sparkles, CheckCircle, Circle } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
+import axios from "axios";
 
-
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
 
 const fmtMinutes = (mins) => {
   const h = Math.floor((mins || 0) / 60);
@@ -36,8 +36,6 @@ const Toast = ({ message, type = "info", onClose }) => {
     </div>
   );
 };
-
-//to get the video file or url coming from youtube or google drive and convert it to embeddable url
 
 const toEmbedUrl = (url) => {
   if (!url) return "";
@@ -92,7 +90,6 @@ const appendAutoplay = (embedUrl, autoplay = true) => {
     : `${embedUrl}?autoplay=1`;
 };
 
-// helper: detect direct video file URLs (.mp4/.webm/.ogg)
 const isDirectVideoFile = (url) => {
   if (!url) return false;
   return /\.(mp4|webm|ogg)(\?.*)?$/i.test(url);
@@ -103,9 +100,13 @@ const CourseDetailPage = () => {
   const navigate = useNavigate();
   const courseId = parseInt(id, 10);
 
-  const [isLoggedIn] = useState(true);
+  // State for course data
+  const [course, setCourse] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Initialize enrollment based on whether course is free
+  // User and enrollment state (replace with actual auth logic)
+  const [isLoggedIn] = useState(true); // Get from auth context
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [isEnrolling, setIsEnrolling] = useState(false);
 
@@ -115,99 +116,89 @@ const CourseDetailPage = () => {
   const [isTeacherAnimating, setIsTeacherAnimating] = useState(false);
   const [isPageLoaded, setIsPageLoaded] = useState(false);
 
-  // find course from dummy data
-  const course = coursesData.find((c) => c.id === courseId);
-
-  // Check if course is free
-  const isCourseFree = course?.isFree || !course?.price;
-
-  //initialize enrollment state based on course type
+  // Fetch course data from backend
   useEffect(() => {
+    const fetchCourse = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get(`${API_BASE_URL}/courses/${courseId}`);
+        
+        if (response.data.success) {
+          setCourse(response.data.course);
+          
+          // Check if course is free (pricingType === "free")
+          const isFree = response.data.course.pricingType === "free";
+          if (isFree) {
+            setIsEnrolled(true);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching course:", err);
+        setError(err.response?.data?.message || "Failed to load course");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    if(isCourseFree) {
-        setIsEnrolled(true); // Auto-enroll if the course is free
-    }
-    else {
-       setIsEnrolled(false);
-    }
-}, [isCourseFree]);
+    fetchCourse();
+  }, [courseId]);
 
   useEffect(() => {
-    setIsTeacherAnimating(true);
-    const timer = setTimeout(() => setIsTeacherAnimating(false), 1000);
-    return () => clearTimeout(timer);
+    if (course) {
+      setIsTeacherAnimating(true);
+      const timer = setTimeout(() => setIsTeacherAnimating(false), 1000);
+      return () => clearTimeout(timer);
+    }
   }, [course]);
 
   useEffect(() => {
     setIsPageLoaded(true);
   }, []);
 
-  // selected content is null by default — user must click to select
-    const [selectedContent, setSelectedContent] = useState({
-      type: null, // 'lecture' or 'chapter'
-      lectureId: null,
-      chapterId: null,
-    });
+  // Check if course is free
+  const isCourseFree = course?.pricingType === "free";
 
-     const selectedLecture = useMemo(() => {
-        if (!selectedContent.lectureId) return null;
-        return (
-          (course?.lectures || []).find(
-            (l) => l.id === selectedContent.lectureId
-          ) || null
-        );
-      }, [course, selectedContent.lectureId]);
+  const [selectedContent, setSelectedContent] = useState({
+    type: null,
+    lectureId: null,
+    chapterId: null,
+  });
 
-      const selectedChapter = useMemo(() => {
-          if (!selectedContent.chapterId || !selectedLecture) return null;
-          return (
-            (selectedLecture.chapters || []).find(
-              (ch) => ch.id === selectedContent.chapterId
-            ) || null
-          );
-        }, [selectedLecture, selectedContent.chapterId]);
-      
-        const currentVideoContent = useMemo(() => {
-          if (selectedContent.type === "chapter" && selectedChapter) {
-            return selectedChapter;
-          }
-          if (selectedContent.type === "lecture" && selectedLecture) {
-            return selectedLecture;
-          }
-          return null;
-        }, [selectedContent, selectedLecture, selectedChapter]);
+  const selectedLecture = useMemo(() => {
+    if (!selectedContent.lectureId) return null;
+    return (
+      (course?.Lectures || []).find(
+        (l) => l.id === selectedContent.lectureId
+      ) || null
+    );
+  }, [course, selectedContent.lectureId]);
 
-         const totalMinutes = useMemo(() => {
-            return (course?.lectures || []).reduce(
-              (sum, l) => sum + (l.durationMin || 0),
-              0
-            );
-          }, [course]);
+  const selectedChapter = useMemo(() => {
+    if (!selectedContent.chapterId || !selectedLecture) return null;
+    return (
+      (selectedLecture.Chapters || []).find(
+        (ch) => ch.id === selectedContent.chapterId
+      ) || null
+    );
+  }, [selectedLecture, selectedContent.chapterId]);
 
-          // --- Pricing: handle course.price as object { original, sale } ---
-  const priceObj = course?.price;
-  const hasPriceObj = !!(
-    priceObj &&
-    (priceObj.sale != null || priceObj.original != null)
-  );
-  const salePrice =
-    hasPriceObj && priceObj.sale != null ? Number(priceObj.sale) : null;
-  const originalPrice =
-    hasPriceObj && priceObj.original != null ? Number(priceObj.original) : null;
-  const formatCurrency = (n) => {
-    if (n == null || Number.isNaN(n)) return "";
-    return `₹${n}`;
-  };
-  const priceLabel =
-    salePrice != null
-      ? formatCurrency(salePrice)
-      : originalPrice != null
-      ? formatCurrency(originalPrice)
-      : "Free";
-  const hasDiscount =
-    originalPrice != null && salePrice != null && originalPrice > salePrice;
+  const currentVideoContent = useMemo(() => {
+    if (selectedContent.type === "chapter" && selectedChapter) {
+      return selectedChapter;
+    }
+    if (selectedContent.type === "lecture" && selectedLecture) {
+      return selectedLecture;
+    }
+    return null;
+  }, [selectedContent, selectedLecture, selectedChapter]);
 
-     // --- Handlers --- //
+  const totalMinutes = useMemo(() => {
+    if (!course) return 0;
+    const totalHours = course.totalDurationHours || 0;
+    const totalMins = course.totalDurationMinutes || 0;
+    return totalHours * 60 + totalMins;
+  }, [course]);
+
   const onLectureHeaderClick = (lectureId) => {
     if (!isLoggedIn) {
       setToast({
@@ -229,9 +220,8 @@ const CourseDetailPage = () => {
       else next.add(lectureId);
       return next;
     });
-  }; //it will check for user is logged in or not , then it will check for enrollment if course is not free, then it will show the details of lecture
+  };
 
-    // clicking a chapter selects it (plays) and ensures its lecture is expanded
   const handleContentSelect = (lectureId, chapterId = null) => {
     if (!isLoggedIn) {
       setToast({
@@ -241,7 +231,6 @@ const CourseDetailPage = () => {
       return;
     }
 
-    // For free courses OR enrolled paid courses, allow access
     if (isCourseFree || isEnrolled) {
       setSelectedContent({
         type: chapterId ? "chapter" : "lecture",
@@ -257,7 +246,6 @@ const CourseDetailPage = () => {
       return;
     }
 
-    // For paid courses when not enrolled, show enroll toast
     if (!isCourseFree && !isEnrolled) {
       setToast({
         message: "Please enroll in the course to access this content",
@@ -267,8 +255,7 @@ const CourseDetailPage = () => {
     }
   };
 
-  //this function will toggle the chapter completion status
-   const toggleChapterCompletion = (chapterId, e) => {
+  const toggleChapterCompletion = (chapterId, e) => {
     if (e) e.stopPropagation();
 
     if (!isLoggedIn || !isEnrolled) {
@@ -297,129 +284,139 @@ const CourseDetailPage = () => {
     }
 
     setIsEnrolling(true);
-    // Simulate enrollment process
+    // TODO: Add actual enrollment API call here
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
     setIsEnrolled(true);
     setIsEnrolling(false);
     setToast({
-      message:
-        " Successfully enrolled in the course! You can now access all content.",
+      message: "Successfully enrolled in the course! You can now access all content.",
       type: "info",
     });
   };
 
-  const handleBackToHome = () => {
-    navigate("/");
-  };
+  // Loading state
+  if (loading) {
+    return (
+      <div className={courseDetailStyles.notFoundContainer}>
+        <div className={courseDetailStyles.notFoundContent}>
+          <h2 className={courseDetailStyles.notFoundTitle}>Loading...</h2>
+          <p className={courseDetailStyles.notFoundMessage}>Please wait while we load the course.</p>
+        </div>
+      </div>
+    );
+  }
 
-    //if no course found
-    if(!course) {
-        return (
-            <div className={courseDetailStyles.notFoundContainer}>
-                <div className={courseDetailStyles.notFoundContent}>
-                    <h2 className={courseDetailStyles.notFoundTitle}>Course Not Found</h2>
-                    <p className={courseDetailStyles.notFoundMessage}>The course you are looking for does not exist.</p>
-                    <button
-                        onClick={() => navigate("/courses")}
-                        className={courseDetailStyles.notFoundButton}>
-                        Back to Courses
-                    </button>
-                </div>
-            </div>
-        );
-    }
+  // Error state
+  if (error || !course) {
+    return (
+      <div className={courseDetailStyles.notFoundContainer}>
+        <div className={courseDetailStyles.notFoundContent}>
+          <h2 className={courseDetailStyles.notFoundTitle}>Course Not Found</h2>
+          <p className={courseDetailStyles.notFoundMessage}>
+            {error || "The course you are looking for does not exist."}
+          </p>
+          <button
+            onClick={() => navigate("/courses")}
+            className={courseDetailStyles.notFoundButton}
+          >
+            Back to Courses
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-
-  // Compute an embeddable URL for the currently selected content (if any)
   const currentRawUrl = currentVideoContent?.videoUrl || null;
   const currentEmbedUrl = currentRawUrl ? toEmbedUrl(currentRawUrl) : null;
   const currentIsDirectVideo = isDirectVideoFile(currentEmbedUrl);
 
-    return (
+  return (
     <div className={courseDetailStyles.container}>
-        {toast && (
-            <Toast
-                message={toast.message}
-                type={toast.type}
-                onClose={() => setToast(null)}
-            />
-        )}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
 
-        <div className={`${courseDetailStyles.mainContainer} ${isPageLoaded 
+      <div
+        className={`${courseDetailStyles.mainContainer} ${
+          isPageLoaded
             ? courseDetailStyles.containerVisible
             : courseDetailStyles.containerHidden
-        }`}>
+        }`}
+      >
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => navigate("/courses")}
+            className={courseDetailStyles.backButton}
+          >
+            <ArrowLeft className={courseDetailStyles.backIcon} />
+            <span className={courseDetailStyles.backText}>Back To Home</span>
+          </button>
+        </div>
 
-            <div className=" flex items-center justify-between">
-                <button 
-                onClick={() => 
-                    navigate('/courses')} 
-                    className={courseDetailStyles.backButton}>
-                        <ArrowLeft className={courseDetailStyles.backIcon} />
-                        <span className={courseDetailStyles.backText}>Back To Home</span>
-                </button>
+        <div className={courseDetailStyles.header}>
+          <div className={courseDetailStyles.badge}>
+            <BookOpen className={courseDetailStyles.badgeIcon} />
+            <span className={courseDetailStyles.badgeText}>
+              {isCourseFree ? "Free Course" : "Premium Course"}
+            </span>
+          </div>
+
+          <h1 className={courseDetailStyles.title}>{course.name}</h1>
+
+          {course.overview && (
+            <div className={courseDetailStyles.overviewContainer}>
+              <div className={courseDetailStyles.overview}>
+                <div className={courseDetailStyles.overviewHeader}>
+                  <Target className={courseDetailStyles.overviewIcon} />
+                  <h3 className={courseDetailStyles.overviewTitle}>
+                    Course Overview
+                  </h3>
+                </div>
+                <p className={courseDetailStyles.overviewText}>
+                  {course.overview}
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className={`${courseDetailStyles.statsContainer} animation-delay-300`}>
+            <div className={courseDetailStyles.statItem}>
+              <Clock className={courseDetailStyles.statIcon} />
+              <span className={courseDetailStyles.statText}>
+                {fmtMinutes(totalMinutes)}
+              </span>
             </div>
 
-            <div className={courseDetailStyles.header}>
-                <div className={courseDetailStyles.badge}>
-                    <BookOpen className={courseDetailStyles.badgeIcon} />
-                    <span className={courseDetailStyles.badgeText}>
-                        {isCourseFree ? "Free Course" : "Premium Course"} 
-                    </span>
-                </div>
-
-                <h1 className={courseDetailStyles.title}>{course.title}</h1>
-
-                {course.overview && (
-                    <div className = {courseDetailStyles.overviewContainer}>
-                        <div className= {courseDetailStyles.overview}>
-                            <div className= {courseDetailStyles.overviewHeader}>
-                                <Target className= {courseDetailStyles.overviewIcon} />
-                                <h3 classname= {courseDetailStyles.overviewTitle}>Course Overview </h3>
-                            </div>
-                            <p className= {courseDetailStyles.overviewText}>{course.overview} </p>
-                        </div>
-                     </div>
-                )}
-
-                <div className={`${courseDetailStyles.statsContainer} animation-delay-300` }>
-                    <div className={courseDetailStyles.statItem}>
-                        <Clock className={courseDetailStyles.statIcon} />
-                        <span className={courseDetailStyles.statText}>
-                            {fmtMinutes(totalMinutes)}
-                        </span>
-                    </div>
-
-                    <div className={`${courseDetailStyles.statsContainer} animation-delay-300` }>
-                    <div className={courseDetailStyles.statItem}>
-                        <BookOpen className={courseDetailStyles.statIcon} />
-                        <span className={courseDetailStyles.statText}>
-                            {(course.lectures || []).length} Lectures
-                        </span>
-                        </div>
-
-                        <div className={`${courseDetailStyles.teacherStat} ${
-                            isTeacherAnimating
-                            ? courseDetailStyles.teacherAnimating
-                            : ""
-                        }`}>
-                            <User className={courseDetailStyles.statIcon} />
-                            <span className={courseDetailStyles.statText}>
-                                {course.teacher}
-                            </span>
-                        </div>
-                </div>
+            <div className={courseDetailStyles.statItem}>
+              <BookOpen className={courseDetailStyles.statIcon} />
+              <span className={courseDetailStyles.statText}>
+                {course.totalLectures || 0} Lectures
+              </span>
             </div>
 
-            {/* Main */}
+            <div
+              className={`${courseDetailStyles.teacherStat} ${
+                isTeacherAnimating ? courseDetailStyles.teacherAnimating : ""
+              }`}
+            >
+              <User className={courseDetailStyles.statIcon} />
+              <span className={courseDetailStyles.statText}>
+                {course.teacher}
+              </span>
+            </div>
+          </div>
+        </div>
 
-            {/* Main Content Grid */}
+        {/* Main Content Grid */}
         <div className={courseDetailStyles.mainGrid}>
-          {/* Enhanced Video Player */}
+          {/* Video Player */}
           <div className={courseDetailStyles.videoSection}>
             <div className={courseDetailStyles.videoContainer}>
-              {/* if direct video file -> use HTML5 video, else iframe */}
               {currentEmbedUrl ? (
                 currentIsDirectVideo ? (
                   <video
@@ -446,18 +443,12 @@ const CourseDetailPage = () => {
               ) : (
                 <div className={courseDetailStyles.videoPlaceholder}>
                   <div className={courseDetailStyles.videoPlaceholderBg}>
-                    <div
-                      className={courseDetailStyles.videoPlaceholderOrb1}
-                    ></div>
-                    <div
-                      className={courseDetailStyles.videoPlaceholderOrb2}
-                    ></div>
+                    <div className={courseDetailStyles.videoPlaceholderOrb1}></div>
+                    <div className={courseDetailStyles.videoPlaceholderOrb2}></div>
                   </div>
                   <div className={courseDetailStyles.videoPlaceholderContent}>
                     <div className={courseDetailStyles.videoPlaceholderIcon}>
-                      <Play
-                        className={courseDetailStyles.videoPlaceholderPlayIcon}
-                      />
+                      <Play className={courseDetailStyles.videoPlaceholderPlayIcon} />
                     </div>
                     <p className={courseDetailStyles.videoPlaceholderText}>
                       Select a lecture or chapter to play video
@@ -484,12 +475,12 @@ const CourseDetailPage = () => {
                         ? `Part of: ${selectedLecture?.title}`
                         : currentVideoContent?.description}
                     </p>
-                    {currentVideoContent?.durationMin && (
+                    {currentVideoContent?.totalMinutes && (
                       <div className={courseDetailStyles.videoMeta}>
                         <div className={courseDetailStyles.durationBadge}>
                           <Clock className={courseDetailStyles.durationIcon} />
                           <span>
-                            {fmtMinutes(currentVideoContent.durationMin)}
+                            {fmtMinutes(currentVideoContent.totalMinutes)}
                           </span>
                         </div>
                         {selectedContent.type === "chapter" && (
@@ -502,7 +493,6 @@ const CourseDetailPage = () => {
                   </div>
                 </div>
 
-                {/* Enhanced Completion Button */}
                 {isLoggedIn &&
                   (isEnrolled || isCourseFree) &&
                   selectedContent.chapterId && (
@@ -519,16 +509,12 @@ const CourseDetailPage = () => {
                       >
                         {completedChapters.has(selectedContent.chapterId) ? (
                           <>
-                            <CheckCircle
-                              className={courseDetailStyles.completionIcon}
-                            />
+                            <CheckCircle className={courseDetailStyles.completionIcon} />
                             Chapter Completed
                           </>
                         ) : (
                           <>
-                            <Circle
-                              className={courseDetailStyles.completionIcon}
-                            />
+                            <Circle className={courseDetailStyles.completionIcon} />
                             Mark as Complete
                           </>
                         )}
@@ -544,9 +530,8 @@ const CourseDetailPage = () => {
             </div>
           </div>
 
-          {/* Enhanced Lectures & Sidebar */}
+          {/* Sidebar */}
           <aside className={courseDetailStyles.sidebar}>
-            {/* Enhanced Course Content */}
             <div className={courseDetailStyles.contentCard}>
               <div className={courseDetailStyles.contentHeader}>
                 <h4 className={courseDetailStyles.contentTitle}>
@@ -561,7 +546,7 @@ const CourseDetailPage = () => {
               </div>
 
               <div className={courseDetailStyles.contentList}>
-                {(course.lectures || []).map((lecture, index) => (
+                {(course.Lectures || []).map((lecture, index) => (
                   <div
                     key={lecture.id}
                     className={courseDetailStyles.lectureItem}
@@ -591,18 +576,12 @@ const CourseDetailPage = () => {
                               {lecture.title}
                             </div>
                             <div className={courseDetailStyles.lectureMeta}>
-                              <div
-                                className={courseDetailStyles.lectureDuration}
-                              >
+                              <div className={courseDetailStyles.lectureDuration}>
                                 <Clock className="w-4 h-4" />
-                                {fmtMinutes(lecture.durationMin)}
+                                {fmtMinutes(lecture.totalMinutes || 0)}
                               </div>
-                              <span
-                                className={
-                                  courseDetailStyles.lectureChapterCount
-                                }
-                              >
-                                {lecture.chapters?.length || 0} chapters
+                              <span className={courseDetailStyles.lectureChapterCount}>
+                                {lecture.Chapters?.length || 0} chapters
                               </span>
                             </div>
                           </div>
@@ -612,7 +591,7 @@ const CourseDetailPage = () => {
 
                     {expandedLectures.has(lecture.id) && (
                       <div className={courseDetailStyles.chapterList}>
-                        {(lecture.chapters || []).map((chapter) => {
+                        {(lecture.Chapters || []).map((chapter) => {
                           const isCompleted = completedChapters.has(chapter.id);
                           const isSelected =
                             selectedContent.chapterId === chapter.id &&
@@ -634,14 +613,8 @@ const CourseDetailPage = () => {
                                 handleContentSelect(lecture.id, chapter.id)
                               }
                             >
-                              <div
-                                className={courseDetailStyles.chapterContent}
-                              >
-                                <div
-                                  className={
-                                    courseDetailStyles.chapterLeftSection
-                                  }
-                                >
+                              <div className={courseDetailStyles.chapterContent}>
+                                <div className={courseDetailStyles.chapterLeftSection}>
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -649,9 +622,7 @@ const CourseDetailPage = () => {
                                         toggleChapterCompletion(chapter.id, e);
                                       }
                                     }}
-                                    className={`${
-                                      courseDetailStyles.completionToggle
-                                    } ${
+                                    className={`${courseDetailStyles.completionToggle} ${
                                       isCompleted
                                         ? courseDetailStyles.completionToggleCompleted
                                         : courseDetailStyles.completionToggleIncomplete
@@ -660,25 +631,17 @@ const CourseDetailPage = () => {
                                   >
                                     {isCompleted ? (
                                       <CheckCircle
-                                        className={
-                                          courseDetailStyles.completionIconSmall
-                                        }
+                                        className={courseDetailStyles.completionIconSmall}
                                       />
                                     ) : (
                                       <Circle
-                                        className={
-                                          courseDetailStyles.completionIconSmall
-                                        }
+                                        className={courseDetailStyles.completionIconSmall}
                                       />
                                     )}
                                   </button>
-                                  <div
-                                    className={courseDetailStyles.chapterText}
-                                  >
+                                  <div className={courseDetailStyles.chapterText}>
                                     <div
-                                      className={`${
-                                        courseDetailStyles.chapterName
-                                      } ${
+                                      className={`${courseDetailStyles.chapterName} ${
                                         isSelected
                                           ? courseDetailStyles.chapterNameSelected
                                           : courseDetailStyles.chapterNameNotSelected
@@ -686,22 +649,14 @@ const CourseDetailPage = () => {
                                     >
                                       {chapter.name}
                                     </div>
-                                    <div
-                                      className={
-                                        courseDetailStyles.chapterTopic
-                                      }
-                                    >
+                                    <div className={courseDetailStyles.chapterTopic}>
                                       {chapter.topic}
                                     </div>
                                   </div>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                  <span
-                                    className={
-                                      courseDetailStyles.chapterDuration
-                                    }
-                                  >
-                                    {fmtMinutes(chapter.durationMin)}
+                                  <span className={courseDetailStyles.chapterDuration}>
+                                    {fmtMinutes(chapter.totalMinutes || 0)}
                                   </span>
                                 </div>
                               </div>
@@ -715,45 +670,22 @@ const CourseDetailPage = () => {
               </div>
             </div>
 
-            {/* Enhanced Pricing Card */}
-            <div
-              className={`${courseDetailStyles.pricingCard} animation-delay-200`}
-            >
+            {/* Pricing Card */}
+            <div className={`${courseDetailStyles.pricingCard} animation-delay-200`}>
               <div className={courseDetailStyles.pricingHeader}>
                 <h5 className={courseDetailStyles.pricingTitle}>Pricing</h5>
               </div>
 
               <div className={courseDetailStyles.pricingAmount}>
                 <div className={courseDetailStyles.price}>
-                  {isCourseFree
-                    ? "Free"
-                    : salePrice != null
-                    ? formatCurrency(salePrice)
-                    : originalPrice != null
-                    ? formatCurrency(originalPrice)
-                    : "Free"}
+                  {isCourseFree ? "Free" : "Premium"}
                 </div>
-
-                {!isCourseFree && hasDiscount && (
-                  <div className={courseDetailStyles.originalPrice}>
-                    {formatCurrency(originalPrice)}
-                  </div>
-                )}
-
-                {!isCourseFree && hasDiscount && (
-                  <div className={courseDetailStyles.discountBadge}>
-                    {Math.round(
-                      ((originalPrice - salePrice) / originalPrice) * 100
-                    )}
-                    % off
-                  </div>
-                )}
               </div>
 
               <p className={courseDetailStyles.pricingDescription}>
                 {isCourseFree
                   ? "Free access · Learn anytime"
-                  : "One-time payment · Lifetime access "}
+                  : "One-time payment · Lifetime access"}
               </p>
 
               <div className="mt-6">
@@ -781,9 +713,7 @@ const CourseDetailPage = () => {
                         <Play className={courseDetailStyles.enrollIcon} />
                         Enroll Now
                         <span>
-                          <ArrowRight
-                            className={courseDetailStyles.enrollArrow}
-                          />
+                          <ArrowRight className={courseDetailStyles.enrollArrow} />
                         </span>
                       </>
                     )}
@@ -800,10 +730,8 @@ const CourseDetailPage = () => {
               </div>
             </div>
 
-            {/* Enhanced Progress Summary */}
-            <div
-              className={`${courseDetailStyles.progressCard} animation-delay-400`}
-            >
+            {/* Progress Summary */}
+            <div className={`${courseDetailStyles.progressCard} animation-delay-400`}>
               <div className={courseDetailStyles.progressHeader}>
                 <Award className={courseDetailStyles.progressIcon} />
                 <h5 className={courseDetailStyles.progressTitle}>
@@ -817,7 +745,7 @@ const CourseDetailPage = () => {
                     <span className="font-semibold text-indigo-600">
                       {Math.round(
                         (completedChapters.size /
-                          (course.lectures?.flatMap((l) => l.chapters || [])
+                          (course.Lectures?.flatMap((l) => l.Chapters || [])
                             .length || 1)) *
                           100
                       )}
@@ -830,7 +758,7 @@ const CourseDetailPage = () => {
                       style={{
                         width: `${
                           (completedChapters.size /
-                            (course.lectures?.flatMap((l) => l.chapters || [])
+                            (course.Lectures?.flatMap((l) => l.Chapters || [])
                               .length || 1)) *
                           100
                         }%`,
@@ -860,12 +788,11 @@ const CourseDetailPage = () => {
             </div>
           </aside>
         </div>
-            </div>
+      </div>
 
-            <style jsx>{courseDetailStyles.animations}</style>
-        </div>
-        </div>
-        );
-    };      
+      <style jsx>{courseDetailStyles.animations}</style>
+    </div>
+  );
+};
 
 export default CourseDetailPage;
