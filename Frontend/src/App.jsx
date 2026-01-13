@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
+import './App.css'
 import Home from "./pages/Home.jsx"; 
 import About from "./pages/About.jsx";
 import Contact from "./pages/Contact.jsx";
@@ -30,6 +31,9 @@ const ScrollToTopRouteChange = () => {
   useEffect(() => {
     window.scrollTo({top: 0, left:0, behavior: "auto"});
   } , [location]);
+
+   return null;
+   
 };
 
 const ScrollTopButton = ({threshold = 200, showOnMount = false}) => {
