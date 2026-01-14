@@ -20,4 +20,4 @@ const connection = ()=>{
         console.log("db connection failed")
     }
 }
-export {sequelize,connection}
+export  {sequelize,connection}

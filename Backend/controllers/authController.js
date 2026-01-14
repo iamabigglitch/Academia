@@ -1,11 +1,13 @@
-import { User } from "../Model/userModel.js";
+import { User } from "../../models/userModel.js";
 import { generateToken } from "../Utills/jwt.js";
 import bcrypt from "bcryptjs";
+
 (async () => {
   const passwordd = "newadmin";
   const hashedd = await bcrypt.hash(passwordd, 10);  // 10 is the salt rounds
   console.log(hashedd);
 })();
+
 const validatePassword = (password) => {
   const errors = [];
   if (password.length < 6)
@@ -26,6 +28,7 @@ if(body.password===null){
 const user = await User.findOne({
 where:{username:body.username}
 })
+
 if(!user){
     return res.status(500).send({message:"Invalid credentials"})
 }

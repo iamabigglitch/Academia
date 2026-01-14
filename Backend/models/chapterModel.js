@@ -1,7 +1,7 @@
 // Model → stores data
 
 import { DataTypes } from "sequelize";
-import sequelize from "../database/db.js";
+import {sequelize} from "../database/db.js";
 import Lecture from "./lectureModel.js";
 
 const Chapter = sequelize.define(

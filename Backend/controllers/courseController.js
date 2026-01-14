@@ -3,11 +3,9 @@ import path from "path";
 import Course from "../models/courseModel.js";
 import Lecture from "../models/lectureModel.js";
 import Chapter from "../models/chapterModel.js";
-import Rating from "../models/ratingModel.js";
-import { makeImageAbsolute } from "../uploads";
 
-
-// HELPER FUNCTION: Calculate Course Duration
+// import { makeImageAbsolute } from "../uploads";
+import { ratingModel } from "../models/ratingModel.js";
 
 const calculateCourseDuration = async (courseId) => {
   const lectures = await Lecture.findAll({
@@ -41,7 +39,7 @@ const calculateCourseDuration = async (courseId) => {
 
     lecture.durationHours = Math.floor(lecture.totalMinutes / 60);
     lecture.durationMinutes = lecture.totalMinutes % 60;
-
+    
     await lecture.save();
     courseTotalMinutes += lecture.totalMinutes;
   }
@@ -55,9 +53,6 @@ const calculateCourseDuration = async (courseId) => {
     { where: { id: courseId } }
   );
 };
-
-
-// GET /courses/public
 
 export const getPublicCourses = async (req, res) => {
   try {
@@ -76,11 +71,11 @@ export const getPublicCourses = async (req, res) => {
       limit: limit ? Number(limit) : undefined
     });
 
-    // Map courses with absolute image URLs
-    const items = courses.map(c => ({
-      ...c.toJSON(),
-      image: makeImageAbsolute(c.image, req)
-    }));
+    // // Map courses with absolute image URLs
+    // const items = courses.map(c => ({
+    //   ...c.toJSON(),
+    //   image: makeImageAbsolute(c.image, req)
+    // }));
 
     res.json({ success: true, items });
   } catch (err) {
@@ -228,7 +223,7 @@ export const rateCourse = async (req, res) => {
     }
 
     // Create or update rating
-    await Rating.upsert({
+    await ratingModel.upsert({
       userId,
       courseId,
       rating,
@@ -236,7 +231,7 @@ export const rateCourse = async (req, res) => {
     });
 
     // Recalculate average rating
-    const ratings = await Rating.findAll({ where: { courseId } });
+    const ratings = await ratingModel.findAll({ where: { courseId } });
     const totalRatings = ratings.length;
     const avgRating =
       totalRatings === 0
@@ -277,7 +272,7 @@ export const getMyRating = async (req, res) => {
     }
 
     // Fetch user's rating for this course
-    const myRating = await Rating.findOne({ 
+    const myRating = await ratingModel.findOne({ 
       where: { 
         userId, 
         courseId: req.params.courseId 
