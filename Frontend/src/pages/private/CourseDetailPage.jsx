@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { courseDetailStyles } from "../assets/dummyStyles";
+import { courseDetailStyles } from "../../assets/dummyStyles";
 import { BookOpen, Target, X, Clock, ArrowLeft, User, Play, ChevronDown, ArrowRight, Award, Sparkles, CheckCircle, Circle } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import api from "../../api/axios";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const fmtMinutes = (mins) => {
   const h = Math.floor((mins || 0) / 60);
@@ -121,7 +121,7 @@ const CourseDetailPage = () => {
     const fetchCourse = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`${API_BASE_URL}/courses/${courseId}`);
+        const response = await api.get(`${API_BASE_URL}/courses/${courseId}`);
         
         if (response.data.success) {
           setCourse(response.data.course);

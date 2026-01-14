@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import './App.css'
-import Home from "./pages/Home.jsx"; 
-import About from "./pages/About.jsx";
-import Contact from "./pages/Contact.jsx";
+import Home from "./pages/private/Home.jsx"; 
+import About from "./pages/private/About.jsx";
+import Contact from "./pages/private/Contact.jsx";
 import NavBar from "./components/Navbar.jsx";
-import Faculty from "./pages/Faculty.jsx";
-import Courses from "./pages/Courses.jsx";
+import Faculty from "./pages/private/Faculty.jsx";
+import Courses from "./pages/private/Courses.jsx";
 import { ArrowUp } from "lucide-react";
-import CourseDetailPageHome from "./pages/CourseDetailPageHome.jsx";
-import CourseDetailPage from "./pages/CourseDetailPage.jsx";
+import CourseDetailPageHome from "./pages/private/CourseDetailPageHome.jsx";
+import CourseDetailPage from "./pages/private/CourseDetailPage.jsx";
+import Login from "./pages/public/Login.jsx";
+import Signup from "./pages/public/Signup.jsx";
 
 //to protect the route
 const ProtectedRoute = ({ children }) => {
@@ -80,7 +82,8 @@ const App = () => {
         <Route path="/contact" element={<Contact/>} />
         <Route path="/faculty" element={<Faculty/>} />
         <Route path="/courses" element={<Courses/>} />
-
+        <Route path = "/login" element={<Login/>}/>
+        <Route path = "/register" element={<Signup/>}/>
         <Route path="/course/:id" element={ <ProtectedRoute><CourseDetailPageHome/></ProtectedRoute>}/>
         <Route path="/courses/:id" element={ <ProtectedRoute><CourseDetailPage/></ProtectedRoute>}/>
       </Routes>

@@ -1,16 +1,16 @@
 import React from "react";
-import Navbar from "../components/Navbar";
-import Banner from "../components/Banner";
-import HomeCourses from "../components/HomeCourses";
-import Footer from "../components/Footer";
+import Navbar from "../../components/Navbar";
+import Banner from "../../components/Banner";
+import HomeCourses from "../../components/HomeCourses";
+import Footer from "../../components/Footer";
 
 
 const Home = () => {
   return (
   <div> 
-    <Navbar />
+    <Navbar/>
     <Banner />
-    <HomeCourses />
+    <HomeCourses/>
     <Footer />
   </div>
   );

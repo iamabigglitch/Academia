@@ -1,10 +1,10 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Play, Clock, BookOpen, ChevronDown, CheckCircle, Circle, X, ArrowLeft, User, Award, Target, ArrowRight, Sparkles } from "lucide-react";
-import { courseDetailStylesH, toastStyles, animationDelaysH, courseDetailCustomStyles } from "../assets/dummyStyles";
-import axios from "axios";
+import { courseDetailStylesH, toastStyles, animationDelaysH, courseDetailCustomStyles } from "../../assets/dummyStyles"
+import api from "../../api/axios";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 const fmtMinutes = (mins) => {
   const h = Math.floor((mins || 0) / 60);
@@ -96,7 +96,7 @@ const CourseDetail = () => {
     const fetchCourse = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`${API_BASE_URL}/courses/${courseId}`);
+        const response = await api.get(`${API_BASE_URL}/courses/${courseId}`);
         
         if (response.data.success) {
           setCourse(response.data.course);
@@ -173,17 +173,17 @@ const CourseDetail = () => {
     return totalHours * 60 + totalMins;
   }, [course]);
 
-  const toggleLecture = (lectureId) => {
-    setExpandedLectures((prev) => {
-      const next = new Set(prev);
-      if (next.has(lectureId)) {
-        next.delete(lectureId);
-      } else {
-        next.add(lectureId);
-      }
-      return next;
-    });
-  };
+  // const toggleLecture = (lectureId) => {
+  //   setExpandedLectures((prev) => {
+  //     const next = new Set(prev);
+  //     if (next.has(lectureId)) {
+  //       next.delete(lectureId);
+  //     } else {
+  //       next.add(lectureId);
+  //     }
+  //     return next;
+  //   });
+  // };
 
   const handleContentSelect = (lectureId, chapterId = null) => {
     if (isLoggedIn && (isEnrolled || courseIsFree)) {
