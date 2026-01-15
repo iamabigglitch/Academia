@@ -86,6 +86,7 @@ const App = () => {
         <Route path = "/register" element={<Signup/>}/>
         <Route path="/course/:id" element={ <ProtectedRoute><CourseDetailPageHome/></ProtectedRoute>}/>
         <Route path="/courses/:id" element={ <ProtectedRoute><CourseDetailPage/></ProtectedRoute>}/>
+        
       </Routes>
          <ScrollTopButton threshold={250}  />
     </BrowserRouter>

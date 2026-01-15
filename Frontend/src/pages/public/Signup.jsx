@@ -123,7 +123,7 @@ const Signup = () => {
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-3 text-gray-400 hover:text-blue-900 transition-colors"
               >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
               </button>
             </div>
 
@@ -214,22 +214,6 @@ const Signup = () => {
                 <h4 className="font-semibold text-lg">Flexible Schedule</h4>
                 <p className="text-blue-200">Learn at times that work for you</p>
               </div>
-            </div>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 mt-12 pt-8 border-t border-blue-700">
-            <div className="text-center">
-              <p className="text-3xl font-bold">10K+</p>
-              <p className="text-sm text-blue-200">Students</p>
-            </div>
-            <div className="text-center">
-              <p className="text-3xl font-bold">500+</p>
-              <p className="text-sm text-blue-200">Courses</p>
-            </div>
-            <div className="text-center">
-              <p className="text-3xl font-bold">98%</p>
-              <p className="text-sm text-blue-200">Satisfaction</p>
             </div>
           </div>
         </div>

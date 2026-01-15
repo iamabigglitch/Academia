@@ -1,796 +1,285 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { courseDetailStyles } from "../../assets/dummyStyles";
-import { BookOpen, Target, X, Clock, ArrowLeft, User, Play, ChevronDown, ArrowRight, Award, Sparkles, CheckCircle, Circle } from "lucide-react";
+import { BookOpen, Target, X, Clock, ArrowLeft, User, Play, ChevronDown, ArrowRight, Award, Sparkles, CheckCircle, Circle, } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../../api/axios";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const BRAND = "#1c398e";
 
-const fmtMinutes = (mins) => {
-  const h = Math.floor((mins || 0) / 60);
-  const m = (mins || 0) % 60;
-  if (h === 0) return `${m}m`;
-  return `${h}h ${m}m`;
+const fmtMinutes = (mins = 0) => {
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return h ? `${h}h ${m}m` : `${m}m`;
 };
+
+const toEmbedUrl = (url) => {
+  if (!url) return "";
+  if (url.includes("embed")) return url;
+  const yt = url.match(/[?&]v=([^&#]+)/);
+  if (yt) return `https://www.youtube.com/embed/${yt[1]}`;
+  const short = url.match(/youtu\.be\/([^?&#]+)/);
+  if (short) return `https://www.youtube.com/embed/${short[1]}`;
+  return url;
+};
+
+const isDirectVideo = (url) =>
+  /\.(mp4|webm|ogg)(\?.*)?$/i.test(url || "");
 
 const Toast = ({ message, type = "info", onClose }) => {
   useEffect(() => {
-    const timer = setTimeout(onClose, 4000);
-    return () => clearTimeout(timer);
+    const t = setTimeout(onClose, 3500);
+    return () => clearTimeout(t);
   }, [onClose]);
 
   return (
     <div
-      className={`${courseDetailStyles.toast} ${
-        type === "error" 
-        ? courseDetailStyles.toastError 
-        : courseDetailStyles.toastInfo
+      className={`fixed top-6 right-6 z-50 px-5 py-4 rounded-xl shadow-xl text-white animate-slide-in ${
+        type === "error" ? "bg-red-600" : "bg-[#1c398e]"
       }`}
     >
-      <div className={courseDetailStyles.toastContent}>
-        <span>{message}</span>
-        <button onClick={onClose} className={courseDetailStyles.toastClose}>
-          <X className={courseDetailStyles.toastCloseIcon} />
+      <div className="flex items-center gap-3">
+        <span className="text-sm font-medium">{message}</span>
+        <button onClick={onClose}>
+          <X className="w-4 h-4 opacity-80 hover:opacity-100" />
         </button>
       </div>
     </div>
   );
 };
 
-const toEmbedUrl = (url) => {
-  if (!url) return "";
-  try {
-    const trimmed = String(url).trim();
-    if (/\/embed\//.test(trimmed)) return trimmed;
-
-    const watchMatch = trimmed.match(/[?&]v=([^&#]+)/);
-    if (watchMatch && watchMatch[1]) {
-      return `https://www.youtube.com/embed/${watchMatch[1]}`;
-    }
-
-    const shortMatch = trimmed.match(/youtu\.be\/([^?&#/]+)/);
-    if (shortMatch && shortMatch[1]) {
-      return `https://www.youtube.com/embed/${shortMatch[1]}`;
-    }
-
-    if (/drive\.google\.com/.test(trimmed)) {
-      const fileMatch = trimmed.match(/\/file\/d\/([^/]+)(?:\/|$)/);
-      if (fileMatch && fileMatch[1]) {
-        return `https://drive.google.com/file/d/${fileMatch[1]}/preview`;
-      }
-
-      const idMatch = trimmed.match(/[?&]id=([^&#]+)/);
-      if (idMatch && idMatch[1]) {
-        return `https://drive.google.com/file/d/${idMatch[1]}/preview`;
-      }
-
-      const ucMatch = trimmed.match(/[?&]export=download.*[?&]id=([^&#]+)/);
-      if (ucMatch && ucMatch[1]) {
-        return `https://drive.google.com/file/d/${ucMatch[1]}/preview`;
-      }
-
-      return trimmed;
-    }
-    const lastSeg = trimmed.split("/").filter(Boolean).pop();
-    if (lastSeg && lastSeg.length === 11 && /^[a-zA-Z0-9_-]+$/.test(lastSeg)) {
-      return `https://www.youtube.com/embed/${lastSeg}`;
-    }
-
-    return trimmed;
-  } catch {
-    return url;
-  }
-};
-
-const appendAutoplay = (embedUrl, autoplay = true) => {
-  if (!embedUrl) return "";
-  if (!autoplay) return embedUrl;
-  return embedUrl.includes("?")
-    ? `${embedUrl}&autoplay=1`
-    : `${embedUrl}?autoplay=1`;
-};
-
-const isDirectVideoFile = (url) => {
-  if (!url) return false;
-  return /\.(mp4|webm|ogg)(\?.*)?$/i.test(url);
-};
-
 const CourseDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const courseId = parseInt(id, 10);
+  const courseId = Number(id);
 
-  // State for course data
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  // User and enrollment state (replace with actual auth logic)
-  const [isLoggedIn] = useState(true); // Get from auth context
-  const [isEnrolled, setIsEnrolled] = useState(false);
-  const [isEnrolling, setIsEnrolling] = useState(false);
-
   const [toast, setToast] = useState(null);
-  const [expandedLectures, setExpandedLectures] = useState(new Set());
-  const [completedChapters, setCompletedChapters] = useState(new Set());
-  const [isTeacherAnimating, setIsTeacherAnimating] = useState(false);
-  const [isPageLoaded, setIsPageLoaded] = useState(false);
 
-  // Fetch course data from backend
+  const [expanded, setExpanded] = useState(new Set());
+  const [completed, setCompleted] = useState(new Set());
+  const [selected, setSelected] = useState(null);
+
+  // const { isAuthenticated } = useAuth();
+  // const isEnrolled = course?.pricingType === "free";
+
+
   useEffect(() => {
     const fetchCourse = async () => {
       try {
-        setLoading(true);
-        const response = await api.get(`${API_BASE_URL}/courses/${courseId}`);
-        
-        if (response.data.success) {
-          setCourse(response.data.course);
-          
-          // Check if course is free (pricingType === "free")
-          const isFree = response.data.course.pricingType === "free";
-          if (isFree) {
-            setIsEnrolled(true);
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching course:", err);
-        setError(err.response?.data?.message || "Failed to load course");
+        const res = await api.get(`${API_BASE_URL}/courses/${courseId}`);
+        setCourse(res.data.course);
+      } catch {
+        setToast({ message: "Failed to load course", type: "error" });
       } finally {
         setLoading(false);
       }
     };
-
     fetchCourse();
   }, [courseId]);
 
-  useEffect(() => {
-    if (course) {
-      setIsTeacherAnimating(true);
-      const timer = setTimeout(() => setIsTeacherAnimating(false), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [course]);
+  const selectedLecture = useMemo(
+    () => course?.Lectures?.find((l) => l.id === selected?.lectureId),
+    [course, selected]
+  );
 
-  useEffect(() => {
-    setIsPageLoaded(true);
-  }, []);
+  const selectedChapter = useMemo(
+    () =>
+      selectedLecture?.Chapters?.find(
+        (c) => c.id === selected?.chapterId
+      ),
+    [selectedLecture, selected]
+  );
 
-  // Check if course is free
-  const isCourseFree = course?.pricingType === "free";
+  const video = selectedChapter || selectedLecture;
+  const videoUrl = toEmbedUrl(video?.videoUrl);
+  const totalMinutes =
+    (course?.totalDurationHours || 0) * 60 +
+    (course?.totalDurationMinutes || 0);
 
-  const [selectedContent, setSelectedContent] = useState({
-    type: null,
-    lectureId: null,
-    chapterId: null,
-  });
-
-  const selectedLecture = useMemo(() => {
-    if (!selectedContent.lectureId) return null;
-    return (
-      (course?.Lectures || []).find(
-        (l) => l.id === selectedContent.lectureId
-      ) || null
-    );
-  }, [course, selectedContent.lectureId]);
-
-  const selectedChapter = useMemo(() => {
-    if (!selectedContent.chapterId || !selectedLecture) return null;
-    return (
-      (selectedLecture.Chapters || []).find(
-        (ch) => ch.id === selectedContent.chapterId
-      ) || null
-    );
-  }, [selectedLecture, selectedContent.chapterId]);
-
-  const currentVideoContent = useMemo(() => {
-    if (selectedContent.type === "chapter" && selectedChapter) {
-      return selectedChapter;
-    }
-    if (selectedContent.type === "lecture" && selectedLecture) {
-      return selectedLecture;
-    }
-    return null;
-  }, [selectedContent, selectedLecture, selectedChapter]);
-
-  const totalMinutes = useMemo(() => {
-    if (!course) return 0;
-    const totalHours = course.totalDurationHours || 0;
-    const totalMins = course.totalDurationMinutes || 0;
-    return totalHours * 60 + totalMins;
-  }, [course]);
-
-  const onLectureHeaderClick = (lectureId) => {
-    if (!isLoggedIn) {
-      setToast({
-        message: "Please login to access course content",
-        type: "error",
-      });
-      return;
-    }
-    if (!isCourseFree && !isEnrolled) {
-      setToast({
-        message: "Please enroll in the course to access content",
-        type: "error",
-      });
-      return;
-    }
-    setExpandedLectures((prev) => {
-      const next = new Set(prev);
-      if (next.has(lectureId)) next.delete(lectureId);
-      else next.add(lectureId);
-      return next;
-    });
-  };
-
-  const handleContentSelect = (lectureId, chapterId = null) => {
-    if (!isLoggedIn) {
-      setToast({
-        message: "Please login to access course content",
-        type: "error",
-      });
-      return;
-    }
-
-    if (isCourseFree || isEnrolled) {
-      setSelectedContent({
-        type: chapterId ? "chapter" : "lecture",
-        lectureId,
-        chapterId,
-      });
-
-      setExpandedLectures((prev) => {
-        const next = new Set(prev);
-        next.add(lectureId);
-        return next;
-      });
-      return;
-    }
-
-    if (!isCourseFree && !isEnrolled) {
-      setToast({
-        message: "Please enroll in the course to access this content",
-        type: "error",
-      });
-      return;
-    }
-  };
-
-  const toggleChapterCompletion = (chapterId, e) => {
-    if (e) e.stopPropagation();
-
-    if (!isLoggedIn || !isEnrolled) {
-      setToast({
-        message: "Please enroll and login to track progress",
-        type: "error",
-      });
-      return;
-    }
-
-    setCompletedChapters((prev) => {
-      const next = new Set(prev);
-      if (next.has(chapterId)) next.delete(chapterId);
-      else next.add(chapterId);
-      return next;
-    });
-  };
-
-  const handleEnroll = async () => {
-    if (!isLoggedIn) {
-      setToast({
-        message: "Please login to enroll in the course",
-        type: "error",
-      });
-      return;
-    }
-
-    setIsEnrolling(true);
-    // TODO: Add actual enrollment API call here
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    setIsEnrolled(true);
-    setIsEnrolling(false);
-    setToast({
-      message: "Successfully enrolled in the course! You can now access all content.",
-      type: "info",
-    });
-  };
-
-  // Loading state
+  
   if (loading) {
     return (
-      <div className={courseDetailStyles.notFoundContainer}>
-        <div className={courseDetailStyles.notFoundContent}>
-          <h2 className={courseDetailStyles.notFoundTitle}>Loading...</h2>
-          <p className={courseDetailStyles.notFoundMessage}>Please wait while we load the course.</p>
-        </div>
+      <div className="min-h-screen grid place-items-center text-gray-500">
+        Loading course…
       </div>
     );
   }
 
-  // Error state
-  if (error || !course) {
+  if (!course) {
     return (
-      <div className={courseDetailStyles.notFoundContainer}>
-        <div className={courseDetailStyles.notFoundContent}>
-          <h2 className={courseDetailStyles.notFoundTitle}>Course Not Found</h2>
-          <p className={courseDetailStyles.notFoundMessage}>
-            {error || "The course you are looking for does not exist."}
-          </p>
-          <button
-            onClick={() => navigate("/courses")}
-            className={courseDetailStyles.notFoundButton}
-          >
-            Back to Courses
-          </button>
-        </div>
+      <div className="min-h-screen grid place-items-center">
+        <button
+          onClick={() => navigate("/courses")}
+          className="px-5 py-2 rounded-lg bg-[#1c398e] text-white"
+        >
+          Back to Courses
+        </button>
       </div>
     );
   }
-
-  const currentRawUrl = currentVideoContent?.videoUrl || null;
-  const currentEmbedUrl = currentRawUrl ? toEmbedUrl(currentRawUrl) : null;
-  const currentIsDirectVideo = isDirectVideoFile(currentEmbedUrl);
 
   return (
-    <div className={courseDetailStyles.container}>
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
+    <div className="min-h-screen bg-slate-50 px-4 py-8">
+      {toast && <Toast {...toast} onClose={() => setToast(null)} />}
 
-      <div
-        className={`${courseDetailStyles.mainContainer} ${
-          isPageLoaded
-            ? courseDetailStyles.containerVisible
-            : courseDetailStyles.containerHidden
-        }`}
+      {/* Back */}
+      <button
+        onClick={() => navigate("/courses")}
+        className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-[#1c398e] mb-6"
       >
-        <div className="flex items-center justify-between">
-          <button
-            onClick={() => navigate("/courses")}
-            className={courseDetailStyles.backButton}
-          >
-            <ArrowLeft className={courseDetailStyles.backIcon} />
-            <span className={courseDetailStyles.backText}>Back To Home</span>
-          </button>
+        <ArrowLeft className="w-4 h-4" /> Back to Courses
+      </button>
+
+      {/* Header */}
+      <div className="max-w-7xl mx-auto mb-10 animate-fade-up">
+        <span className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded-full bg-[#1c398e]/10 text-[#1c398e] font-medium">
+          <BookOpen className="w-4 h-4" />
+          {course.pricingType === "free" ? "Free Course" : "Premium Course"}
+        </span>
+
+        <h1 className="mt-4 text-3xl md:text-5xl font-bold text-gray-900">
+          {course.name}
+        </h1>
+
+        <p className="mt-4 max-w-3xl text-gray-600">
+          {course.overview}
+        </p>
+
+        <div className="flex gap-6 mt-6 text-sm text-gray-600">
+          <span className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-[#1c398e]" />
+            {fmtMinutes(totalMinutes)}
+          </span>
+          <span className="flex items-center gap-2">
+            <User className="w-4 h-4 text-[#1c398e]" />
+            {course.teacher}
+          </span>
         </div>
+      </div>
 
-        <div className={courseDetailStyles.header}>
-          <div className={courseDetailStyles.badge}>
-            <BookOpen className={courseDetailStyles.badgeIcon} />
-            <span className={courseDetailStyles.badgeText}>
-              {isCourseFree ? "Free Course" : "Premium Course"}
-            </span>
-          </div>
-
-          <h1 className={courseDetailStyles.title}>{course.name}</h1>
-
-          {course.overview && (
-            <div className={courseDetailStyles.overviewContainer}>
-              <div className={courseDetailStyles.overview}>
-                <div className={courseDetailStyles.overviewHeader}>
-                  <Target className={courseDetailStyles.overviewIcon} />
-                  <h3 className={courseDetailStyles.overviewTitle}>
-                    Course Overview
-                  </h3>
-                </div>
-                <p className={courseDetailStyles.overviewText}>
-                  {course.overview}
-                </p>
-              </div>
+      {/* Layout */}
+      <div className="max-w-7xl mx-auto grid grid-cols-1 xl:grid-cols-3 gap-8">
+        {/* Video */}
+        <div className="xl:col-span-2 bg-white rounded-2xl shadow-sm overflow-hidden animate-fade-up">
+          {videoUrl ? (
+            isDirectVideo(videoUrl) ? (
+              <video controls className="w-full h-[460px]" src={videoUrl} />
+            ) : (
+              <iframe
+                className="w-full h-[460px]"
+                src={videoUrl}
+                allowFullScreen
+              />
+            )
+          ) : (
+            <div className="h-[460px] grid place-items-center text-gray-400">
+              <Play className="w-10 h-10 mb-2" />
+              Select a lecture to start
             </div>
           )}
 
-          <div className={`${courseDetailStyles.statsContainer} animation-delay-300`}>
-            <div className={courseDetailStyles.statItem}>
-              <Clock className={courseDetailStyles.statIcon} />
-              <span className={courseDetailStyles.statText}>
-                {fmtMinutes(totalMinutes)}
-              </span>
-            </div>
-
-            <div className={courseDetailStyles.statItem}>
-              <BookOpen className={courseDetailStyles.statIcon} />
-              <span className={courseDetailStyles.statText}>
-                {course.totalLectures || 0} Lectures
-              </span>
-            </div>
-
-            <div
-              className={`${courseDetailStyles.teacherStat} ${
-                isTeacherAnimating ? courseDetailStyles.teacherAnimating : ""
-              }`}
-            >
-              <User className={courseDetailStyles.statIcon} />
-              <span className={courseDetailStyles.statText}>
-                {course.teacher}
-              </span>
-            </div>
+          <div className="p-6">
+            <h3 className="text-xl font-semibold">
+              {video?.title || video?.name}
+            </h3>
+            <p className="text-gray-600 mt-1">
+              {video?.description}
+            </p>
           </div>
         </div>
 
-        {/* Main Content Grid */}
-        <div className={courseDetailStyles.mainGrid}>
-          {/* Video Player */}
-          <div className={courseDetailStyles.videoSection}>
-            <div className={courseDetailStyles.videoContainer}>
-              {currentEmbedUrl ? (
-                currentIsDirectVideo ? (
-                  <video
-                    controls
-                    src={currentEmbedUrl}
-                    className={courseDetailStyles.video}
+        {/* Sidebar */}
+        <aside className="space-y-6 animate-fade-up">
+          {/* Content */}
+          <div className="bg-white rounded-2xl shadow-sm p-5">
+            <h4 className="font-semibold mb-4">Course Content</h4>
+
+            {course.Lectures.map((lec) => (
+              <div key={lec.id} className="border-b last:border-none">
+                <button
+                  onClick={() =>
+                    setExpanded((s) =>
+                      s.has(lec.id)
+                        ? new Set([...s].filter((x) => x !== lec.id))
+                        : new Set(s).add(lec.id)
+                    )
+                  }
+                  className="w-full flex justify-between items-center py-3"
+                >
+                  <span className="font-medium">{lec.title}</span>
+                  <ChevronDown
+                    className={`w-4 h-4 transition ${
+                      expanded.has(lec.id) ? "rotate-180" : ""
+                    }`}
                   />
-                ) : (
-                  <iframe
-                    title={
-                      currentVideoContent.title ||
-                      currentVideoContent.name ||
-                      "video-player"
-                    }
-                    src={appendAutoplay(
-                      currentEmbedUrl,
-                      isLoggedIn && (isEnrolled || isCourseFree)
-                    )}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    className={courseDetailStyles.iframe}
-                  />
-                )
-              ) : (
-                <div className={courseDetailStyles.videoPlaceholder}>
-                  <div className={courseDetailStyles.videoPlaceholderBg}>
-                    <div className={courseDetailStyles.videoPlaceholderOrb1}></div>
-                    <div className={courseDetailStyles.videoPlaceholderOrb2}></div>
-                  </div>
-                  <div className={courseDetailStyles.videoPlaceholderContent}>
-                    <div className={courseDetailStyles.videoPlaceholderIcon}>
-                      <Play className={courseDetailStyles.videoPlaceholderPlayIcon} />
-                    </div>
-                    <p className={courseDetailStyles.videoPlaceholderText}>
-                      Select a lecture or chapter to play video
-                    </p>
-                    {(!isLoggedIn || (!isEnrolled && !isCourseFree)) && (
-                      <p className={courseDetailStyles.videoPlaceholderSubtext}>
-                        {!isLoggedIn ? "Login required" : "Enrollment required"}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
+                </button>
 
-              <div className={courseDetailStyles.videoInfo}>
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className={courseDetailStyles.videoTitle}>
-                      {currentVideoContent?.title ||
-                        currentVideoContent?.name ||
-                        "Select content to play"}
-                    </h3>
-                    <p className={courseDetailStyles.videoDescription}>
-                      {selectedContent.type === "chapter"
-                        ? `Part of: ${selectedLecture?.title}`
-                        : currentVideoContent?.description}
-                    </p>
-                    {currentVideoContent?.totalMinutes && (
-                      <div className={courseDetailStyles.videoMeta}>
-                        <div className={courseDetailStyles.durationBadge}>
-                          <Clock className={courseDetailStyles.durationIcon} />
-                          <span>
-                            {fmtMinutes(currentVideoContent.totalMinutes)}
-                          </span>
-                        </div>
-                        {selectedContent.type === "chapter" && (
-                          <span className={courseDetailStyles.chapterBadge}>
-                            Chapter
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {isLoggedIn &&
-                  (isEnrolled || isCourseFree) &&
-                  selectedContent.chapterId && (
-                    <div className={courseDetailStyles.completionSection}>
-                      <button
-                        onClick={() =>
-                          toggleChapterCompletion(selectedContent.chapterId)
-                        }
-                        className={`${courseDetailStyles.completionButton} ${
-                          completedChapters.has(selectedContent.chapterId)
-                            ? courseDetailStyles.completionButtonCompleted
-                            : courseDetailStyles.completionButtonIncomplete
-                        }`}
-                      >
-                        {completedChapters.has(selectedContent.chapterId) ? (
-                          <>
-                            <CheckCircle className={courseDetailStyles.completionIcon} />
-                            Chapter Completed
-                          </>
-                        ) : (
-                          <>
-                            <Circle className={courseDetailStyles.completionIcon} />
-                            Mark as Complete
-                          </>
-                        )}
-                      </button>
-                      <p className={courseDetailStyles.completionText}>
-                        {completedChapters.has(selectedContent.chapterId)
-                          ? "Great job! You've completed this chapter."
-                          : "Click to mark this chapter as completed."}
-                      </p>
-                    </div>
-                  )}
-              </div>
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <aside className={courseDetailStyles.sidebar}>
-            <div className={courseDetailStyles.contentCard}>
-              <div className={courseDetailStyles.contentHeader}>
-                <h4 className={courseDetailStyles.contentTitle}>
-                  Course Content
-                </h4>
-                {isCourseFree && (
-                  <div className={courseDetailStyles.freeBadge}>
-                    <Sparkles className={courseDetailStyles.freeBadgeIcon} />
-                    Free Access
-                  </div>
-                )}
-              </div>
-
-              <div className={courseDetailStyles.contentList}>
-                {(course.Lectures || []).map((lecture, index) => (
-                  <div
-                    key={lecture.id}
-                    className={courseDetailStyles.lectureItem}
-                    style={{ animationDelay: `${index * 100}ms` }}
-                  >
+                {expanded.has(lec.id) &&
+                  lec.Chapters.map((ch) => (
                     <div
-                      className={`${courseDetailStyles.lectureHeader} ${
-                        expandedLectures.has(lecture.id)
-                          ? courseDetailStyles.lectureHeaderExpanded
-                          : courseDetailStyles.lectureHeaderCollapsed
+                      key={ch.id}
+                      onClick={() =>
+                        setSelected({
+                          lectureId: lec.id,
+                          chapterId: ch.id,
+                        })
+                      }
+                      className={`flex justify-between items-center px-3 py-2 rounded-lg cursor-pointer text-sm ${
+                        selected?.chapterId === ch.id
+                          ? "bg-[#1c398e]/10 text-[#1c398e]"
+                          : "hover:bg-slate-100"
                       }`}
-                      onClick={() => onLectureHeaderClick(lecture.id)}
                     >
-                      <div className={courseDetailStyles.lectureHeaderContent}>
-                        <div className={courseDetailStyles.lectureLeftSection}>
-                          <div
-                            className={`${courseDetailStyles.lectureChevron} ${
-                              expandedLectures.has(lecture.id)
-                                ? courseDetailStyles.lectureChevronExpanded
-                                : courseDetailStyles.lectureChevronCollapsed
-                            }`}
-                          >
-                            <ChevronDown className="w-5 h-5" />
-                          </div>
-                          <div className={courseDetailStyles.lectureInfo}>
-                            <div className={courseDetailStyles.lectureTitle}>
-                              {lecture.title}
-                            </div>
-                            <div className={courseDetailStyles.lectureMeta}>
-                              <div className={courseDetailStyles.lectureDuration}>
-                                <Clock className="w-4 h-4" />
-                                {fmtMinutes(lecture.totalMinutes || 0)}
-                              </div>
-                              <span className={courseDetailStyles.lectureChapterCount}>
-                                {lecture.Chapters?.length || 0} chapters
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                      <span>{ch.name}</span>
+                      <span className="text-gray-400">
+                        {fmtMinutes(ch.totalMinutes)}
+                      </span>
                     </div>
-
-                    {expandedLectures.has(lecture.id) && (
-                      <div className={courseDetailStyles.chapterList}>
-                        {(lecture.Chapters || []).map((chapter) => {
-                          const isCompleted = completedChapters.has(chapter.id);
-                          const isSelected =
-                            selectedContent.chapterId === chapter.id &&
-                            selectedContent.lectureId === lecture.id;
-
-                          return (
-                            <div
-                              key={chapter.id}
-                              className={`${courseDetailStyles.chapterItem} ${
-                                isSelected
-                                  ? courseDetailStyles.chapterSelected
-                                  : courseDetailStyles.chapterNotSelected
-                              } ${
-                                !isCourseFree && !isEnrolled
-                                  ? courseDetailStyles.chapterDisabled
-                                  : ""
-                              }`}
-                              onClick={() =>
-                                handleContentSelect(lecture.id, chapter.id)
-                              }
-                            >
-                              <div className={courseDetailStyles.chapterContent}>
-                                <div className={courseDetailStyles.chapterLeftSection}>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (isCourseFree || isEnrolled) {
-                                        toggleChapterCompletion(chapter.id, e);
-                                      }
-                                    }}
-                                    className={`${courseDetailStyles.completionToggle} ${
-                                      isCompleted
-                                        ? courseDetailStyles.completionToggleCompleted
-                                        : courseDetailStyles.completionToggleIncomplete
-                                    }`}
-                                    disabled={!isCourseFree && !isEnrolled}
-                                  >
-                                    {isCompleted ? (
-                                      <CheckCircle
-                                        className={courseDetailStyles.completionIconSmall}
-                                      />
-                                    ) : (
-                                      <Circle
-                                        className={courseDetailStyles.completionIconSmall}
-                                      />
-                                    )}
-                                  </button>
-                                  <div className={courseDetailStyles.chapterText}>
-                                    <div
-                                      className={`${courseDetailStyles.chapterName} ${
-                                        isSelected
-                                          ? courseDetailStyles.chapterNameSelected
-                                          : courseDetailStyles.chapterNameNotSelected
-                                      }`}
-                                    >
-                                      {chapter.name}
-                                    </div>
-                                    <div className={courseDetailStyles.chapterTopic}>
-                                      {chapter.topic}
-                                    </div>
-                                  </div>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                  <span className={courseDetailStyles.chapterDuration}>
-                                    {fmtMinutes(chapter.totalMinutes || 0)}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  ))}
               </div>
+            ))}
+          </div>
+
+          {/* Progress */}
+          <div className="bg-white rounded-2xl shadow-sm p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <Award className="w-5 h-5 text-[#1c398e]" />
+              <h4 className="font-semibold">Your Progress</h4>
             </div>
 
-            {/* Pricing Card */}
-            <div className={`${courseDetailStyles.pricingCard} animation-delay-200`}>
-              <div className={courseDetailStyles.pricingHeader}>
-                <h5 className={courseDetailStyles.pricingTitle}>Pricing</h5>
-              </div>
-
-              <div className={courseDetailStyles.pricingAmount}>
-                <div className={courseDetailStyles.price}>
-                  {isCourseFree ? "Free" : "Premium"}
-                </div>
-              </div>
-
-              <p className={courseDetailStyles.pricingDescription}>
-                {isCourseFree
-                  ? "Free access · Learn anytime"
-                  : "One-time payment · Lifetime access"}
-              </p>
-
-              <div className="mt-6">
-                {isCourseFree ? (
-                  <button
-                    disabled
-                    className={`${courseDetailStyles.enrollButton} ${courseDetailStyles.freeEnrolledButton}`}
-                  >
-                    <CheckCircle className={courseDetailStyles.enrollIcon} />
-                    Free Course - Access Granted
-                  </button>
-                ) : !isEnrolled ? (
-                  <button
-                    onClick={handleEnroll}
-                    disabled={isEnrolling}
-                    className={`${courseDetailStyles.enrollButton} ${courseDetailStyles.enrollPaidButton}`}
-                  >
-                    {isEnrolling ? (
-                      <>
-                        <div className={courseDetailStyles.enrollSpinner}></div>
-                        Enrolling...
-                      </>
-                    ) : (
-                      <>
-                        <Play className={courseDetailStyles.enrollIcon} />
-                        Enroll Now
-                        <span>
-                          <ArrowRight className={courseDetailStyles.enrollArrow} />
-                        </span>
-                      </>
-                    )}
-                  </button>
-                ) : (
-                  <button
-                    disabled
-                    className={`${courseDetailStyles.enrollButton} ${courseDetailStyles.enrolledButton}`}
-                  >
-                    <CheckCircle className={courseDetailStyles.enrollIcon} />
-                    Enrolled
-                  </button>
-                )}
-              </div>
+            <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
+              <div
+                className="h-full bg-[#1c398e] transition-all"
+                style={{
+                  width: `${
+                    (completed .size /
+                      (course.Lectures.flatMap((l) => l.Chapters).length ||
+                        1)) *
+                    100
+                  }%`,
+                }}
+              />
             </div>
-
-            {/* Progress Summary */}
-            <div className={`${courseDetailStyles.progressCard} animation-delay-400`}>
-              <div className={courseDetailStyles.progressHeader}>
-                <Award className={courseDetailStyles.progressIcon} />
-                <h5 className={courseDetailStyles.progressTitle}>
-                  Your Progress
-                </h5>
-              </div>
-              <div className={courseDetailStyles.progressContent}>
-                <div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-gray-600">Course Completion</span>
-                    <span className="font-semibold text-indigo-600">
-                      {Math.round(
-                        (completedChapters.size /
-                          (course.Lectures?.flatMap((l) => l.Chapters || [])
-                            .length || 1)) *
-                          100
-                      )}
-                      %
-                    </span>
-                  </div>
-                  <div className={courseDetailStyles.progressBar}>
-                    <div
-                      className={courseDetailStyles.progressFill}
-                      style={{
-                        width: `${
-                          (completedChapters.size /
-                            (course.Lectures?.flatMap((l) => l.Chapters || [])
-                              .length || 1)) *
-                          100
-                        }%`,
-                      }}
-                    />
-                  </div>
-                </div>
-                <div className={courseDetailStyles.progressStats}>
-                  <div className={courseDetailStyles.progressStat}>
-                    <div className={courseDetailStyles.progressStatValue}>
-                      {fmtMinutes(totalMinutes)}
-                    </div>
-                    <div className={courseDetailStyles.progressStatLabel}>
-                      Total Duration
-                    </div>
-                  </div>
-                  <div className={courseDetailStyles.progressStat}>
-                    <div className={courseDetailStyles.progressStatValue}>
-                      {completedChapters.size}
-                    </div>
-                    <div className={courseDetailStyles.progressStatLabel}>
-                      Completed
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </aside>
-        </div>
+          </div>
+        </aside>
       </div>
 
-      <style jsx>{courseDetailStyles.animations}</style>
+      {/* Animations */}
+      <style>
+        {`
+          @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes slideIn {
+            from { opacity: 0; transform: translateX(30px); }
+            to { opacity: 1; transform: translateX(0); }
+          }
+          .animate-fade-up { animation: fadeUp .6s ease both; }
+          .animate-slide-in { animation: slideIn .4s ease both; }
+        `}
+      </style>
     </div>
   );
 };

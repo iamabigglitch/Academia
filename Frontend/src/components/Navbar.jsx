@@ -1,15 +1,7 @@
 import React, { useState, useRef } from "react";
 import { navbarStyles } from "../assets/dummyStyles";
 import logo from "../assets/logo.png";
-import {
-  BookOpen,
-  Home,
-  BookMarked,
-  Users,
-  Phone,
-  Menu,
-  X,
-} from "lucide-react";
+import { BookOpen, Home, BookMarked, Users, Phone, Menu, X, } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 const navItems = [
