@@ -63,14 +63,13 @@ course.instructor.toLowerCase().includes(searchQuery.toLowerCase()) ||
 course.category.toLowerCase().includes(searchQuery.toLowerCase())
 );
 
-  // Decide which courses to show (8 by default)
+  // Decide which courses to show (9 by default for 3x3 grid)
 
-  const VISIBLE_COUNT = 8;
+  const VISIBLE_COUNT = 9;
   const visibleCourses = showAll
     ? filteredCourses
     : filteredCourses.slice(0, VISIBLE_COUNT);
 
-    // Small, animated top-right toast — only shown when user clicks a course and token missing
 
   const showLoginToast = () => {
     toast.error("Please login to access this course", {
@@ -85,7 +84,6 @@ course.category.toLowerCase().includes(searchQuery.toLowerCase())
     });
   };
 
-  // navigate to course details if logged in else
   const openCourse = (courseId) => {
     const token = localStorage.getItem("token");
     if (token) {
@@ -128,7 +126,7 @@ course.category.toLowerCase().includes(searchQuery.toLowerCase())
     <div className={coursePageStyles.pageContainer}>
       <div className={coursePageStyles.headerContainer}>
         <div className={coursePageStyles.headerTransform}>
-          <h1 className={coursePageStyles.headerTitle}>LEARN & GROW</h1>
+          <h1 className={coursePageStyles.headerTitle} style={{ color: '#1c398e' }}>LEARN & GROW</h1>
         </div>
 
         <p className={coursePageStyles.headerSubtitle}>
@@ -200,7 +198,13 @@ course.category.toLowerCase().includes(searchQuery.toLowerCase())
             </button>
           </div>
         ) : (
-          <div className={coursePageStyles.coursesGridContainer}>
+          <div className={coursePageStyles.coursesGridContainer} style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
+            gap: '2rem',
+            maxWidth: '1400px',
+            margin: '0 auto'
+          }}>
             {visibleCourses.map((course, index) => {
               const userRating = ratings[course.id] || 0;
               const isFree = isCourseFree(course);
@@ -216,11 +220,15 @@ course.category.toLowerCase().includes(searchQuery.toLowerCase())
                     if (e.key === "Enter") openCourse(course.id);
                   }}
                   className={coursePageStyles.courseCard}
-                  style={{ animationDelay: `${index * 80}ms` }}
+                  style={{ 
+                    animationDelay: `${index * 80}ms`,
+                    minHeight: '480px',
+                    width: '100%'
+                  }}
                 >
                   <div className={coursePageStyles.courseCardInner}>
                     <div className={coursePageStyles.courseCardContent}>
-                      <div className={coursePageStyles.courseImageContainer}>
+                      <div className={coursePageStyles.courseImageContainer} style={{ height: '260px' }}>
                         <img
                           src={course.image}
                           alt={course.name}
@@ -228,19 +236,19 @@ course.category.toLowerCase().includes(searchQuery.toLowerCase())
                         />
                       </div>
 
-                      <div className={coursePageStyles.courseInfo}>
-                        <h3 className={coursePageStyles.courseName}>
+                      <div className={coursePageStyles.courseInfo} style={{ padding: '1.25rem' }}>
+                        <h3 className={coursePageStyles.courseName} style={{ fontSize: '1.25rem', marginBottom: '0.75rem' }}>
                           {course.name}
                         </h3>
 
-                        <div className={coursePageStyles.teacherContainer}>
+                        <div className={coursePageStyles.teacherContainer} style={{ marginBottom: '1rem' }}>
                           <UserIcon />
                           <span className={coursePageStyles.teacherName}>
                             {course.teacher}
                           </span>
                         </div>
 
-                        <div className={coursePageStyles.ratingContainer}>
+                        <div className={coursePageStyles.ratingContainer} style={{ marginBottom: '1rem' }}>
                           <div className={coursePageStyles.ratingStars}>
                             <div className={coursePageStyles.ratingStarsInner}>
                               {[1, 2, 3, 4, 5].map((star) => {
@@ -273,12 +281,12 @@ course.category.toLowerCase().includes(searchQuery.toLowerCase())
                         <div className={coursePageStyles.priceContainer}>
                           <div className="flex items-center space-x-2">
                             {isFree ? (
-                              <span className={coursePageStyles.priceFree}>
+                              <span className={coursePageStyles.priceFree} style={{ fontSize: '1.125rem' }}>
                                 Free
                               </span>
                             ) : (
                               <>
-                                <span className={coursePageStyles.priceCurrent}>
+                                <span className={coursePageStyles.priceCurrent} style={{ fontSize: '1.125rem' }}>
                                   {typeof priceDisplay === "object"
                                     ? priceDisplay.current
                                     : priceDisplay}

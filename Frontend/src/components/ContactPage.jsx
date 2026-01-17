@@ -37,15 +37,15 @@ const ContactPage = () => {
 
     setIsSubmitting(true);
 
-    // const whatsappMessage =
-    //   `Name: ${formData.name}%0A` +
-    //   `Email: ${formData.email}%0A` +
-    //   `Phone: ${formData.phone}%0A` +
-    //   `Subject: ${formData.subject}%0A` +
-    //   `Message: ${formData.message}`;
+    const whatsappMessage =
+      `Name: ${formData.name}%0A` +
+      `Email: ${formData.email}%0A` +
+      `Phone: ${formData.phone}%0A` +
+      `Subject: ${formData.subject}%0A` +
+      `Message: ${formData.message}`;
 
-    // const whatsappUrl = `https://wa.me/918299431275?text=${whatsappMessage}`;
-    // window.open(whatsappUrl, "_blank");
+    const whatsappUrl = `https://wa.me/9779742464744?text=${whatsappMessage}`;
+    window.open(whatsappUrl, "_blank");
 
     setTimeout(() => {
       setFormData({
@@ -71,7 +71,7 @@ const ContactPage = () => {
     <div className={contactStyles.container}>
       <div className={contactStyles.mainContainer}>
         <div className={contactStyles.header}>
-          <h1 className={contactStyles.title}>Contact Us</h1>
+          <h1 className={contactStyles.title} style={{ background: 'linear-gradient(to right, #1c398e, #1c398e)', WebkitBackgroundClip: 'text', backgroundClip: 'text' }}>Contact Us</h1>
         </div>
 
         <div className={contactStyles.mainSection}>
@@ -80,6 +80,7 @@ const ContactPage = () => {
             <div className={contactStyles.formGlow2}></div>
             <div className={contactStyles.formGlow3}></div>
 
+          
             <div className={contactStyles.form}> 
               <form
                 className={contactStyles.formElements}
@@ -208,9 +209,10 @@ const ContactPage = () => {
                 </div>
               </form>
             </div>
+          </div>
 
-            {/* Animation Section */}
-            <div className={contactStyles.animationContainer}>
+       
+          <div className={contactStyles.animationContainer}>
               <div className={contactStyles.animationWrapper}>
                 <DotLottieReact
                   src="https://lottie.host/9ccf026c-11e9-417a-9a9d-0169bc83e49d/sMK5FavyPC.lottie"
@@ -228,17 +230,16 @@ const ContactPage = () => {
         </div>
 
         {/* Footer info */}
-        {/* <div className={contactStyles.footer}>
+        <div className={contactStyles.footer}>
           <div className={contactStyles.footerBadge}>
             <MessageCircle className={contactStyles.footerIcon} />
             <span className={contactStyles.footerText}>
               All messages are sent directly to our WhatsApp Business account.
             </span>
           </div>
-        </div>  */}
+        </div>
 
       </div> 
-    </div> 
   );  
 };
 

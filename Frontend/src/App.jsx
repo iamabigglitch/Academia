@@ -12,6 +12,8 @@ import CourseDetailPageHome from "./pages/private/CourseDetailPageHome.jsx";
 import CourseDetailPage from "./pages/private/CourseDetailPage.jsx";
 import Login from "./pages/public/Login.jsx";
 import Signup from "./pages/public/Signup.jsx";
+// import Add from "./pages/Admin/private/Add.jsx";
+// import List from "./pages/Admin/private/List.jsx";
 
 //to protect the route
 const ProtectedRoute = ({ children }) => {
@@ -86,6 +88,10 @@ const App = () => {
         <Route path = "/register" element={<Signup/>}/>
         <Route path="/course/:id" element={ <ProtectedRoute><CourseDetailPageHome/></ProtectedRoute>}/>
         <Route path="/courses/:id" element={ <ProtectedRoute><CourseDetailPage/></ProtectedRoute>}/>
+
+        {/* <Route path="/" element={<Home />} /> //Admin Side  */}
+        {/* <Route path="/addcourse" element={ <Add/>} />
+        <Route path="/listcourse" element={ <List/>} /> */}
         
       </Routes>
          <ScrollTopButton threshold={250}  />

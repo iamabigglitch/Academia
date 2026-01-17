@@ -1,9 +1,58 @@
 import React from 'react';
-import {facultyStyles,} from "../assets/dummyStyles";
-import sampleTeachers from "../assets/dummyFaculty";
+import {facultyStyles} from "../assets/dummyStyles";
 import {Instagram, Linkedin, Mail, Star} from "lucide-react";
+// import teacher4 from "../assets/teacher4.png"
 
-const MotionWrapper  = {
+// Faculty data
+const sampleTeachers = [
+  {
+    id: 1,
+    name: "Dr. Kasha Kc",
+    qualification: "Ph.D. in Artificial Intelligence",
+    bio: "Specialized in Machine Learning and Deep Neural Networks",
+    // image: teacher4,
+    experience: "12+ years",
+    linkedin: "https://www.linkedin.com/in/kasha-kc/",
+    instagram: "https://www.instagram.com/kashakc/",
+    email: "kasha.kc@example.com",
+    initialRating: 2.8,
+  },
+  {
+    id: 2,
+    name: "Mr. Shashank Shrestha",
+    qualification: "M.Tech in Computer Science",
+    bio: "Frontend Architect with expertise in React and Vue",
+    experience: "8+ years",
+    linkedin: "https://www.linkedin.com/in/shashank-shrestha/",
+    instagram: "https://www.instagram.com/shashanks.frontend/",
+    email: "shashank.shrestha@example.com",
+    initialRating: 1.5,
+  },
+  {
+    id: 3,
+    name: "Mrs. Yukta Verma",
+    qualification: "M.S. in Cloud Computing",
+    bio: "DevOps Engineer and Cloud Infrastructure Specialist",
+    experience: "10+ years",
+    linkedin: "https://www.linkedin.com/in/yukta-verma-cloud/",
+    instagram: "https://www.instagram.com/yukta.cloud/",
+    email: "yukta.verma@example.com",
+    initialRating: 3.6,
+  },
+  {
+    id: 4,
+    name: "Mr. Kartik Shakya",
+    qualification: "Ph.D. in Data Science",
+    bio: "Data Scientist and Machine Learning Researcher",
+    experience: "9+ years",
+    linkedin: "https://www.linkedin.com/in/kartik-shakya-ds/",
+    instagram: "https://www.instagram.com/kartiks.datascience/",
+    email: "kartik.shakya@example.com",
+    initialRating: 3.9,
+  },
+];
+
+const MotionWrapper = {
     div: ({children, className}) => (
         <div className={className}>{children}</div>
     ),
@@ -14,9 +63,12 @@ const FacultyPage = () => {
         <div className={facultyStyles.container}>
             <div className={facultyStyles.header}>
                 <div className={facultyStyles.headerContent}>
-                    <h1 className={facultyStyles.title}>Meet Our Faculty</h1>
+                    <h1 className={facultyStyles.title} style={{ color: '#1c398e' }}>Meet Our Faculty</h1>
                     <div className={facultyStyles.titleDivider}></div>
-                    <p className={facultyStyles.subtitle}>Learn from industry experts and academic pioneers dedicated to your success.
+                    <p 
+                    className={facultyStyles.subtitle}
+                    style={{ color: '#051546' }}>
+                        Learn from industry experts and academic pioneers dedicated to your success.
                     </p>
             </div>
         </div>
@@ -38,7 +90,7 @@ const FacultyPage = () => {
                     <div className={facultyStyles.imageContainer}>
                         <div className={facultyStyles.imageWrapper}>
                             <img
-                                src={teacher.image}
+                                src={teacher.image || "https://via.placeholder.com/300"}
                                 alt={teacher.name}
                                 className={facultyStyles.image}
                             />
@@ -93,6 +145,7 @@ const FacultyPage = () => {
                  <a 
                  href = {teacher.linkedin} 
                  target="_blank" 
+                 rel="noopener noreferrer"
                  className={`
                     ${facultyStyles.socialIcon} 
                     ${facultyStyles.socialIconLinkedin}
@@ -103,7 +156,8 @@ const FacultyPage = () => {
 
                  <a 
                  href = {teacher.instagram} 
-                 target="_blank" 
+                 target="_blank"
+                 rel="noopener noreferrer" 
                  className={`
                     ${facultyStyles.socialIcon} 
                     ${facultyStyles.socialIconInstagram}
