@@ -1,27 +1,24 @@
-import React, { useEffect, useState } from 'react'
-import { dashboardStyles } from '../../assets/dummyStylesAdmin'
+import React, { useEffect, useState } from 'react';
+import { dashboardStyles } from '../../assets/dummyStylesAdmin';
 import { BookMarked, BookOpenText, LucideBadgeDollarSign, Search, ShoppingCart, Users } from 'lucide-react';
 
-const API_BASE = 'http://localhost:4000' ;
+const API_BASE = 'http://localhost:4000';
+
 const fmtCurrency = (n) => {
-  if (n == null) return "Rs:0";
+  if (n == null) return "Rs. 0";
   const num = Number(n);
-  if (Number.isNaN(num)) return "Rs:0";
-  return `Rs: ${num}`;
+  if (Number.isNaN(num)) return "Rs. 0";
+  return `Rs. ${num.toLocaleString()}`;
 };
 
-
-
 const DashboardPage = () => {
-
-    const [searchTerm, setSearchTerm] = useState("");
-
+  const [searchTerm, setSearchTerm] = useState("");
   const [statsData, setStatsData] = useState(null);
   const [coursesData, setCoursesData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-   const iconMap = {
+  const iconMap = {
     Users,
     ShoppingCart,
     BookMarked,
@@ -44,7 +41,7 @@ const DashboardPage = () => {
       {
         title: "Revenue",
         value: fmtCurrency(totalRevenue),
-        icon: iconMap.BadgeIndianRupee,
+        icon: iconMap.LucideBadgeDollarSign,
         color: "green",
       },
       {
@@ -99,7 +96,7 @@ const DashboardPage = () => {
         const mapped = (courses || []).map((c) => {
           const id = c._id ?? c.id ?? c.courseId ?? "";
           const name = c.name ?? c.title ?? "Untitled Course";
-          const image = c.image ?? "";
+          const image = c.image ?? "https://via.placeholder.com/150?text=No+Image";
           const instructor = c.teacher ?? c.instructor ?? "Unknown";
           const metrics = topLookup[name] || { purchases: 0, revenue: 0 };
           const students = metrics.purchases || (c.students ?? 0);
@@ -118,7 +115,7 @@ const DashboardPage = () => {
                 ? fmtCurrency(orig)
                 : "Free";
           } else if (c.pricingType && c.pricingType !== "free") {
-            priceDisplay = "Rs: 0";
+            priceDisplay = "Rs. 0";
           }
 
           return {
@@ -151,8 +148,8 @@ const DashboardPage = () => {
     { title: "Total Bookings", value: 0, icon: iconMap.Users, color: "indigo" },
     {
       title: "Revenue",
-      value: "Rs: 0",
-      icon: iconMap.BadgeIndianRupee,
+      value: "Rs. 0",
+      icon: iconMap.LucideBadgeDollarSign,
       color: "green",
     },
     {
@@ -175,164 +172,167 @@ const DashboardPage = () => {
       (course.instructor || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-    return(
-        <div className={dashboardStyles.pageContainer}>
-            <div className={dashboardStyles.backgroundPattern}>
-            </div>
-            <div className={dashboardStyles.contentContainer}>
-                {/* header */}
-                <div className={dashboardStyles.headerContainer}>
-                    <h1 className={dashboardStyles.headerTitle}>Dashboard Overview</h1>
-                    <p className={dashboardStyles.headerSubtitle}>
-                        Welcome back! Here's what's happening with your Courses Today.
-                    </p>
-                </div>
-
-            {error && (
-                <div classname={dashboardStyles.errorBaneer} role="alert">
-                    {error}
-                    </div>
-            )}
-            {/* Stats Section */}
-            <div className={dashboardStyles.statsGrid}>
-                {stats.map((stat, index) => {
-                    const Icon = stat.icon || Users;
-
-                    return (
-                        <div 
-                        key={stat.title} 
-                        className={dashboardStyles.statCard} 
-                        style={{
-                            animationDelay: `${index * 100}ms`,
-                        }}>
-
-                            <div classname="flex items=center justify-between">
-                                <div>
-                                    <p className={dashboardStyles.statTitle}>{stat.title}</p>
-                                    <p className={dashboardStyles.statValue}>{stat.value}</p>
-                            </div>
-
-                            <div 
-                            className={ dashboardStyles.statIconContainer?.(stat.color)}>
-                                <Icon className={dashboardStyles.statIcon} />
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })}
-                </div>
-
-                {/* Course Section */}
-                <div className={dashboardStyles.coursesContainer}>
-                    <div className={dashboardStyles.coursesHeader}>
-                        <div classname={dashboardStyles.coursesTitleContainer}>
-                            <BookOpenText className={dashboardStyles.coursesIcon}>
-                                <h2 className={dashboardStyles.coursesTitle}>Course Performance</h2>
-                            </BookOpenText>
-                        </div>
-
-                        <div className={dashboardStyles.searchContainer}>
-                            <Search className={dashboardStyles.searchIcon}/>
-                            <input 
-                            type="text" 
-                            placeholder="Search Courses..." 
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)} 
-                            className={dashboardStyles.searchInput}/>
-                        </div>
-                    </div>
-
-                    {/* table */}
-                    <div className={dashboardStyles.tableContainer}>
-                        <table className={dashboardStyles.table}>
-                            <thead className={dashboardStyles.tableHead}>
-                                <tr>
-                                <th className={dashboardStyles.tableHeader}>Course</th>
-                                <th className={dashboardStyles.tableHeader}>Students</th>
-                                <th className={dashboardStyles.tableHeader}>Price</th>
-                                <th className={dashboardStyles.tableHeader}>Purchases</th>
-                                <th className={dashboardStyles.tableHeader}>Earnings</th>
-                                </tr>
-                            </thead>
-
-                            <tbody className={dashboardStyles.tableBody}>
-                                {filteredCourses.map((course, index) => (
-                                    <tr key={course.id || `${index}`} className={dashboardStyles.tableRow} style={{
-                                        animationDelay: `${index * 50 + 400}ms`
-                                }}>
-                                    <td className='px-4 sm:px-6 py-3 sm: py-4'>
-                                        <div classname= "flex items-center">
-                                            <img 
-                                            src={course.image} 
-                                            alt={course.name} 
-                                            className={dashboardStyles.courseImage} />
-
-                                        <div>
-                                            <p className={dashboardStyles.courseName}>
-                                                {course.name}
-                                            </p>
-                                            <p className={dashboardStyles.courseInstructor}>
-                                                {course.instructor}
-                                            </p>
-                                        </div>
-                                        </div>
-                                    </td>
-
-                                    <td className={dashboardStyles.studentsCell}>
-                                        <div className="flex items-center text-gray-700">
-                                            <span className={dashboardStyles.studentsText}>
-                                                {course.students}
-                                                </span>
-                                        </div>
-                                    </td>
-
-                                    <td className={dashboardStyles.priceCell}>
-                                        {course.price}
-                                    </td>
-
-                                    <td className= "px-4 sm:px-6 py-3 sm:py-4">
-                                        <div className={dashboardStyles.purchasesContainer}>
-                                            <ShoppingCart 
-                                            className={dashboardStyles.purchasesIcon}/>
-                                            <span className={dashboardStyles.purchasesText}>
-                                                {course.purchases}
-                                            </span>
-                                        </div>
-                                    </td>
-
-                                    <td className={dashboardStyles.earningsCell}>
-                                        {course.earnings}
-                                    </td>
-                                </tr>
-                            ))}
-                            </tbody>
-                        </table>
-
-                        {filteredCourses.length === 0 && !loading && (
-                            <div className={dashboardStyles.emptyState}>
-                                <Search className={dashboardStyles.emptyIcon} />
-                                <p className={dashboardStyles.emptyText}>
-                                    No courses found matching your Search.
-                                </p>
-
-                                <button
-                                onClick={() => setSearchTerm("")}
-                                className={dashboardStyles.clearButton}>
-                                    Clear Search 
-                                </button>
-                                </div>
-                        )}
-
-                        {loading && (
-                            <div className={dashboardStyles.loadingOverlay}>
-                                <div className={dashboardStyles.loadingSpinner}/>
-                                </div>
-                        )}
-                    </div>
-                </div>
-            </div>
+  return (
+    <div className={dashboardStyles.pageContainer}>
+      <div className={dashboardStyles.backgroundPattern}></div>
+      <div className={dashboardStyles.contentContainer}>
+        {/* Header */}
+        <div className={dashboardStyles.headerContainer}>
+          <h1 className={dashboardStyles.headerTitle}>Dashboard Overview</h1>
+          <p className={dashboardStyles.headerSubtitle}>
+            Welcome back! Here's what's happening with your Courses Today.
+          </p>
         </div>
-    )
-}
+
+        {error && (
+          <div className={dashboardStyles.errorBanner} role="alert">
+            {error}
+          </div>
+        )}
+
+        {/* Stats Section */}
+        <div className={dashboardStyles.statsGrid}>
+          {stats.map((stat, index) => {
+            const Icon = stat.icon || Users;
+
+            return (
+              <div
+                key={stat.title}
+                className={dashboardStyles.statCard}
+                style={{
+                  animationDelay: `${index * 100}ms`,
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className={dashboardStyles.statTitle}>{stat.title}</p>
+                    <p className={dashboardStyles.statValue}>{stat.value}</p>
+                  </div>
+
+                  <div className={dashboardStyles.statIconContainer?.(stat.color)}>
+                    <Icon className={dashboardStyles.statIcon} />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Course Section */}
+        <div className={dashboardStyles.coursesContainer}>
+          <div className={dashboardStyles.coursesHeader}>
+            <div className={dashboardStyles.coursesTitleContainer}>
+              <BookOpenText className={dashboardStyles.coursesIcon} />
+              <h2 className={dashboardStyles.coursesTitle}>Course Performance</h2>
+            </div>
+
+            <div className={dashboardStyles.searchContainer}>
+              <Search className={dashboardStyles.searchIcon} />
+              <input
+                type="text"
+                placeholder="Search Courses..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className={dashboardStyles.searchInput}
+              />
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className={dashboardStyles.tableContainer}>
+            <table className={dashboardStyles.table}>
+              <thead className={dashboardStyles.tableHead}>
+                <tr>
+                  <th className={dashboardStyles.tableHeader}>Course</th>
+                  <th className={dashboardStyles.tableHeader}>Students</th>
+                  <th className={dashboardStyles.tableHeader}>Price</th>
+                  <th className={dashboardStyles.tableHeader}>Purchases</th>
+                  <th className={dashboardStyles.tableHeader}>Earnings</th>
+                </tr>
+              </thead>
+
+              <tbody className={dashboardStyles.tableBody}>
+                {filteredCourses.map((course, index) => (
+                  <tr
+                    key={course.id || `course-${index}`}
+                    className={dashboardStyles.tableRow}
+                    style={{
+                      animationDelay: `${index * 50 + 400}ms`,
+                    }}
+                  >
+                    <td className="px-4 sm:px-6 py-3 sm:py-4">
+                      <div className="flex items-center">
+                        <img
+                          src={course.image}
+                          alt={course.name}
+                          className={dashboardStyles.courseImage}
+                          onError={(e) => {
+                            e.target.src = "https://via.placeholder.com/150?text=No+Image";
+                          }}
+                        />
+
+                        <div>
+                          <p className={dashboardStyles.courseName}>{course.name}</p>
+                          <p className={dashboardStyles.courseInstructor}>
+                            {course.instructor}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td className={dashboardStyles.studentsCell}>
+                      <div className="flex items-center text-gray-700">
+                        <span className={dashboardStyles.studentsText}>
+                          {course.students}
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className={dashboardStyles.priceCell}>{course.price}</td>
+
+                    <td className="px-4 sm:px-6 py-3 sm:py-4">
+                      <div className={dashboardStyles.purchasesContainer}>
+                        <ShoppingCart className={dashboardStyles.purchasesIcon} />
+                        <span className={dashboardStyles.purchasesText}>
+                          {course.purchases}
+                        </span>
+                      </div>
+                    </td>
+
+                    <td className={dashboardStyles.earningsCell}>
+                      {course.earnings}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {filteredCourses.length === 0 && !loading && (
+              <div className={dashboardStyles.emptyState}>
+                <Search className={dashboardStyles.emptyIcon} />
+                <p className={dashboardStyles.emptyText}>
+                  No courses found matching your search.
+                </p>
+
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className={dashboardStyles.clearButton}
+                >
+                  Clear Search
+                </button>
+              </div>
+            )}
+
+            {loading && (
+              <div className={dashboardStyles.loadingOverlay}>
+                <div className={dashboardStyles.loadingSpinner} />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default DashboardPage;

@@ -12,8 +12,8 @@ import CourseDetailPageHome from "./pages/private/CourseDetailPageHome.jsx";
 import CourseDetailPage from "./pages/private/CourseDetailPage.jsx";
 import Login from "./pages/public/Login.jsx";
 import Signup from "./pages/public/Signup.jsx";
-// import Add from "./pages/Admin/private/Add.jsx";
-// import List from "./pages/Admin/private/List.jsx";
+import Add from "./pages/Admin/private/Add.jsx";
+import List from "./pages/Admin/private/List.jsx";
 
 //to protect the route
 const ProtectedRoute = ({ children }) => {
@@ -79,11 +79,11 @@ const App = () => {
       <NavBar />
       <ScrollToTopRouteChange />
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path= "/home" element={<Home />} />
         <Route path = "/about" element={<About/>} />
-        <Route path="/contact" element={<Contact/>} />
-        <Route path="/faculty" element={<Faculty/>} />
-        <Route path="/courses" element={<Courses/>} />
+        <Route path= "/contact" element={<Contact/>} />
+        <Route path= "/faculty" element={<Faculty/>} />
+        <Route path= "/courses" element={<Courses/>} />
         <Route path = "/login" element={<Login/>}/>
         <Route path = "/register" element={<Signup/>}/>
         <Route path="/course/:id" element={ <ProtectedRoute><CourseDetailPageHome/></ProtectedRoute>}/>
