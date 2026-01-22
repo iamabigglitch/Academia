@@ -1,285 +1,1202 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { BookOpen, Target, X, Clock, ArrowLeft, User, Play, ChevronDown, ArrowRight, Award, Sparkles, CheckCircle, Circle, } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
-import api from "../../api/axios";
+import React, { useMemo, useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Play, Clock, BookOpen, ChevronDown, CheckCircle, Circle, X, ArrowLeft, User, Award, Target, Sparkles, ArrowRight, } from "lucide-react";
+// import { useUser, useAuth } from "@clerk/clerk-react";
+import { courseDetailStyles } from "../../assets/dummyStyles";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-const BRAND = "#1c398e";
+const API_BASE = "http://localhost:4000";
 
-const fmtMinutes = (mins = 0) => {
-  const h = Math.floor(mins / 60);
-  const m = mins % 60;
-  return h ? `${h}h ${m}m` : `${m}m`;
+const fmtMinutes = (mins) => {
+  const h = Math.floor((mins || 0) / 60);
+  const m = (mins || 0) % 60;
+  if (h === 0) return `${m}m`;
+  return `${h}h ${m}m`;
 };
-
-const toEmbedUrl = (url) => {
-  if (!url) return "";
-  if (url.includes("embed")) return url;
-  const yt = url.match(/[?&]v=([^&#]+)/);
-  if (yt) return `https://www.youtube.com/embed/${yt[1]}`;
-  const short = url.match(/youtu\.be\/([^?&#]+)/);
-  if (short) return `https://www.youtube.com/embed/${short[1]}`;
-  return url;
-};
-
-const isDirectVideo = (url) =>
-  /\.(mp4|webm|ogg)(\?.*)?$/i.test(url || "");
 
 const Toast = ({ message, type = "info", onClose }) => {
   useEffect(() => {
-    const t = setTimeout(onClose, 3500);
-    return () => clearTimeout(t);
+    const timer = setTimeout(onClose, 4000);
+    return () => clearTimeout(timer);
   }, [onClose]);
 
   return (
     <div
-      className={`fixed top-6 right-6 z-50 px-5 py-4 rounded-xl shadow-xl text-white animate-slide-in ${
-        type === "error" ? "bg-red-600" : "bg-[#1c398e]"
+      className={`${courseDetailStyles.toast} ${
+        type === "error"
+          ? courseDetailStyles.toastError
+          : courseDetailStyles.toastInfo
       }`}
     >
-      <div className="flex items-center gap-3">
-        <span className="text-sm font-medium">{message}</span>
-        <button onClick={onClose}>
-          <X className="w-4 h-4 opacity-80 hover:opacity-100" />
+      <div className={courseDetailStyles.toastContent}>
+        <span>{message}</span>
+        <button onClick={onClose} className={courseDetailStyles.toastClose}>
+          <X className={courseDetailStyles.toastCloseIcon} />
         </button>
       </div>
     </div>
   );
 };
 
+/* helpers */
+const toEmbedUrl = (url) => {
+  if (!url) return "";
+  try {
+    const trimmed = String(url).trim();
+    if (/\/embed\//.test(trimmed)) return trimmed;
+    const watchMatch = trimmed.match(/[?&]v=([^&#]+)/);
+    if (watchMatch && watchMatch[1])
+      return `https://www.youtube.com/embed/${watchMatch[1]}`;
+    const shortMatch = trimmed.match(/youtu\.be\/([^?&#/]+)/);
+    if (shortMatch && shortMatch[1])
+      return `https://www.youtube.com/embed/${shortMatch[1]}`;
+    if (/drive\.google\.com/.test(trimmed)) {
+      const fileMatch = trimmed.match(/\/file\/d\/([^/]+)(?:\/|$)/);
+      if (fileMatch && fileMatch[1])
+        return `https://drive.google.com/file/d/${fileMatch[1]}/preview`;
+      const idMatch = trimmed.match(/[?&]id=([^&#]+)/);
+      if (idMatch && idMatch[1])
+        return `https://drive.google.com/file/d/${idMatch[1]}/preview`;
+      return trimmed;
+    }
+    const lastSeg = trimmed.split("/").filter(Boolean).pop();
+    if (lastSeg && lastSeg.length === 11 && /^[a-zA-Z0-9_-]+$/.test(lastSeg)) {
+      return `https://www.youtube.com/embed/${lastSeg}`;
+    }
+    return trimmed;
+  } catch (err) {
+    return url;
+  }
+};
+
+const appendAutoplay = (embedUrl, autoplay = true) => {
+  if (!embedUrl) return "";
+  if (!autoplay) return embedUrl;
+  return embedUrl.includes("?")
+    ? `${embedUrl}&autoplay=1`
+    : `${embedUrl}?autoplay=1`;
+};
+
+const isDirectVideoFile = (url) => {
+  if (!url) return false;
+  return /\.(mp4|webm|ogg)(\?.*)?$/i.test(url);
+};
+
+const normalizeCourse = (c) => {
+  if (!c) return c;
+  const course = { ...c };
+  course.lectures = Array.isArray(course.lectures)
+    ? course.lectures.map((l) => {
+        const lecture = { ...l };
+        lecture.durationMin =
+          lecture.durationMin ??
+          lecture.totalMinutes ??
+          (lecture.duration?.hours || 0) * 60 +
+            (lecture.duration?.minutes || 0);
+        lecture.chapters = Array.isArray(lecture.chapters)
+          ? lecture.chapters.map((ch) => {
+              const chapter = { ...ch };
+              chapter.durationMin =
+                chapter.durationMin ??
+                chapter.totalMinutes ??
+                (chapter.duration?.hours || 0) * 60 +
+                  (chapter.duration?.minutes || 0);
+              return chapter;
+            })
+          : [];
+        return lecture;
+      })
+    : [];
+  return course;
+};
+
 const CourseDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const courseId = Number(id);
+  const courseId = id;
+
+  const { user } = useUser();
+  const { getToken } = useAuth();
+  const isLoggedIn = Boolean(user);
 
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const [isEnrolled, setIsEnrolled] = useState(false);
+  const [bookingInfo, setBookingInfo] = useState(null);
+  const [isEnrolling, setIsEnrolling] = useState(false);
+
   const [toast, setToast] = useState(null);
+  const [expandedLectures, setExpandedLectures] = useState(new Set());
+  const [completedChapters, setCompletedChapters] = useState(new Set());
+  const [isTeacherAnimating, setIsTeacherAnimating] = useState(false);
+  const [isPageLoaded, setIsPageLoaded] = useState(false);
 
-  const [expanded, setExpanded] = useState(new Set());
-  const [completed, setCompleted] = useState(new Set());
-  const [selected, setSelected] = useState(null);
+  const studentNameFromUser = useMemo(() => {
+    if (!user) return "";
+    const fullName =
+      user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim();
+    const email =
+      user.primaryEmailAddress?.emailAddress ||
+      (user.emailAddresses && user.emailAddresses[0]?.emailAddress) ||
+      "";
+    return fullName || email || "";
+  }, [user]);
 
-  // const { isAuthenticated } = useAuth();
-  // const isEnrolled = course?.pricingType === "free";
-
+  const studentEmailFromUser = useMemo(() => {
+    if (!user) return "";
+    return (
+      user.primaryEmailAddress?.emailAddress ||
+      (user.emailAddresses && user.emailAddresses[0]?.emailAddress) ||
+      ""
+    );
+  }, [user]);
 
   useEffect(() => {
-    const fetchCourse = async () => {
-      try {
-        const res = await api.get(`${API_BASE_URL}/courses/${courseId}`);
-        setCourse(res.data.course);
-      } catch {
-        setToast({ message: "Failed to load course", type: "error" });
-      } finally {
-        setLoading(false);
-      }
+    let mounted = true;
+    setLoading(true);
+    setError(null);
+
+    fetch(`${API_BASE}/api/course/${courseId}`)
+      .then(async (res) => {
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text || `Failed to fetch course ${courseId}`);
+        }
+        return res.json();
+      })
+      .then((json) => {
+        if (!mounted) return;
+        if (!json || !json.success) {
+          throw new Error((json && json.message) || "Failed to load course");
+        }
+        const normalized = normalizeCourse(json.course);
+        setCourse(normalized);
+
+        // DO NOT auto set isEnrolled for free courses; rely on server booking check
+        setIsEnrolled(false);
+      })
+      .catch((err) => {
+        console.error("Failed to load course:", err);
+        if (mounted) setError(err.message || "Failed to load course");
+      })
+      .finally(() => mounted && setLoading(false));
+
+    return () => {
+      mounted = false;
     };
-    fetchCourse();
   }, [courseId]);
 
-  const selectedLecture = useMemo(
-    () => course?.Lectures?.find((l) => l.id === selected?.lectureId),
-    [course, selected]
-  );
+  useEffect(() => {
+    let mounted = true;
+    if (!course) return;
 
-  const selectedChapter = useMemo(
-    () =>
-      selectedLecture?.Chapters?.find(
-        (c) => c.id === selected?.chapterId
-      ),
-    [selectedLecture, selected]
-  );
+    const checkEnrollment = async () => {
+      const q = `${API_BASE}/api/booking/check?courseId=${encodeURIComponent(
+        course._id ?? course.id ?? courseId
+      )}`;
 
-  const video = selectedChapter || selectedLecture;
-  const videoUrl = toEmbedUrl(video?.videoUrl);
-  const totalMinutes =
-    (course?.totalDurationHours || 0) * 60 +
-    (course?.totalDurationMinutes || 0);
+      const headers = { "Content-Type": "application/json" };
+      let opts = { method: "GET", credentials: "include", headers };
 
-  
-  if (loading) {
+      if (typeof getToken === "function") {
+        try {
+          const token = await Promise.race([
+            getToken().catch(() => null),
+            new Promise((r) => setTimeout(() => r(null), 1500)),
+          ]);
+          if (token) {
+            headers.Authorization = `Bearer ${token}`;
+            opts = { method: "GET", headers };
+          }
+        } catch (e) {
+          console.debug("getToken failed, falling back to cookie auth:", e);
+          opts = { method: "GET", credentials: "include", headers };
+        }
+      }
+
+      try {
+        const res = await fetch(q, opts);
+
+        if (res.status === 404) {
+          console.debug("booking.check 404; no booking route present");
+          setBookingInfo(null);
+          setIsEnrolled(false);
+          return;
+        }
+
+        const data = await res.json().catch(() => null);
+        if (!data) {
+          setBookingInfo(null);
+          setIsEnrolled(false);
+          return;
+        }
+
+        const booking = data.booking || null;
+        const serverSaysEnrolled = !!(
+          data.enrolled ||
+          data.userEnrolled ||
+          data.bookingExists ||
+          data.alreadyBooked
+        );
+
+        const bookingPaidOrConfirmed =
+          booking &&
+          (serverSaysEnrolled ||
+            booking.paymentStatus === "Paid" ||
+            booking.paymentStatus === "paid" ||
+            booking.orderStatus === "Confirmed" ||
+            booking.orderStatus === "confirmed" ||
+            !!booking.paidAt);
+
+        if (!mounted) return;
+
+        if (bookingPaidOrConfirmed) {
+          setBookingInfo(booking || null);
+          setIsEnrolled(true);
+          return;
+        }
+
+        if (booking) {
+          // booking exists but not paid/confirmed
+          setBookingInfo(booking);
+          setIsEnrolled(false);
+          return;
+        }
+
+        // no booking
+        setBookingInfo(null);
+        setIsEnrolled(false);
+      } catch (err) {
+        console.debug("booking.check failed:", err);
+        // network error: leave as not enrolled
+      }
+    };
+
+    checkEnrollment();
+    return () => (mounted = false);
+  }, [course, getToken, courseId, isLoggedIn]);
+
+  useEffect(() => {
+    setIsTeacherAnimating(true);
+    const timer = setTimeout(() => setIsTeacherAnimating(false), 800);
+    return () => clearTimeout(timer);
+  }, [course]);
+
+  useEffect(() => setIsPageLoaded(true), []);
+
+  const [selectedContent, setSelectedContent] = useState({
+    type: null,
+    lectureId: null,
+    chapterId: null,
+  });
+
+  const selectedLecture = useMemo(() => {
+    if (!selectedContent.lectureId || !course) return null;
     return (
-      <div className="min-h-screen grid place-items-center text-gray-500">
-        Loading course…
-      </div>
+      (course.lectures || []).find(
+        (l) =>
+          String(l.id) === String(selectedContent.lectureId) ||
+          String(l._id) === String(selectedContent.lectureId)
+      ) || null
     );
-  }
+  }, [course, selectedContent.lectureId]);
 
+  const selectedChapter = useMemo(() => {
+    if (!selectedContent.chapterId || !selectedLecture) return null;
+    return (
+      (selectedLecture.chapters || []).find(
+        (ch) =>
+          String(ch.id) === String(selectedContent.chapterId) ||
+          String(ch._id) === String(selectedContent.chapterId)
+      ) || null
+    );
+  }, [selectedLecture, selectedContent.chapterId]);
+
+  const currentVideoContent = useMemo(() => {
+    if (selectedContent.type === "chapter" && selectedChapter)
+      return selectedChapter;
+    if (selectedContent.type === "lecture" && selectedLecture)
+      return selectedLecture;
+    return null;
+  }, [selectedContent, selectedLecture, selectedChapter]);
+
+  const totalMinutes = useMemo(
+    () =>
+      (course?.lectures || []).reduce(
+        (sum, l) => sum + (l.durationMin || l.totalMinutes || 0),
+        0
+      ),
+    [course]
+  );
+
+  const priceObj = course?.price;
+  const hasPriceObj = !!(
+    priceObj &&
+    (priceObj.sale != null || priceObj.original != null)
+  );
+  const salePrice =
+    hasPriceObj && priceObj.sale != null ? Number(priceObj.sale) : null;
+  const originalPrice =
+    hasPriceObj && priceObj.original != null ? Number(priceObj.original) : null;
+  const formatCurrency = (n) => (n == null || Number.isNaN(n) ? "" : `₹${n}`);
+  const courseIsFree = course
+    ? !!course.isFree ||
+      !course.price ||
+      (!course.price.sale && !course.price.original) ||
+      course.pricingType === "free"
+    : true;
+  const hasDiscount =
+    originalPrice != null && salePrice != null && originalPrice > salePrice;
+
+  const bookingPendingPayment =
+    bookingInfo &&
+    ((bookingInfo.paymentStatus &&
+      /unpaid/i.test(String(bookingInfo.paymentStatus))) ||
+      (bookingInfo.orderStatus &&
+        /pending/i.test(String(bookingInfo.orderStatus)))) &&
+    (salePrice || originalPrice || bookingInfo.price);
+
+  // handlers
+  const toggleLecture = (lectureId) => {
+    setExpandedLectures((prev) => {
+      const next = new Set(prev);
+      if (next.has(lectureId)) next.delete(lectureId);
+      else next.add(lectureId);
+      return next;
+    });
+  };
+
+  const onLectureHeaderClick = (lectureId) => {
+    if (!isLoggedIn) {
+      setToast({
+        message: "Please login to access course content",
+        type: "error",
+      });
+      return;
+    }
+    const isOpen = expandedLectures.has(lectureId);
+    if (isOpen) {
+      setExpandedLectures((prev) => {
+        const next = new Set(prev);
+        next.delete(lectureId);
+        return next;
+      });
+      if (selectedContent.lectureId === lectureId) {
+        setSelectedContent({
+          type: "lecture",
+          lectureId: null,
+          chapterId: null,
+        });
+      }
+      return;
+    }
+
+    // Now require server-enrollment even for free courses
+    if (!isEnrolled) {
+      if (bookingPendingPayment) {
+        setToast({
+          message: "Payment pending — complete payment to view chapters",
+          type: "error",
+        });
+      } else {
+        setToast({
+          message: "Please enroll in the course to view chapters",
+          type: "error",
+        });
+      }
+      return;
+    }
+
+    setExpandedLectures((prev) => new Set([...prev, lectureId]));
+    handleContentSelect(lectureId, null);
+  };
+
+  const handleContentSelect = (lectureId, chapterId = null) => {
+    if (!isLoggedIn) {
+      setToast({
+        message: "Please login to access course content",
+        type: "error",
+      });
+      return;
+    }
+
+    if (isEnrolled) {
+      setSelectedContent({
+        type: chapterId ? "chapter" : "lecture",
+        lectureId,
+        chapterId,
+      });
+      setExpandedLectures((prev) => {
+        const next = new Set(prev);
+        next.add(lectureId);
+        return next;
+      });
+      return;
+    }
+
+    if (!isEnrolled) {
+      if (bookingPendingPayment) {
+        setToast({
+          message:
+            "You have a pending payment — complete it to access the course.",
+          type: "error",
+        });
+        return;
+      }
+      setToast({
+        message: "Please enroll in the course to access this content",
+        type: "error",
+      });
+    }
+  };
+
+  const toggleChapterCompletion = (chapterId, e) => {
+    if (e) e.stopPropagation();
+    if (!isLoggedIn || !isEnrolled) {
+      setToast({
+        message: "Please enroll and login to track progress",
+        type: "error",
+      });
+      return;
+    }
+    setCompletedChapters((prev) => {
+      const next = new Set(prev);
+      if (next.has(chapterId)) next.delete(chapterId);
+      else next.add(chapterId);
+      return next;
+    });
+  };
+
+  const handleEnroll = async () => {
+    if (!isLoggedIn) {
+      setToast({
+        message: "Please login to enroll in the course",
+        type: "error",
+      });
+      return;
+    }
+    if (!course) {
+      setToast({ message: "Course not loaded", type: "error" });
+      return;
+    }
+
+    // prevent duplicate enroll attempts
+    if (isEnrolling) return;
+
+    setIsEnrolling(true);
+    try {
+      const numericPrice =
+        salePrice != null
+          ? salePrice
+          : originalPrice != null
+          ? originalPrice
+          : 0;
+      const payload = {
+        courseId: course._id ?? course.id ?? courseId,
+        courseName: course.name,
+        teacherName: course.teacher || "",
+        price: numericPrice,
+        studentName: studentNameFromUser || "",
+        email: studentEmailFromUser || "",
+      };
+
+      const headers = { "Content-Type": "application/json" };
+      let opts = {
+        method: "POST",
+        headers,
+        credentials: "include",
+        body: JSON.stringify(payload),
+      };
+      if (typeof getToken === "function") {
+        try {
+          const token = await getToken().catch(() => null);
+          if (token) {
+            headers.Authorization = `Bearer ${token}`;
+            opts = { method: "POST", headers, body: JSON.stringify(payload) };
+          }
+        } catch (e) {}
+      }
+
+      const res = await fetch(`${API_BASE}/api/booking/create`, opts);
+      const data = await res
+        .json()
+        .catch(() => ({ success: false, message: "Invalid response" }));
+
+      if (!res.ok || !data.success) {
+        const msg =
+          (data && (data.message || data.error)) ||
+          `Failed to create booking (${res.status})`;
+        const alreadyBooked =
+          /already booked|already enrolled|booking exists/i.test(msg) ||
+          data.alreadyBooked ||
+          data.bookingExists;
+        if (alreadyBooked) {
+          setToast({
+            message:
+              "You already have a booking — please check My Courses to view status.",
+            type: "info",
+          });
+          return;
+        }
+        throw new Error(msg);
+      }
+
+      // If Stripe checkout URL returned, redirect
+      if (data.checkoutUrl) {
+        if (data.booking) setBookingInfo(data.booking);
+        window.location.href = data.checkoutUrl;
+        return;
+      }
+
+      // For free course or server-confirmed booking
+      if (data.booking) {
+        setBookingInfo(data.booking);
+        const b = data.booking;
+        const paid =
+          b.paymentStatus === "Paid" ||
+          b.paymentStatus === "paid" ||
+          b.orderStatus === "Confirmed" ||
+          b.orderStatus === "confirmed" ||
+          !!b.paidAt;
+
+        if (paid) {
+          setIsEnrolled(true);
+          setToast({
+            message:
+              numericPrice === 0
+                ? "Enrolled successfully (free course)."
+                : "Enrollment succeeded.",
+            type: "info",
+          });
+          if (numericPrice > 0) navigate("/my-courses");
+          return;
+        }
+
+        if (numericPrice > 0 && !paid) {
+          setIsEnrolled(false);
+          setToast({
+            message: "Booking created — complete payment to access the course.",
+            type: "info",
+          });
+          return;
+        }
+
+        setIsEnrolled(true);
+        setToast({ message: "Enrolled.", type: "info" });
+        return;
+      }
+
+      // fallback
+      if (data.success) {
+        if (numericPrice === 0) {
+          setIsEnrolled(true);
+          setToast({ message: "Enrolled (free course).", type: "info" });
+        } else {
+          setToast({
+            message: "Enrollment initiated, complete payment.",
+            type: "info",
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Enroll error:", err);
+      setToast({ message: err.message || "Enrollment failed", type: "error" });
+    } finally {
+      setIsEnrolling(false);
+    }
+  };
+
+  const handleBackToHome = () => navigate("/");
+
+  if (loading) return <div className="p-6 text-center">Loading course...</div>;
+  if (error) return <div className="p-6 text-center text-red-500">{error}</div>;
   if (!course) {
     return (
-      <div className="min-h-screen grid place-items-center">
-        <button
-          onClick={() => navigate("/courses")}
-          className="px-5 py-2 rounded-lg bg-[#1c398e] text-white"
-        >
-          Back to Courses
-        </button>
+      <div className={courseDetailStyles.notFoundContainer}>
+        <div className={courseDetailStyles.notFoundContent}>
+          <h2 className={courseDetailStyles.notFoundTitle}>Course not found</h2>
+          <p className={courseDetailStyles.notFoundText}>
+            Go back to courses list
+          </p>
+          <button
+            onClick={() => navigate("/courses")}
+            className={courseDetailStyles.notFoundButton}
+          >
+            Back to courses
+          </button>
+        </div>
       </div>
     );
   }
 
+  const currentRawUrl = currentVideoContent?.videoUrl || null;
+  const currentEmbedUrl = currentRawUrl ? toEmbedUrl(currentRawUrl) : null;
+  const currentIsDirectVideo = isDirectVideoFile(currentEmbedUrl);
+
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-8">
-      {toast && <Toast {...toast} onClose={() => setToast(null)} />}
+    <div className={courseDetailStyles.container}>
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
 
-      {/* Back */}
-      <button
-        onClick={() => navigate("/courses")}
-        className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-[#1c398e] mb-6"
+      <div
+        className={`${courseDetailStyles.mainContainer} ${
+          isPageLoaded
+            ? courseDetailStyles.containerVisible
+            : courseDetailStyles.containerHidden
+        }`}
       >
-        <ArrowLeft className="w-4 h-4" /> Back to Courses
-      </button>
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => navigate("/courses")}
+            className={courseDetailStyles.backButton}
+          >
+            <ArrowLeft className={courseDetailStyles.backIcon} />
+            <span className={courseDetailStyles.backText}>Back to Home</span>
+          </button>
 
-      {/* Header */}
-      <div className="max-w-7xl mx-auto mb-10 animate-fade-up">
-        <span className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded-full bg-[#1c398e]/10 text-[#1c398e] font-medium">
-          <BookOpen className="w-4 h-4" />
-          {course.pricingType === "free" ? "Free Course" : "Premium Course"}
-        </span>
-
-        <h1 className="mt-4 text-3xl md:text-5xl font-bold text-gray-900">
-          {course.name}
-        </h1>
-
-        <p className="mt-4 max-w-3xl text-gray-600">
-          {course.overview}
-        </p>
-
-        <div className="flex gap-6 mt-6 text-sm text-gray-600">
-          <span className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-[#1c398e]" />
-            {fmtMinutes(totalMinutes)}
-          </span>
-          <span className="flex items-center gap-2">
-            <User className="w-4 h-4 text-[#1c398e]" />
-            {course.teacher}
-          </span>
+          <div>{/* Refresh booking status removed per request */}</div>
         </div>
-      </div>
 
-      {/* Layout */}
-      <div className="max-w-7xl mx-auto grid grid-cols-1 xl:grid-cols-3 gap-8">
-        {/* Video */}
-        <div className="xl:col-span-2 bg-white rounded-2xl shadow-sm overflow-hidden animate-fade-up">
-          {videoUrl ? (
-            isDirectVideo(videoUrl) ? (
-              <video controls className="w-full h-[460px]" src={videoUrl} />
-            ) : (
-              <iframe
-                className="w-full h-[460px]"
-                src={videoUrl}
-                allowFullScreen
-              />
-            )
-          ) : (
-            <div className="h-[460px] grid place-items-center text-gray-400">
-              <Play className="w-10 h-10 mb-2" />
-              Select a lecture to start
+        <div className={courseDetailStyles.header}>
+          <div className={courseDetailStyles.badge}>
+            <BookOpen className={courseDetailStyles.badgeIcon} />
+            <span className={courseDetailStyles.badgeText}>
+              {courseIsFree ? "Free Course" : "Premium Course"}
+            </span>
+          </div>
+
+          <h1 className={courseDetailStyles.title}>{course.name}</h1>
+
+          {course.overview && (
+            <div className={courseDetailStyles.overviewContainer}>
+              <div className={courseDetailStyles.overview}>
+                <div className={courseDetailStyles.overviewHeader}>
+                  <Target className={courseDetailStyles.overviewIcon} />
+                  <h3 className={courseDetailStyles.overviewTitle}>
+                    Course Overview
+                  </h3>
+                </div>
+                <p className={courseDetailStyles.overviewText}>
+                  {course.overview}
+                </p>
+              </div>
             </div>
           )}
 
-          <div className="p-6">
-            <h3 className="text-xl font-semibold">
-              {video?.title || video?.name}
-            </h3>
-            <p className="text-gray-600 mt-1">
-              {video?.description}
-            </p>
+          <div
+            className={`${courseDetailStyles.statsContainer} animation-delay-300`}
+          >
+            <div className={courseDetailStyles.statItem}>
+              <Clock className={courseDetailStyles.statIcon} />
+              <span className={courseDetailStyles.statText}>
+                {fmtMinutes(totalMinutes)}
+              </span>
+            </div>
+            <div className={courseDetailStyles.statItem}>
+              <BookOpen className={courseDetailStyles.statIcon} />
+              <span className={courseDetailStyles.statText}>
+                {(course.lectures || []).length} lectures
+              </span>
+            </div>
+
+            <div
+              className={`${courseDetailStyles.teacherStat} ${
+                isTeacherAnimating ? courseDetailStyles.teacherAnimating : ""
+              }`}
+            >
+              <User className={courseDetailStyles.statIcon} />
+              <span className={courseDetailStyles.statText}>
+                {course.teacher}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Sidebar */}
-        <aside className="space-y-6 animate-fade-up">
-          {/* Content */}
-          <div className="bg-white rounded-2xl shadow-sm p-5">
-            <h4 className="font-semibold mb-4">Course Content</h4>
-
-            {course.Lectures.map((lec) => (
-              <div key={lec.id} className="border-b last:border-none">
-                <button
-                  onClick={() =>
-                    setExpanded((s) =>
-                      s.has(lec.id)
-                        ? new Set([...s].filter((x) => x !== lec.id))
-                        : new Set(s).add(lec.id)
-                    )
-                  }
-                  className="w-full flex justify-between items-center py-3"
-                >
-                  <span className="font-medium">{lec.title}</span>
-                  <ChevronDown
-                    className={`w-4 h-4 transition ${
-                      expanded.has(lec.id) ? "rotate-180" : ""
-                    }`}
+        <div className={courseDetailStyles.mainGrid}>
+          <div className={courseDetailStyles.videoSection}>
+            <div className={courseDetailStyles.videoContainer}>
+              {currentEmbedUrl ? (
+                currentIsDirectVideo ? (
+                  <video
+                    controls
+                    src={currentEmbedUrl}
+                    className={courseDetailStyles.video}
                   />
-                </button>
-
-                {expanded.has(lec.id) &&
-                  lec.Chapters.map((ch) => (
+                ) : (
+                  <iframe
+                    title={
+                      currentVideoContent?.title ||
+                      currentVideoContent?.name ||
+                      "video-player"
+                    }
+                    src={appendAutoplay(
+                      currentEmbedUrl,
+                      isLoggedIn && isEnrolled
+                    )}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className={courseDetailStyles.iframe}
+                  />
+                )
+              ) : (
+                <div className={courseDetailStyles.videoPlaceholder}>
+                  <div className={courseDetailStyles.videoPlaceholderBg}>
                     <div
-                      key={ch.id}
+                      className={courseDetailStyles.videoPlaceholderOrb1}
+                    ></div>
+                    <div
+                      className={courseDetailStyles.videoPlaceholderOrb2}
+                    ></div>
+                  </div>
+                  <div className={courseDetailStyles.videoPlaceholderContent}>
+                    <div className={courseDetailStyles.videoPlaceholderIcon}>
+                      <Play
+                        className={courseDetailStyles.videoPlaceholderPlayIcon}
+                      />
+                    </div>
+                    <p className={courseDetailStyles.videoPlaceholderText}>
+                      Select a lecture or chapter to play video
+                    </p>
+                    {(!isLoggedIn || !isEnrolled) && (
+                      <p className={courseDetailStyles.videoPlaceholderSubtext}>
+                        {!isLoggedIn
+                          ? "Login required"
+                          : bookingPendingPayment
+                          ? "Payment pending"
+                          : "Enrollment required"}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className={courseDetailStyles.videoInfo}>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className={courseDetailStyles.videoTitle}>
+                      {currentVideoContent?.title ||
+                        currentVideoContent?.name ||
+                        "Select content to play"}
+                    </h3>
+                    <p className={courseDetailStyles.videoDescription}>
+                      {selectedContent.type === "chapter"
+                        ? `Part of: ${selectedLecture?.title}`
+                        : currentVideoContent?.description}
+                    </p>
+                    {currentVideoContent?.durationMin && (
+                      <div className={courseDetailStyles.videoMeta}>
+                        <div className={courseDetailStyles.durationBadge}>
+                          <Clock className={courseDetailStyles.durationIcon} />
+                          <span>
+                            {fmtMinutes(currentVideoContent.durationMin)}
+                          </span>
+                        </div>
+                        {selectedContent.type === "chapter" && (
+                          <span className={courseDetailStyles.chapterBadge}>
+                            Chapter
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {isLoggedIn && isEnrolled && selectedContent.chapterId && (
+                  <div className={courseDetailStyles.completionSection}>
+                    <button
                       onClick={() =>
-                        setSelected({
-                          lectureId: lec.id,
-                          chapterId: ch.id,
-                        })
+                        toggleChapterCompletion(selectedContent.chapterId)
                       }
-                      className={`flex justify-between items-center px-3 py-2 rounded-lg cursor-pointer text-sm ${
-                        selected?.chapterId === ch.id
-                          ? "bg-[#1c398e]/10 text-[#1c398e]"
-                          : "hover:bg-slate-100"
+                      className={`${courseDetailStyles.completionButton} ${
+                        completedChapters.has(selectedContent.chapterId)
+                          ? courseDetailStyles.completionButtonCompleted
+                          : courseDetailStyles.completionButtonIncomplete
                       }`}
                     >
-                      <span>{ch.name}</span>
-                      <span className="text-gray-400">
-                        {fmtMinutes(ch.totalMinutes)}
-                      </span>
-                    </div>
-                  ))}
+                      {completedChapters.has(selectedContent.chapterId) ? (
+                        <>
+                          <CheckCircle
+                            className={courseDetailStyles.completionIcon}
+                          />
+                          Chapter Completed
+                        </>
+                      ) : (
+                        <>
+                          <Circle
+                            className={courseDetailStyles.completionIcon}
+                          />
+                          Mark as Complete
+                        </>
+                      )}
+                    </button>
+                    <p className={courseDetailStyles.completionText}>
+                      {completedChapters.has(selectedContent.chapterId)
+                        ? "Great job! You've completed this chapter."
+                        : "Click to mark this chapter as completed."}
+                    </p>
+                  </div>
+                )}
               </div>
-            ))}
-          </div>
-
-          {/* Progress */}
-          <div className="bg-white rounded-2xl shadow-sm p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <Award className="w-5 h-5 text-[#1c398e]" />
-              <h4 className="font-semibold">Your Progress</h4>
-            </div>
-
-            <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
-              <div
-                className="h-full bg-[#1c398e] transition-all"
-                style={{
-                  width: `${
-                    (completed .size /
-                      (course.Lectures.flatMap((l) => l.Chapters).length ||
-                        1)) *
-                    100
-                  }%`,
-                }}
-              />
             </div>
           </div>
-        </aside>
+
+          <aside className={courseDetailStyles.sidebar}>
+            <div className={courseDetailStyles.contentCard}>
+              <div className={courseDetailStyles.contentHeader}>
+                <h4 className={courseDetailStyles.contentTitle}>
+                  Course Content
+                </h4>
+                {courseIsFree && (
+                  <div className={courseDetailStyles.freeBadge}>
+                    <Sparkles className={courseDetailStyles.freeBadgeIcon} />
+                    Free Access
+                  </div>
+                )}
+              </div>
+
+              <div className={courseDetailStyles.contentList}>
+                {(course.lectures || []).map((lecture, index) => (
+                  <div
+                    key={lecture.id ?? lecture._id ?? index}
+                    className={courseDetailStyles.lectureItem}
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <div
+                      className={`${courseDetailStyles.lectureHeader} ${
+                        expandedLectures.has(lecture.id ?? lecture._id)
+                          ? courseDetailStyles.lectureHeaderExpanded
+                          : courseDetailStyles.lectureHeaderCollapsed
+                      }`}
+                      onClick={() =>
+                        onLectureHeaderClick(lecture.id ?? lecture._id)
+                      }
+                    >
+                      <div className={courseDetailStyles.lectureHeaderContent}>
+                        <div className={courseDetailStyles.lectureLeftSection}>
+                          <div
+                            className={`${courseDetailStyles.lectureChevron} ${
+                              expandedLectures.has(lecture.id ?? lecture._id)
+                                ? courseDetailStyles.lectureChevronExpanded
+                                : courseDetailStyles.lectureChevronCollapsed
+                            }`}
+                          >
+                            <ChevronDown className="w-5 h-5" />
+                          </div>
+                          <div className={courseDetailStyles.lectureInfo}>
+                            <div className={courseDetailStyles.lectureTitle}>
+                              {lecture.title}
+                            </div>
+                            <div className={courseDetailStyles.lectureMeta}>
+                              <div
+                                className={courseDetailStyles.lectureDuration}
+                              >
+                                <Clock className="w-4 h-4" />
+                                {fmtMinutes(lecture.durationMin)}
+                              </div>
+                              <span
+                                className={
+                                  courseDetailStyles.lectureChapterCount
+                                }
+                              >
+                                {lecture.chapters?.length || 0} chapters
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {expandedLectures.has(lecture.id ?? lecture._id) && (
+                      <div className={courseDetailStyles.chapterList}>
+                        {(lecture.chapters || []).map((chapter) => {
+                          const chapId = chapter.id ?? chapter._id;
+                          const isCompleted = completedChapters.has(chapId);
+                          const isSelected =
+                            selectedContent.chapterId === chapId &&
+                            selectedContent.lectureId ===
+                              (lecture.id ?? lecture._id);
+                          return (
+                            <div
+                              key={chapId}
+                              className={`${courseDetailStyles.chapterItem} ${
+                                isSelected
+                                  ? courseDetailStyles.chapterSelected
+                                  : courseDetailStyles.chapterNotSelected
+                              } ${
+                                !isEnrolled
+                                  ? courseDetailStyles.chapterDisabled
+                                  : ""
+                              }`}
+                              onClick={() =>
+                                handleContentSelect(
+                                  lecture.id ?? lecture._id,
+                                  chapId
+                                )
+                              }
+                            >
+                              <div
+                                className={courseDetailStyles.chapterContent}
+                              >
+                                <div
+                                  className={
+                                    courseDetailStyles.chapterLeftSection
+                                  }
+                                >
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (isEnrolled)
+                                        toggleChapterCompletion(chapId, e);
+                                    }}
+                                    className={`${
+                                      courseDetailStyles.completionToggle
+                                    } ${
+                                      isCompleted
+                                        ? courseDetailStyles.completionToggleCompleted
+                                        : courseDetailStyles.completionToggleIncomplete
+                                    }`}
+                                    disabled={!isEnrolled}
+                                  >
+                                    {isCompleted ? (
+                                      <CheckCircle
+                                        className={
+                                          courseDetailStyles.completionIconSmall
+                                        }
+                                      />
+                                    ) : (
+                                      <Circle
+                                        className={
+                                          courseDetailStyles.completionIconSmall
+                                        }
+                                      />
+                                    )}
+                                  </button>
+                                  <div
+                                    className={courseDetailStyles.chapterText}
+                                  >
+                                    <div
+                                      className={`${
+                                        courseDetailStyles.chapterName
+                                      } ${
+                                        isSelected
+                                          ? courseDetailStyles.chapterNameSelected
+                                          : courseDetailStyles.chapterNameNotSelected
+                                      }`}
+                                    >
+                                      {chapter.name}
+                                    </div>
+                                    <div
+                                      className={
+                                        courseDetailStyles.chapterTopic
+                                      }
+                                    >
+                                      {chapter.topic}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <span
+                                    className={
+                                      courseDetailStyles.chapterDuration
+                                    }
+                                  >
+                                    {fmtMinutes(chapter.durationMin)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div
+              className={`${courseDetailStyles.pricingCard} animation-delay-200`}
+            >
+              <div className={courseDetailStyles.pricingHeader}>
+                <h5 className={courseDetailStyles.pricingTitle}>Pricing</h5>
+              </div>
+
+              <div className={courseDetailStyles.pricingAmount}>
+                <div className={courseDetailStyles.price}>
+                  {courseIsFree
+                    ? "Free"
+                    : salePrice != null
+                    ? formatCurrency(salePrice)
+                    : originalPrice != null
+                    ? formatCurrency(originalPrice)
+                    : "Free"}
+                </div>
+
+                {!courseIsFree && hasDiscount && (
+                  <div className={courseDetailStyles.originalPrice}>
+                    {formatCurrency(originalPrice)}
+                  </div>
+                )}
+                {!courseIsFree && hasDiscount && (
+                  <div className={courseDetailStyles.discountBadge}>
+                    {Math.round(
+                      ((originalPrice - salePrice) / originalPrice) * 100
+                    )}
+                    % off
+                  </div>
+                )}
+              </div>
+
+              <p className={courseDetailStyles.pricingDescription}>
+                {courseIsFree
+                  ? "Free access · Learn anytime"
+                  : "One-time payment · Lifetime access "}
+              </p>
+
+              <div className="mt-6">
+                {/* NEW: show Enroll button for both free and paid courses until server confirms booking */}
+                {!isEnrolled ? (
+                  bookingPendingPayment ? (
+                    <div className="flex flex-col gap-2">
+                      <button
+                        onClick={() => handleEnroll()}
+                        disabled={isEnrolling}
+                        className={`${courseDetailStyles.enrollButton} ${courseDetailStyles.enrollPaidButton}`}
+                      >
+                        {isEnrolling ? (
+                          <>
+                            <div
+                              className={courseDetailStyles.enrollSpinner}
+                            ></div>
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            <Play className={courseDetailStyles.enrollIcon} />
+                            {courseIsFree
+                              ? "Enroll (Free)"
+                              : "Complete Payment"}
+                            <span>
+                              <ArrowRight
+                                className={courseDetailStyles.enrollArrow}
+                              />
+                            </span>
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => navigate("/my-courses")}
+                        className="text-sm underline"
+                      >
+                        View booking (My Courses)
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleEnroll}
+                      disabled={isEnrolling}
+                      className={`${courseDetailStyles.enrollButton} ${courseDetailStyles.enrollPaidButton}`}
+                    >
+                      {isEnrolling ? (
+                        <>
+                          <div
+                            className={courseDetailStyles.enrollSpinner}
+                          ></div>
+                          Enrolling...
+                        </>
+                      ) : (
+                        <>
+                          <Play className={courseDetailStyles.enrollIcon} />
+                          {courseIsFree ? "Enroll (Free)" : "Enroll Now"}
+                          <span>
+                            <ArrowRight
+                              className={courseDetailStyles.enrollArrow}
+                            />
+                          </span>
+                        </>
+                      )}
+                    </button>
+                  )
+                ) : (
+                  <button
+                    disabled
+                    className={`${courseDetailStyles.enrollButton} ${courseDetailStyles.enrolledButton}`}
+                  >
+                    <CheckCircle className={courseDetailStyles.enrollIcon} />
+                    Enrolled
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div
+              className={`${courseDetailStyles.progressCard} animation-delay-400`}
+            >
+              <div className={courseDetailStyles.progressHeader}>
+                <Award className={courseDetailStyles.progressIcon} />
+                <h5 className={courseDetailStyles.progressTitle}>
+                  Your Progress
+                </h5>
+              </div>
+              <div className={courseDetailStyles.progressContent}>
+                <div>
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-gray-600">Course Completion</span>
+                    <span className="font-semibold text-indigo-600">
+                      {Math.round(
+                        (completedChapters.size /
+                          (course.lectures?.flatMap((l) => l.chapters || [])
+                            .length || 1)) *
+                          100
+                      )}
+                      %
+                    </span>
+                  </div>
+                  <div className={courseDetailStyles.progressBar}>
+                    <div
+                      className={courseDetailStyles.progressFill}
+                      style={{
+                        width: `${
+                          (completedChapters.size /
+                            (course.lectures?.flatMap((l) => l.chapters || [])
+                              .length || 1)) *
+                          100
+                        }%`,
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className={courseDetailStyles.progressStats}>
+                  <div className={courseDetailStyles.progressStat}>
+                    <div className={courseDetailStyles.progressStatValue}>
+                      {fmtMinutes(totalMinutes)}
+                    </div>
+                    <div className={courseDetailStyles.progressStatLabel}>
+                      Total Duration
+                    </div>
+                  </div>
+                  <div className={courseDetailStyles.progressStat}>
+                    <div className={courseDetailStyles.progressStatValue}>
+                      {completedChapters.size}
+                    </div>
+                    <div className={courseDetailStyles.progressStatLabel}>
+                      Completed
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
       </div>
 
-      {/* Animations */}
-      <style>
-        {`
-          @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          @keyframes slideIn {
-            from { opacity: 0; transform: translateX(30px); }
-            to { opacity: 1; transform: translateX(0); }
-          }
-          .animate-fade-up { animation: fadeUp .6s ease both; }
-          .animate-slide-in { animation: slideIn .4s ease both; }
-        `}
-      </style>
+      <style jsx>{courseDetailStyles.animations}</style>
     </div>
   );
 };

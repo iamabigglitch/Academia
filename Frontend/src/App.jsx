@@ -7,6 +7,7 @@ import Contact from "./pages/private/Contact.jsx";
 import NavBar from "./components/Navbar.jsx";
 import Faculty from "./pages/private/Faculty.jsx";
 import Courses from "./pages/private/Courses.jsx";
+import MyCourses from "./pages/private/MyCoursesPage.jsx";
 import { ArrowUp } from "lucide-react";
 import CourseDetailPageHome from "./pages/private/CourseDetailPageHome.jsx";
 import CourseDetailPage from "./pages/private/CourseDetailPage.jsx";
@@ -14,6 +15,8 @@ import Login from "./pages/public/Login.jsx";
 import Signup from "./pages/public/Signup.jsx";
 import Add from "./pages/Admin/private/Add.jsx";
 import List from "./pages/Admin/private/List.jsx";
+import Booking from "./pages/Admin/private/Booking.jsx";
+import MyCoursesPage from "./pages/private/MyCoursesPage.jsx";
 
 //to protect the route
 const ProtectedRoute = ({ children }) => {
@@ -84,6 +87,7 @@ const App = () => {
         <Route path= "/contact" element={<Contact/>} />
         <Route path= "/faculty" element={<Faculty/>} />
         <Route path= "/courses" element={<Courses/>} />
+        <Route path= "/mycourses" element={<MyCoursesPage/>} />
         <Route path = "/login" element={<Login/>}/>
         <Route path = "/register" element={<Signup/>}/>
         <Route path="/course/:id" element={ <ProtectedRoute><CourseDetailPageHome/></ProtectedRoute>}/>
@@ -92,6 +96,7 @@ const App = () => {
         {/* <Route path="/" element={<Home />} /> //Admin Side  */}
         {/* <Route path="/addcourse" element={ <Add/>} />
         <Route path="/listcourse" element={ <List/>} /> */}
+        {/* <Route path = "/booking" element= {< Booking />} /> */}
         
       </Routes>
          <ScrollTopButton threshold={250}  />

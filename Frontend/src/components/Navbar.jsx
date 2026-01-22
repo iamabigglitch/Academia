@@ -1,10 +1,10 @@
 import React, { useState, useRef } from "react";
 import { navbarStyles } from "../assets/dummyStyles";
 import logo from "../assets/logo.png";
-import { BookOpen, Home, BookMarked, Users, Phone, Menu, X, } from "lucide-react";
+import { BookOpen, Home, BookMarked, Users, Phone, Menu, X, BookOpenText, } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
-const navItems = [
+const baseNav = [
   { name: "Home", icon: Home, href: "/home" },
   { name: "Courses", icon: BookOpen, href: "/courses" },
   { name: "About", icon: BookMarked, href: "/about" },
@@ -19,6 +19,11 @@ const NavBar = () => {
   const [showNavbar, setShowNavbar] = useState(true);
 
   const menuRef = useRef(null);
+
+  const navItems = isSignedIn ? [
+    ...baseNav,
+    {name: "My Courses", icon: BookOpenText, href: "/mycourses"},
+  ] : baseNav;
 
   const isAuthenticated = false; // change to true to see avatar
   const user = {

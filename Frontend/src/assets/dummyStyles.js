@@ -1,6 +1,6 @@
 export const bannerStyles = {
   // Layout and container styles
-  container: "relative md:pt-25 xl:pt-25 pt-21 sm:min-h-[520px] md:min-h-[560px] lg:min-h-[600px] pt-6 sm:pt-20 lg:pt-25 flex items-center justify-center px-4 sm:px-6 md:px-8 lg:px-12 py-8 bg-gradient-to-br from-blue-50 via-white to-purple-50 animate-gradient-bg rounded-3xl",
+  container: "relative md:pt-25 xl:pt-25 pt-21 sm:min-h-[520px] md:min-h-[560px] lg:min-h-[600px] pt-6 sm:pt-8 lg:pt-25 flex items-center justify-center px-4 sm:px-6 md:px-8 lg:px-12 py-8 bg-gradient-to-br from-blue-50 via-white to-purple-50 animate-gradient-bg rounded-3xl",
   
   // Floating icons wrapper
   floatingIconsWrapper: "absolute inset-0 pointer-events-none overflow-visible z-0",
@@ -26,8 +26,16 @@ export const bannerStyles = {
   headingSpan1: "block text-transparent bg-clip-text bg-gradient-to-r from-purple-500 via-pink-500 to-blue-500 animate-text-gradient",
   headingSpan2: "block text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 animate-text-gradient animation-delay-300",
   
+  videoModal: {
+    overlay: "fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fadeIn",
+    container: "relative w-[90%] max-w-3xl aspect-video rounded-2xl overflow-hidden shadow-2xl border border-white/20",
+    iframe: "w-full h-full",
+    closeButton: "absolute top-3 cursor-pointer right-3 bg-white/90 hover:bg-white text-black font-bold rounded-full p-2 shadow-lg transition-all duration-200",
+    closeIcon: "w-5 h-5"
+  },
+
   // Description
-  description: "text-lg sm:text-xl font-body italic font-[pacifico] text-gray-700 leading-relaxed mt-2 sm:mt-4",
+  description: "text-lg sm:text-xl font-body italic font-[pacifico] font-semibold text-gray-700 leading-relaxed mt-2 sm:mt-4",
   
   // Features
   featuresGrid: "grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 animate-fade-in opacity-0 animation-delay-700",
@@ -43,7 +51,7 @@ export const bannerStyles = {
   
   // Image
   imageContainer: "flex items-center justify-center",
-  image: "w-full max-w-[220px] sm:max-w-sm md:max-w-md lg:max-w-sm h-auto rounded-2xl shadow-2xl border border-white/70"
+  image: "w-full max-w-[220px] sm:max-w-sm md:max-w-md lg:max-w-sm h-auto rounded-2xl shadow-2xl border border-white/70 animate-float"
 };
 
 // Animation delays
@@ -272,6 +280,7 @@ export const customStyles = `
 
 `;
 
+// src/assets/dummyStyles.js
 export const aboutUsStyles = {
   // Layout & Container
   container: "min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50",
@@ -289,8 +298,8 @@ export const aboutUsStyles = {
   trustIcon: "w-5 h-5 mr-2 fill-current",
   
   // Typography
-  mainHeading: "text-5xl md:text-6xl font-semibold text-[#0f172a]",
-  subHeading: "text-lg md:text-xl text-[#334155] max-w-3xl mx-auto",
+  mainHeading: "text-5xl md:text-7xl lg:text-8xl font-bold text-white mb-6 font-serif tracking-tight drop-shadow-lg",
+  subHeading: "text-xl md:text-2xl text-blue-100 max-w-4xl mx-auto leading-relaxed mb-8 drop-shadow",
   inlineHighlight: "inline-block ml-2 px-2 py-1 text-blue-100 rounded-full font-semibold",
   
   // Stats
@@ -309,13 +318,13 @@ export const aboutUsStyles = {
   sectionBadge: "inline-flex items-center px-4 py-2 rounded-full bg-white shadow-lg mb-6",
   sectionIcon: "w-5 h-5 mr-2 text-gradient bg-gradient-to-r",
   sectionBadgeText: "font-semibold text-gray-700",
-  sectionTitle: "text-3xl md:text-4xl font-semibold text-[#0f172a]",
-  sectionDescription: "text-base md:text-lg text-[#64748b] leading-relaxed",
+  sectionTitle: "text-4xl sm:text-5xl md:text-5xl lg:text-5xl xl:text-5xl font-bold text-gray-900 mb-6 font-serif",
+  sectionDescription: "text-xl text-gray-600 mb-8 leading-relaxed",
   featuresContainer: "space-y-4 mb-8",
   featureItem: "flex items-center gap-4 group",
   featureIcon: "w-8 h-8 bg-gradient-to-r rounded-full flex items-center justify-center flex-shrink-0 transition-transform",
   featureIconSvg: "w-5 h-5 text-white",
-  featureText: "text-base text-[#1e293b]",
+  featureText: "text-lg text-gray-700 font-medium",
   
   // Values Section
   valuesSection: "py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-50 to-blue-50",
@@ -334,7 +343,35 @@ export const aboutUsStyles = {
   valueFeatureItem: "flex items-center gap-3 text-gray-700",
   valueFeatureDot: "w-2 h-2 bg-gradient-to-r rounded-full",
   valueUnderline: "absolute bottom-0 left-0 w-0 group-hover:w-full h-1 bg-gradient-to-r transition-all duration-500",
-
+  
+  // Team Section
+  teamSection: "py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 to-indigo-100",
+  teamHeader: "text-center mb-16",
+  teamTitle: "text-2xl sm:text-4xl md:text-4xl lg:text-4xl xl:text-4xl font-bold text-gray-900 mb-4 font-serif",
+  teamSubtitle: "text-xl text-gray-600 max-w-2xl mx-auto",
+  teamGrid: "grid md:grid-cols-2 lg:grid-cols-4 gap-8",
+  teamMember: "text-center font-[pacifico] group cursor-pointer",
+  teamImageContainer: "relative mb-6",
+  teamImage: "w-48 h-48 mx-auto rounded-full transform transition-all duration-500",
+  teamName: "text-2xl font-bold text-gray-900 mb-2 transition-colors",
+  teamRole: "text-blue-600 italic font-semibold mb-2",
+  teamBio: "text-gray-600 mb-4",
+  
+  // Testimonials Section
+  testimonialsSection: "py-20 px-4 sm:px-6 lg:px-8 bg-white",
+  testimonialsHeader: "text-center mb-16",
+  testimonialsTitle: "text-2xl sm:text-4xl md:text-4xl lg:text-4xl xl:text-4xl font-bold text-gray-900 mb-4 font-serif",
+  testimonialsSubtitle: "text-xl text-gray-600 max-w-2xl mx-auto",
+  testimonialsGrid: "grid md:grid-cols-3 gap-8",
+  testimonialCard: "bg-gray-50 p-8 rounded-3xl hover:shadow-2xl transition-all duration-300 group border border-gray-100",
+  testimonialStars: "flex items-center gap-2 mb-4",
+  testimonialStar: "w-5 h-5 text-yellow-400 fill-current",
+  testimonialText: "text-gray-700 mb-6 leading-relaxed italic",
+  testimonialAuthor: "flex items-center gap-4",
+  testimonialAvatar: "w-12 h-12 rounded-full object-cover",
+  testimonialAuthorName: "font-semibold text-gray-900",
+  testimonialAuthorRole: "text-gray-600 text-sm",
+  
   // CTA Section
   ctaSection: "py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-blue-200 via-purple-500 to-indigo-300 relative overflow-hidden",
   ctaOrb1: "absolute top-0 left-0 w-72 h-72 bg-white/50 rounded-full -translate-x-1/2 -translate-y-1/2 animate-pulse",
@@ -343,7 +380,7 @@ export const aboutUsStyles = {
   ctaTitle: "text-5xl md:text-6xl font-bold text-white mb-6 font-serif",
   ctaDescription: "text-xl text-blue-100 mb-12 max-w-2xl mx-auto leading-relaxed",
   ctaButtons: "flex flex-col sm:flex-row gap-6 justify-center items-center mb-8",
-  ctaButton:  "bg-[#0f172a] text-white px-8 py-4 rounded-xl hover:bg-[#1e293b] transition-colors",
+  ctaButton: "group bg-transparent cursor-pointer border-2 border-white text-white px-12 py-5 rounded-2xl font-bold text-lg hover:bg-white/10 transition-all duration-300 flex items-center gap-3 backdrop-blur-sm hover:shadow-2xl",
   ctaButtonIcon: "w-5 h-5 group-hover:scale-110 transition-transform"
 };
 
@@ -376,7 +413,7 @@ export const aboutUsAnimations = `
   }
 `;
 
-
+// Add these to the existing dummyStyles.js file
 export const contactStyles = {
   // Layout & Container
   container: "min-h-screen bg-gradient-to-br from-white to-gray-50 py-10 px-4 sm:px-6 md:px-10 lg:px-12 overflow-x-hidden",
@@ -391,7 +428,10 @@ export const contactStyles = {
   
   // Contact Form
   formContainer: "relative order-2 lg:order-1",
-  form: "relative rounded-2xl shadow-lg p-6 sm:p-8 border border-gray-100",
+  formGlow1: "absolute -inset-1 bg-gradient-to-r from-purple-300 to-blue-500 rounded-2xl opacity-75 blur-sm animate-pulse",
+  formGlow2: "absolute -inset-1 bg-gradient-to-r from-purple-300 to-blue-500 rounded-2xl opacity-50 animate-pulse delay-75",
+  formGlow3: "absolute -inset-1 bg-gradient-to-r from-purple-300 to-blue-500 rounded-2xl opacity-25 animate-pulse delay-150",
+  form: "relative bg-white rounded-2xl shadow-lg p-6 sm:p-8 border border-gray-100",
   formElements: "space-y-6",
   
   // Form Grid
@@ -444,6 +484,7 @@ export const contactStyles = {
   footerText: "text-gray-700 text-sm sm:text-base"
 };
 
+// Add these to your existing assets/dummyStyles.js
 
 export const coursePageStyles = {
   // Layout and container styles
@@ -455,11 +496,11 @@ export const coursePageStyles = {
   
   // Search bar
   searchContainer: "max-w-2xl mx-auto mb-8 md:mb-12 relative group px-2 sm:px-0",
-  searchGradient: "hidden",
-  searchInputContainer: "relative bg-white border border-gray-300 hover:border-blue-400 rounded-3xl shadow-lg transition-all duration-300",
+  searchGradient: "absolute -inset-1 bg-gradient-to-r from-purple-500 via-blue-500 to-indigo-500 rounded-3xl blur-lg opacity-20 group-hover:opacity-60 transition-opacity duration-700 animate-gradient-x",
+  searchInputContainer: "relative bg-white/80 backdrop-blur-lg border border-transparent group-hover:border-blue-400 rounded-3xl shadow-xl transition-all duration-500",
   searchIconContainer: "absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none",
-  searchIcon: "w-5 h-5 text-gray-400 group-hover:text-blue-500 transition-colors duration-300",
-  searchInput: "w-full pl-12 pr-10 py-3 rounded-3xl bg-transparent text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 font-medium text-sm sm:text-base",
+  searchIcon: "w-5 h-5 text-blue-500 group-hover:text-indigo-600 transition-colors duration-500",
+  searchInput: "w-full pl-12 pr-10 py-3 rounded-3xl bg-transparent text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-0 font-medium text-sm sm:text-base",
   clearButton: "absolute inset-y-0 right-0 pr-3 sm:pr-4 flex items-center text-gray-400 hover:text-red-500 transition-colors duration-300",
   
   // Results count
@@ -509,10 +550,11 @@ export const coursePageStyles = {
   showMoreText: "text-sm font-medium text-gray-800"
 };
 
+// Add these to your existing assets/dummyStyles.js
 
 export const myCoursesStyles = {
   // Layout and container styles
-  pageContainer: "min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 font-[pacifico]",
+  pageContainer: "min-h-screen pt-25 bg-gradient-to-br from-blue-50 to-indigo-100 py-8 font-[pacifico]",
   mainContainer: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
   
   // Header
@@ -521,25 +563,25 @@ export const myCoursesStyles = {
   emptyText: "text-gray-600 text-lg",
   
   // Grid layout
-  grid: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8",
+  grid: "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 md:grid-cols-2 xl:grid-cols-4 gap-8",
   
   // Course card
   courseCard: "group bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border border-white/50 cursor-pointer",
   imageContainer: "relative overflow-hidden",
-  courseImage: "w-full h-48 object-contain pb-7.5 lg:pb-6 xl:pb-8.5 transition-transform duration-700",
+  courseImage: "w-full h-48 object-contain pb-7.5 lg:pb-6 xl:pb-8.5 md:object-cover transition-transform duration-700",
   courseContent: "p-5",
   
   // Course info
   courseName: "text-lg font-bold text-gray-800 mb-3 line-clamp-2 transition-colors duration-300",
-  infoContainer: "flex items-center justify-between mb-4",
+  infoContainer: "flex flex flex-col gap-2   justify-between mb-4",
   
   // Rating
-  ratingContainer: "flex items-center space-x-1 bg-yellow-50 rounded-full px-3 py-1 border border-yellow-100",
+  ratingContainer: "flex  items-center space-x-1 bg-yellow-50 rounded-full px-3 py-1 border border-yellow-100",
   ratingIcon: "w-4 h-4 text-yellow-500 fill-current",
   ratingText: "text-sm font-semibold text-gray-800",
   
   // Teacher
-  teacherContainer: "flex items-center space-x-1 bg-blue-50 rounded-full px-3 py-1 border border-blue-100",
+  teacherContainer: "flex items-center space-x-1 px-3 py-1",
   teacherIcon: "w-4 h-4 text-blue-600",
   teacherText: "text-sm font-medium text-gray-800 truncate max-w-[80px]",
   
@@ -597,12 +639,11 @@ export const coursePageCustomStyles = `
 
 // Add these to the existing dummyStyles.js file
 export const facultyStyles = {
-
   // Layout & Container
   container: "min-h-screen pt-12 sm:pt-16 bg-gradient-to-br from-blue-50 via-white to-purple-50",
   
   // Header Section
-  header: "relative py-12 sm:py-16 px-4 text-center bg-gradient-to-br from-blue-100 via-white to-purple-50",
+  header: "relative py-12 sm:py-16 px-4 text-center bg-gradient-to-br from-blue-50 via-white to-purple-50",
   headerContent: "relative z-10 max-w-4xl mx-auto",
   title: "text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-blue-500 mb-3 sm:mb-4 font-cinematic tracking-wide",
   titleDivider: "w-20 sm:w-28 h-1 bg-gradient-to-r from-blue-200 to-sky-500 mx-auto mb-4 rounded-full",
@@ -643,14 +684,12 @@ starIcon: "w-5 h-5",
 
   
   // Social Icons
- 
-socialContainer: "flex justify-center gap-3 sm:gap-4 mt-2",
-socialIcon: "transform transition-all duration-300 hover:scale-105 hover:-translate-y-1 p-3 sm:p-3.5 rounded-2xl shadow-md hover:shadow-lg",
-socialIconEmail: "bg-gradient-to-br from-slate-100 to-slate-200 hover:from-slate-200 hover:to-slate-300",
-socialIconLinkedin: "bg-gradient-to-br from-sky-100 to-sky-200 hover:from-sky-200 hover:to-sky-300",
-socialIconInstagram: "bg-gradient-to-br from-pink-100 to-purple-200 hover:from-pink-200 hover:to-purple-300",
-socialIconSvg:"w-4 h-4 sm:w-5 sm:h-5 text-gray-900",
-
+  socialContainer: "flex justify-center gap-3 sm:gap-4 mt-2",
+  socialIcon: "transform transition-all duration-300 hover:scale-105 hover:-translate-y-1 p-3 sm:p-3.5 rounded-2xl shadow-lg hover:shadow-xl",
+  socialIconEmail: "bg-gradient-to-br from-green-100 to-green-300",
+  socialIconLinkedin: "bg-gradient-to-br from-sky-100 to-blue-300",
+  socialIconInstagram: "bg-gradient-to-br from-purple-200 to-pink-600",
+  socialIconSvg: "w-4 h-4 sm:w-5 sm:h-5 text-gray-900",
   
   // CSS Animations and Utilities
   animations: `
@@ -706,7 +745,7 @@ export const footerStyles = {
   contactIconContainer: "flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center mr-3 sm:mr-4 transform transition-transform duration-300 shadow-lg border border-white overflow-hidden",
   contactIcon: "w-4 h-4",
   contactTextContainer: "min-w-0",
-  contactTextPrimary: "font-medium text-sm break-words",
+  contactTextPrimary: "font-medium text-sm break-words xl:text-xs",
   contactTextSecondary: "text-xs text-slate-500",
   
   // Social section
@@ -921,7 +960,76 @@ export const navbarStyles = {
 };
 
 
-// Add these to the existing dummyStyles.js file
+// Add these to your existing assets/dummyStyles.js
+
+export const signUpPageStyles = {
+  // Layout and container styles
+  pageContainer: "min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-indigo-50 to-cyan-50 p-4 relative overflow-hidden",
+  
+  // Back button
+  backButton: "absolute top-6 left-6 inline-flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-800 z-10 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/40 transition-all hover:bg-white hover:shadow-lg",
+  backButtonIcon: "w-5 h-5",
+  
+  // Main layout
+  mainLayout: "w-full pt-20 max-w-6xl flex flex-col md:flex-row lg:flex-row items-center justify-center gap-12",
+  
+  // Animation section
+  animationContainer: "flex items-center justify-center w-full order-1 md:order-none lg:order-none",
+  animationWrapper: "w-full flex justify-center",
+  
+  // Form section
+  formContainer: "flex items-center justify-center w-full",
+  formWrapper: "relative w-full max-w-md",
+  formCard: "relative bg-white/90 backdrop-blur-xl rounded-3xl border border-white/60 p-8 shadow-2xl transition-all duration-500",
+  
+  // Header
+  header: "text-center mb-8 font-[pacifico]",
+  title: "text-2xl font-bold text-slate-800 mb-1",
+  subtitle: "text-slate-600 text-sm",
+  
+  // Form
+  form: "space-y-2",
+  submitButton: "w-full mt-6 py-3 px-6 bg-gradient-to-r from-blue-400 to-indigo-600 text-white font-semibold rounded-full shadow-lg transition-all duration-300 hover:shadow-xl disabled:opacity-50 relative overflow-hidden",
+  buttonContent: "relative flex items-center justify-center gap-2",
+  buttonIcon: "w-5 h-5",
+  
+  // Sign in link
+  signinContainer: "mt-6 text-center",
+  signinText: "text-slate-600 text-sm font-[pacifico]",
+  signinLink: "text-blue-600 font-semibold hover:text-blue-700"
+};
+
+// Floating Input styles
+export const floatingInputStyles = {
+  container: "relative mb-6 group",
+  inputWrapper: "relative",
+  input: "w-full bg-white/80 backdrop-blur-sm border-0 rounded-2xl pt-6 pb-4 px-4 text-slate-700 placeholder-transparent focus:outline-none focus:ring-2 transition-all duration-300 shadow-lg",
+  inputError: "focus:ring-red-400 border-l-4 border-red-400",
+  inputNormal: "focus:ring-indigo-300 focus:border-l-4 focus:border-indigo-400",
+  label: "absolute left-4 transition-all duration-300 cursor-text font-medium",
+  labelFocused: "top-2 text-xs text-indigo-600",
+  labelNormal: "top-5 text-sm text-slate-500",
+  labelError: "text-red-400",
+  iconsContainer: "absolute right-4 top-1/2 transform -translate-y-1/2 flex items-center gap-2",
+  emailIcon: "w-5 h-5 text-indigo-400",
+  passwordToggle: "focus:outline-none cursor-pointer",
+  passwordToggleIcon: "w-5 h-5 text-indigo-400",
+  dotsContainer: "absolute -bottom-2 left-1/2 transform -translate-x-1/2 flex space-x-1",
+  dot: "w-1 h-1 bg-indigo-400 rounded-full animate-bounce",
+  errorContainer: "flex items-center mt-2 text-red-500 text-sm ml-1",
+  errorIcon: "w-4 h-4 mr-1 text-yellow-500"
+};
+
+// Custom styles for SignUpPage
+export const signUpPageCustomStyles = `
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-15px); }
+  }
+  .animate-float { animation: float 6s ease-in-out infinite; }
+`;
+
+
 export const courseDetailStyles = {
   // Layout & Container
   container: "min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 py-8 px-4 relative overflow-hidden",
@@ -1422,7 +1530,83 @@ export const courseDetailCustomStyles = `
   }
 `;
 
+export const loginPageStyles = {
+  // Layout and container styles
+  pageContainer: "min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-purple-100 relative overflow-hidden",
+  
+  // Back button
+  backButton: "absolute top-6 left-6 z-10 group",
+  backButtonContainer: "flex items-center space-x-2 text-slate-700 hover:text-slate-900 transition-all duration-300 transform hover:translate-x-1",
+  backButtonIcon: "p-2 bg-white/70 rounded-full backdrop-blur-sm group-hover:bg-white/90 transition-all duration-300 shadow-sm",
+  backButtonArrow: "w-5 h-5",
+  backButtonText: "font-semibold",
+  
+  // Main content
+  mainContent: "relative min-h-screen font-serif flex items-center justify-center p-4",
+  contentContainer: "w-full max-w-6xl flex flex-col md:flex-row lg:flex-row items-center justify-center gap-10",
+  
+  // Animation section
+  animationContainer: "flex flex-1 items-center justify-center w-full mb-8 lg:mb-0",
+  
+  // Login card
+  cardContainer: "flex-1 flex justify-center w-full",
+  cardWrapper: "relative w-full max-w-md",
+  cardGlow: "absolute -inset-4 bg-gradient-to-r from-cyan-300 to-purple-300 rounded-2xl blur-lg opacity-50 group-hover:opacity-70 transition duration-1000 group-hover:duration-200",
+  mainCard: "relative bg-white/80 backdrop-blur-xl rounded-2xl border border-white/60 shadow-2xl transform transition-all duration-500",
+  cardTopLine: "absolute -top-1 left-8 right-8 h-3 bg-gradient-to-r from-cyan-400 to-purple-400 rounded-t-2xl blur-sm",
+  cardContent: "p-8",
+  
+  // Header
+  header: "text-center mb-8",
+  title: "text-4xl font-bold bg-gradient-to-r from-cyan-600 to-purple-600 bg-clip-text text-transparent mb-2 transform hover:scale-110 transition-transform duration-300",
+  subtitle: "text-slate-600",
+  
+  // Form
+  form: "space-y-6",
+  formGroup: "group",
+  label: "flex items-center space-x-3 text-slate-700 mb-2",
+  labelIcon: "w-5 h-5",
+  inputContainer: "relative",
+  input: "w-full px-4 py-3 pl-12 bg-white/60 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:bg-white/80 focus:ring-2 focus:ring-cyan-200 transition-all duration-300 backdrop-blur-sm",
+  passwordInput: "w-full px-4 py-3 pl-12 pr-12 bg-white/60 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-500 focus:outline-none focus:border-purple-400 focus:bg-white/80 focus:ring-2 focus:ring-purple-200 transition-all duration-300 backdrop-blur-sm",
+  inputIcon: "absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4",
+  passwordToggle: "absolute right-4 cursor-pointer top-1/2 transform -translate-y-1/2 text-slate-500 hover:text-slate-700 transition-colors duration-200",
+  passwordToggleIcon: "w-4 h-4",
+  
+  // Submit button
+  submitButton: "w-full py-4 px-6 bg-gradient-to-br from-cyan-100 via-blue-100 text-white font-semibold rounded-full cursor-pointer hover:shadow-2xl transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-cyan-400/30 relative overflow-hidden group shadow-lg",
+  buttonContent: "flex items-center justify-center space-x-2",
+  buttonIcon: "w-5 h-5 text-cyan-500",
+  buttonText: "relative text-cyan-500 z-10",
+  
+  // Sign up link
+  signupContainer: "text-center mt-6 relative z-10",
+  signupText: "text-slate-600",
+  signupLink: "text-cyan-600 hover:text-cyan-700 font-semibold transition-colors duration-200",
+  
+  // Toast notification
+  toast: "fixed bottom-6 right-6 bg-white/90 backdrop-blur-xl border border-green-300 shadow-2xl rounded-xl px-6 py-2 flex items-center space-x-3 animate-fade-in-up",
+  toastIcon: "text-green-500 w-6 h-6",
+  toastContent: "",
+  toastTitle: "font-semibold text-green-700",
+  toastMessage: "text-sm text-gray-600"
+};
 
+// Icon colors
+export const loginIconColors = {
+  cyan: "text-cyan-500",
+  purple: "text-purple-500",
+  cyan600: "text-cyan-600",
+  purple600: "text-purple-600"
+};
 
-
-
+// Custom styles for LoginPage
+export const loginPageCustomStyles = `
+  @keyframes fade-in-up {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-in-up {
+    animation: fade-in-up 0.5s ease-out;
+  }
+`;
