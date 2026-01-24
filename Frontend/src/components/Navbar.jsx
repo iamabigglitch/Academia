@@ -19,17 +19,15 @@ const NavBar = () => {
   const [showNavbar, setShowNavbar] = useState(true);
 
   const menuRef = useRef(null);
-
-  const navItems = isSignedIn ? [
-    ...baseNav,
-    {name: "My Courses", icon: BookOpenText, href: "/mycourses"},
-  ] : baseNav;
-
-  const isAuthenticated = false; // change to true to see avatar
+  const isAuthenticated = false; 
   const user = {
     name: "Jay",
     avatar: "https://i.pravatar.cc/40",
   };
+  const navItems = isAuthenticated ? [
+    ...baseNav,
+    {name: "My Courses", icon: BookOpenText, href: "/mycourses"},
+  ] : baseNav;
 
   const desktopLinkClass = (isActive) =>
     `${navbarStyles.desktopNavItem}${

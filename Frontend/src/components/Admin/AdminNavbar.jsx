@@ -4,7 +4,7 @@ import { LayoutDashboard, ListChecks, Menu, PlusCircle, X } from 'lucide-react';
 import { navbarStyles } from '../../assets/dummyStylesAdmin';
 import logo from '../../assets/logo.png';
 
-const Navbar = () => {
+const AdminNavbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const location = useLocation();
@@ -161,4 +161,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;
+export default AdminNavbar;

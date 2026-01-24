@@ -11,7 +11,7 @@ const fmtCurrency = (n) => {
   return `Rs. ${num.toLocaleString()}`;
 };
 
-const DashboardPage = () => {
+const AdminDashboardPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statsData, setStatsData] = useState(null);
   const [coursesData, setCoursesData] = useState([]);
@@ -335,4 +335,4 @@ const DashboardPage = () => {
   );
 };
 
-export default DashboardPage;
+export default AdminDashboardPage;

@@ -1,15 +1,15 @@
-// import express from 'express';
-// import { checkBooking, confirmPayment, createBooking, getBookings, getStats, getUserBookings } from '../controllers/bookingController.js';
+import express from 'express';
+import { checkBooking, confirmPayment, createBooking, getBookings, getStats, getUserBookings } from '../controllers/bookingController.js';
 
-// const bookingRoute = express.Router();
+const bookingRoute = express.Router();
 
-// bookingRoute.get('/', getBookings);
-// bookingRoute.get('/stats', getStats);
+bookingRoute.get('/', getBookings);
+bookingRoute.get('/stats', getStats);
 
-// bookingRoute.post('/create', createBooking);
-// bookingRoute.get('/check', checkBooking );
-// bookingRoute.get('/confirm', confirmPayment)
+bookingRoute.post('/create', createBooking);
+bookingRoute.get('/check', checkBooking );
+bookingRoute.get('/confirm', confirmPayment)
 
-// bookingRoute.get('/my', getUserBookings);
+bookingRoute.get('/my', getUserBookings);
 
-// export default bookingRoute;
+export default bookingRoute;

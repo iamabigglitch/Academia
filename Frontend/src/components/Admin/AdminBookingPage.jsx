@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import {bookingsStyles, BookingStyles} from "../../assets/dummyStylesAdmin";
+import {bookingsStyles} from "../../assets/dummyStylesAdmin";
 
 const API_BASE = "http://localhost:4000";
 
@@ -136,7 +136,7 @@ const BookingPage = () => {
               {!loading &&
               bookings.map((booking) => (
                 <div key={booking.id} className={bookingsStyles.bookingCard}>
-                  <div className={BookingStyles.studentSection}>
+                  <div className={bookingsStyles.studentSection}>
                     <div className={bookingsStyles.studentIconContainer}>
                       <User className={bookingsStyles.studentIcon} />
                     </div>

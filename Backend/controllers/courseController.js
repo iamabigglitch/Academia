@@ -4,7 +4,7 @@ import Course from "../models/courseModel.js";
 import Lecture from "../models/lectureModel.js";
 import Chapter from "../models/chapterModel.js";
 
-// import { makeImageAbsolute } from "../uploads";
+import { makeImageAbsolute } from "../uploads";
 import { ratingModel } from "../models/ratingModel.js";
 
 const calculateCourseDuration = async (courseId) => {
@@ -71,11 +71,11 @@ export const getPublicCourses = async (req, res) => {
       limit: limit ? Number(limit) : undefined
     });
 
-    // // Map courses with absolute image URLs
-    // const items = courses.map(c => ({
-    //   ...c.toJSON(),
-    //   image: makeImageAbsolute(c.image, req)
-    // }));
+    // Map courses with absolute image URLs
+    const items = courses.map(c => ({
+      ...c.toJSON(),
+      image: makeImageAbsolute(c.image, req)
+    }));
 
     res.json({ success: true, items });
   } catch (err) {

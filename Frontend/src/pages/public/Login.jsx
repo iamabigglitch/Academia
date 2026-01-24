@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, User, Lock, BookOpen, GraduationCap, Users, Award } from 'lucide-react';
-import axios from "axios";
+import api from '../../api/axios.js';
 
 const Login = () => {
   // State for password visibility toggle
@@ -21,18 +21,15 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const res = await axios.post(
-            "http://localhost:5000/auth/login",
-        loginData
-    );
-
+      const res = await api.post("/auth/signin", loginData);
+ console.log(res.data.token)
     localStorage.setItem("token", res.data.token);
     alert(res.data.message || "Login successful!");
 
     } catch (error) {
 
       // Handle network or server errors
-      alert('Error connecting to server');
+      alert(error.response?.data?.message);
       console.error('Login error:', error);
     } finally {
       setLoading(false);

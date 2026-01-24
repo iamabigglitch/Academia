@@ -4,7 +4,7 @@ import { toast, Toaster } from "react-hot-toast";
 import axios from 'axios';
 import { Search, Star, BookOpen, Clock, EyeOff, Trash2, Eye, Video } from 'lucide-react';
 
-const ListPage = () => {
+const AdminListPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedCourse, setExpandedCourse] = useState(null);
   const [expandedLectures, setExpandedLectures] = useState({});
@@ -602,4 +602,4 @@ const ListPage = () => {
   );
 };
 
-export default ListPage;
+export default AdminListPage;
