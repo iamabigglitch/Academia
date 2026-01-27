@@ -1,23 +1,34 @@
 import { DataTypes } from "sequelize";
-import {sequelize} from "../database/db.js"; 
+import { sequelize } from "../database/db.js";
+import { User } from "./userModel.js";
+import Course from "./courseModel.js";
 
-const Booking = sequelize.define("Booking", {
+export const Booking = sequelize.define("Booking", {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true,
+  },
   bookingId: {
     type: DataTypes.STRING,
     allowNull: false,
     unique: true,
   },
-  clerkUserId: {
-    type: DataTypes.STRING,
+  userId: {
+    type: DataTypes.INTEGER,
     allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
   },
   studentName: {
     type: DataTypes.STRING,
     allowNull: false,
     defaultValue: "Unknown",
   },
-  course: {
-    type: DataTypes.STRING,
+  courseId: {
+    type: DataTypes.UUID,
     allowNull: false,
   },
   courseName: {
@@ -25,12 +36,17 @@ const Booking = sequelize.define("Booking", {
     allowNull: false,
     defaultValue: "",
   },
+  teacherName: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
   price: {
     type: DataTypes.FLOAT,
     allowNull: false,
+    defaultValue: 0,
   },
   paymentMethod: {
-    type: DataTypes.ENUM("Online"),
+    type: DataTypes.ENUM("Online", "Cash"),
     allowNull: false,
     defaultValue: "Online",
   },
@@ -59,13 +75,18 @@ const Booking = sequelize.define("Booking", {
     allowNull: false,
     defaultValue: "",
   },
+  paidAt: {
+    type: DataTypes.DATE,
+    allowNull: true,
+  }
 }, {
-  timestamps: true, 
+  timestamps: true,
   tableName: "Bookings",
-  indexes: [
-    { fields: ["bookingId"], unique: true },
-    { fields: ["clerkUserId"] },
-  ],
 });
 
-export default Booking;
+// Relationships
+Booking.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+User.hasMany(Booking, { foreignKey: 'userId' });
+
+Booking.belongsTo(Course, { foreignKey: 'courseId', as: 'course' });
+Course.hasMany(Booking, { foreignKey: 'courseId' });

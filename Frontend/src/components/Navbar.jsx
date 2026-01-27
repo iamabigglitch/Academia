@@ -1,33 +1,66 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { navbarStyles } from "../assets/dummyStyles";
 import logo from "../assets/logo.png";
-import { BookOpen, Home, BookMarked, Users, Phone, Menu, X, BookOpenText, } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { BookOpen, Home, BookMarked, Users, Phone, Menu, X, BookOpenText, User as UserIcon } from "lucide-react";
+import { NavLink, useNavigate } from "react-router-dom";
 
-const baseNav = [
-  { name: "Home", icon: Home, href: "/home" },
+const baseNavPublic = [
+  { name: "Home", icon: Home, href: "/" },
+  { name: "About", icon: BookMarked, href: "/about" },
+  { name: "Faculty", icon: Users, href: "/faculty" },
+  { name: "Contact", icon: Phone, href: "/contact" },
+];
+
+const baseNavAuthenticated = [
   { name: "Courses", icon: BookOpen, href: "/courses" },
+  { name: "My Courses", icon: BookOpenText, href: "/mycourses" },
   { name: "About", icon: BookMarked, href: "/about" },
   { name: "Faculty", icon: Users, href: "/faculty" },
   { name: "Contact", icon: Phone, href: "/contact" },
 ];
 
 const NavBar = () => {
-  
+  const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showNavbar, setShowNavbar] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [user, setUser] = useState(null);
 
   const menuRef = useRef(null);
-  const isAuthenticated = false; 
-  const user = {
-    name: "Jay",
-    avatar: "https://i.pravatar.cc/40",
+
+  // Check if user is authenticated and get user data
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      setIsAuthenticated(true);
+      
+      // Get user data from localStorage (saved during login/signup)
+      const userData = localStorage.getItem("user");
+      if (userData) {
+        try {
+          const parsedUser = JSON.parse(userData);
+          setUser(parsedUser);
+        } catch (error) {
+          console.error("Error parsing user data:", error);
+        }
+      }
+    } else {
+      setIsAuthenticated(false);
+      setUser(null);
+    }
+  }, []);
+
+  const navItems = isAuthenticated ? baseNavAuthenticated : baseNavPublic;
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setIsAuthenticated(false);
+    setUser(null);
+    setIsOpen(false);
+    navigate("/");
   };
-  const navItems = isAuthenticated ? [
-    ...baseNav,
-    {name: "My Courses", icon: BookOpenText, href: "/mycourses"},
-  ] : baseNav;
 
   const desktopLinkClass = (isActive) =>
     `${navbarStyles.desktopNavItem}${
@@ -40,6 +73,21 @@ const NavBar = () => {
         ? navbarStyles.mobileMenuItemActive
         : navbarStyles.mobileMenuItemHover
     }`;
+
+  // // Get user initials for fallback avatar
+  const getUserInitials = () => {
+    if (!user || !user.username) return "U";
+    return user.username.charAt(0).toUpperCase();
+  };
+
+
+  const getProfilePhoto = () => {
+    if (user && user.username) {
+      
+      return `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=0369a1&color=fff&size=128&bold=true`;
+    }
+    return null;
+  };
 
   return (
     <nav
@@ -98,7 +146,7 @@ const NavBar = () => {
                 </NavLink>
 
                 <NavLink
-                  to="/register"
+                  to="/signup"
                   className="px-5 py-2 rounded-xl font-semibold text-white bg-gradient-to-r from-sky-600 to-cyan-600 hover:from-sky-700 hover:to-cyan-700 transition-all"
                 >
                   Register
@@ -106,26 +154,31 @@ const NavBar = () => {
               </>
             ) : (
               <div className="relative group">
-                <img
-                  src={user.avatar}
-                  alt="User"
-                  className="w-10 h-10 rounded-full border-2 border-sky-500 cursor-pointer"
+                {/* User Avatar with Photo */}
+                <img 
+                  src={getProfilePhoto()} 
+                  alt={user?.username || "User"} 
+                  className="w-10 h-10 rounded-full border-2 border-sky-500 cursor-pointer object-cover"
                 />
 
                 {/* Avatar Dropdown */}
-                <div className="absolute right-0 mt-3 w-40 bg-white rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+                <div className="absolute right-0 mt-3 w-48 bg-white rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                  <div className="px-4 py-3 border-b border-gray-100">
+                    <p className="font-semibold text-gray-800">{user?.username || "User"}</p>
+                    <p className="text-xs text-gray-500">{user?.email || ""}</p>
+                  </div>
                   <NavLink
                     to="/profile"
-                    className="block px-4 py-2 hover:bg-sky-50 rounded-t-xl"
+                    className="block px-4 py-2 hover:bg-sky-50 text-gray-700"
                   >
                     Profile
                   </NavLink>
-                  <NavLink
-                    to="/logout"
-                    className="block px-4 py-2 hover:bg-sky-50 rounded-b-xl text-red-500"
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-left px-4 py-2 hover:bg-sky-50 rounded-b-xl text-red-500"
                   >
                     Logout
-                  </NavLink>
+                  </button>
                 </div>
               </div>
             )}
@@ -191,19 +244,34 @@ const NavBar = () => {
                   </NavLink>
                 </>
               ) : (
+                <>
+                  <div className="flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-sky-50">
+                    <img 
+                      src={getProfilePhoto()} 
+                      alt={user?.username || "User"} 
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                    <div className="text-left">
+                      <p className="font-semibold text-gray-800">{user?.username || "User"}</p>
+                      <p className="text-xs text-gray-500">{user?.email || ""}</p>
+                    </div>
+                  </div>
 
-                <NavLink
-                  to="/profile"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-sky-50 font-semibold"
-                >
-                  <img
-                    src={user.avatar}
-                    alt="User"
-                    className="w-8 h-8 rounded-full"
-                  />
-                  My Profile
-                </NavLink>
+                  <NavLink
+                    to="/profile"
+                    onClick={() => setIsOpen(false)}
+                    className="block text-center px-4 py-3 rounded-xl font-semibold text-sky-700 border border-sky-200 hover:bg-sky-50 transition"
+                  >
+                    My Profile
+                  </NavLink>
+                  
+                  <button
+                    onClick={handleLogout}
+                    className="block w-full text-center px-4 py-3 rounded-xl font-semibold text-red-500 border border-red-200 hover:bg-red-50 transition"
+                  >
+                    Logout
+                  </button>
+                </>
               )}
             </div>
           </div>

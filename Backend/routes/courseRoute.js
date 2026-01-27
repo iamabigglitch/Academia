@@ -2,7 +2,7 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import { createCourse, deleteCourse, getCourseById, getCourses, getMyRating, getPublicCourses, rateCourse } from '../controllers/courseController.js';
-
+import { protect } from '../Middleware/authmiddleware.js';
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, path.join(process.cwd(), 'uploads')),
@@ -21,10 +21,10 @@ courseRoute.get('/public', getPublicCourses);
 courseRoute.get('/', getCourses);
 courseRoute.get('/:id', getCourseById);
 
-courseRoute.post('/', upload.single('image'), createCourse);
-courseRoute.delete('/:id', deleteCourse);
+courseRoute.post('/:courseId/rate', protect, rateCourse);
+courseRoute.get('/:courseId/rating', protect, getMyRating);
 
-courseRoute.post('/:courseId/rate', rateCourse);
-courseRoute.get('/:courseId/rating', getMyRating);
+courseRoute.post('/', protect, upload.single('image'), createCourse);
+courseRoute.delete('/:id', protect, deleteCourse);
 
 export default courseRoute;

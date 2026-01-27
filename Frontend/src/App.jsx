@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { BrowserRouter, Routes } from "react-router-dom";
+import { BrowserRouter, Routes, useLocation } from "react-router-dom";
 import './App.css';
 import NavBar from "./components/Navbar.jsx";
+import AdminNavbar from "./components/Admin/AdminNavbar.jsx";
 import { ArrowUp } from "lucide-react";
 import PublicRoutes from "./routes/publicRoutes";
 import UserRoutes from "./routes/userRoutes";
@@ -23,22 +24,34 @@ const ScrollTopButton = ({ threshold = 200 }) => {
     <button
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
       className="fixed right-6 bottom-6 z-50 p-2 rounded-full backdrop-blur-sm border border-white/20 shadow-lg cursor-pointer transition-transform focus:outline-none focus:ring-2 focus:ring-sky-300"
+      style={{ backgroundColor: '#1c398e' }}
     >
-      <ArrowUp className="w-6 h-6 text-sky-600 drop-shadow-sm" />
+      <ArrowUp className="w-6 h-6 text-white drop-shadow-sm" />
     </button>
   );
 };
 
-const App = () => {
+const AppContent = () => {
+  const location = useLocation();
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
   return (
-    <BrowserRouter>
-      <NavBar />
+    <>
+      {isAdminRoute ? <AdminNavbar /> : <NavBar />}
       <Routes>
         {PublicRoutes()}
         {UserRoutes()}
         {AdminRoutes()}
       </Routes>
       <ScrollTopButton threshold={250} />
+    </>
+  );
+};
+
+const App = () => {
+  return (
+    <BrowserRouter>
+      <AppContent />
     </BrowserRouter>
   );
 };

@@ -19,7 +19,7 @@ const PublicRoutes = () => (
     <Route path="/courses" element={<Courses />} />
 
     <Route path="/login" element={<GuestOnlyRoute><Login /></GuestOnlyRoute>} />
-    <Route path="/register" element={<GuestOnlyRoute><Signup /></GuestOnlyRoute>} />
+    <Route path="/signup" element={<GuestOnlyRoute><Signup /></GuestOnlyRoute>} />
   </>
 );
 

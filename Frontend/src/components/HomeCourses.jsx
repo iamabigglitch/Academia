@@ -5,7 +5,7 @@ import { ArrowRight, Star, User } from "lucide-react";
 import { toast, ToastContainer, Slide } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const API_BASE = 'http://localhost:3000'; // 
+const API_BASE = 'http://localhost:3000';  
 
 const HomeCourses = () => {
   const navigate = useNavigate();

@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, User, Lock, BookOpen, GraduationCap, Users, Award } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
 import api from '../../api/axios.js';
 
 const Login = () => {
+  const navigate = useNavigate();
+  
   // State for password visibility toggle
   const [showPassword, setShowPassword] = useState(false);
   
@@ -16,20 +19,27 @@ const Login = () => {
   });
 
   // Handle Login submission
-
   const handleLogin = async () => {
     setLoading(true);
 
     try {
       const res = await api.post("/auth/signin", loginData);
- console.log(res.data.token)
-    localStorage.setItem("token", res.data.token);
-    alert(res.data.message || "Login successful!");
+      console.log(res.data.token);
+      console.log('User role:', res.data);
+      
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+      alert(res.data.message || "Login successful!");
+      // Check user role and redirect accordingly
+      if (res.data.user.role === 'admin') {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/courses');
+      }
 
     } catch (error) {
-
       // Handle network or server errors
-      alert(error.response?.data?.message);
+      alert(error.response?.data?.message || "Login failed. Please try again.");
       console.error('Login error:', error);
     } finally {
       setLoading(false);
@@ -41,7 +51,6 @@ const Login = () => {
 
       {/* Background Decorative Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-
         {/* Floating circles */}
         <div className="absolute top-20 left-10 w-72 h-72 bg-blue-400 rounded-full opacity-10 blur-3xl animate-float"></div>
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-blue-300 rounded-full opacity-10 blur-3xl animate-float-delay"></div>
@@ -53,7 +62,6 @@ const Login = () => {
       {/* Left Side - Branding */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-center items-center text-white relative z-10 px-12">
         <div className="max-w-md">
-
           {/* Logo and Title */}
           <div className="flex items-center gap-3 mb-8">
             <div className="bg-white p-3 rounded-xl">
@@ -105,7 +113,6 @@ const Login = () => {
       {/* Right Side - Login Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center relative z-10">
         <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 lg:p-10 animate-fadeIn">
-
           {/* Mobile Logo */}
           <div className="lg:hidden flex justify-center mb-6">
             <div className="bg-blue-900 p-3 rounded-full">
@@ -121,7 +128,6 @@ const Login = () => {
 
           {/* Login Form */}
           <div className="space-y-5">
-
             {/* Username Input */}
             <div className="relative group">
               <User className="absolute left-3 top-3 w-5 h-5 text-gray-400 group-focus-within:text-blue-900 transition-colors" />
@@ -155,12 +161,12 @@ const Login = () => {
 
             {/* Forgot Password Link */}
             <div className="text-right">
-              <a
-                href="/forgot-password"
+              <Link
+                to="/forgot-password"
                 className="text-sm text-blue-900 hover:underline transition-all"
               >
                 Forgot Password?
-              </a>
+              </Link>
             </div>
 
             {/* Login Button */}
@@ -185,12 +191,12 @@ const Login = () => {
 
           {/* Sign Up Link */}
           <p className="text-center text-gray-600">
-            <a
-              href="/signup"
+            <Link
+              to="/signup"
               className="text-blue-900 font-semibold hover:underline transition-all"
             >
               Create an account
-            </a>
+            </Link>
           </p>
         </div>
       </div>

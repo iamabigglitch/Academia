@@ -1,15 +1,16 @@
 import express from 'express';
-import { checkBooking, confirmPayment, createBooking, getBookings, getStats, getUserBookings } from '../controllers/bookingController.js';
+import { getBookings, checkBooking, createBooking, confirmPayment, getUserBookings, getStats } from '../controllers/bookingController.js';
+import { protect } from '../Middleware/authmiddleware.js';
 
-const bookingRoute = express.Router();
+const router = express.Router();
 
-bookingRoute.get('/', getBookings);
-bookingRoute.get('/stats', getStats);
+router.get('/check', checkBooking);
 
-bookingRoute.post('/create', createBooking);
-bookingRoute.get('/check', checkBooking );
-bookingRoute.get('/confirm', confirmPayment)
+router.post('/create', protect, createBooking);
+router.post('/confirm-payment', protect, confirmPayment);
+router.get('/my-bookings', protect, getUserBookings);
 
-bookingRoute.get('/my', getUserBookings);
+router.get('/', protect, getBookings);
+router.get('/stats', protect, getStats);
 
-export default bookingRoute;
+export default router;

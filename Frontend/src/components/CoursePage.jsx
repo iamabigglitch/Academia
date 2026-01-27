@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { coursePageStyles, coursePageCustomStyles } from "../assets/dummyStyles";
-import { Search, Star, StarHalf, User, X, SmilePlus } from "lucide-react";
+import { Search, Star, StarHalf, User, X, SmilePlus, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast, Slide, ToastContainer } from "react-toastify";
-import {Toaster} from 'react-hot-toast';
+import "react-toastify/dist/ReactToastify.css";
 
-const API_BASE = 'http://localhost:4000';
+const API_BASE = 'http://localhost:3000'; 
 
 const StarIcon = ({ filled = false, half = false, className = "" }) => {
   if (half) {
@@ -26,8 +26,6 @@ const StarIcon = ({ filled = false, half = false, className = "" }) => {
 
 const UserIcon = () => <User className={coursePageStyles.teacherIcon} />;
 const SearchIcon = () => <Search className={coursePageStyles.searchIcon} />;
-
-//show 5 interactive start (calls onRate(courseId, rating))
 
 const RatingStars = ({
   courseId,
@@ -90,8 +88,6 @@ const RatingStars = ({
 
 const CoursePage = () => {
   const navigate = useNavigate();
-  const {isSignedIn} = useUser();
-  const {getToken} = useAuth();
 
   const [ratings, setRatings] = useState(() => {
     try {
@@ -106,9 +102,8 @@ const CoursePage = () => {
   const [showAll, setShowAll] = useState(false);
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
- const [error, setError] = useState(null);
+  const [error, setError] = useState(null);
 
-  // persist rating when changed
   useEffect(() => {
     try {
       localStorage.setItem("userCourseRatings", JSON.stringify(ratings));
@@ -131,83 +126,27 @@ const CoursePage = () => {
         }
         return res.json();
       })
-      .then(async (json) => {
+      .then((json) => {
         if (!mounted) return;
         const raw = json.items || json.courses || [];
-        // filter non-top (existing behavior)
         const regular = raw.filter((c) =>
           c.courseType ? c.courseType !== "top" : true
         );
 
         const mapped = regular.map((c) => ({
-          id: String(c._id || c.id || ""),
+          id: String(c.id || ""),
           name: c.name,
-          teacher: c.teacher || c.instructor || "",
+          teacher: c.teacher || "",
           category: c.category || "",
           image: c.image || "",
-          isFree:
-            c.pricingType === "free" ||
-            !c.price ||
-            (!c.price.sale && !c.price.original),
-          price:
-            c.price ||
-            (c.originalPrice
-              ? { original: c.originalPrice, sale: c.price }
-              : {}),
-          avgRating:
-            typeof c.avgRating === "number"
-              ? c.avgRating
-              : typeof c.rating === "number"
-              ? c.rating
-              : parseFloat(c.rating) || 0,
-          totalRatings:
-            typeof c.totalRatings === "number"
-              ? c.totalRatings
-              : c.ratingCount ?? 0,
-          raw: c,
+          isFree: c.pricingType === "free" || c.priceOriginal === 0,
+          priceOriginal: c.priceOriginal || 0,
+          priceSale: c.priceSale || 0,
+          avgRating: typeof c.avgRating === "number" ? c.avgRating : 0,
+          totalRatings: typeof c.totalRatings === "number" ? c.totalRatings : 0,
         }));
 
         setCourses(mapped);
-
-        // if signed in, try to fetch my-rating per course (parallel)
-        if (isSignedIn && mapped.length) {
-          const promises = mapped.map(async (course) => {
-            if (!course.id) return null;
-            try {
-              const headers = { "Content-Type": "application/json" };
-              try {
-                const token = await getToken().catch(() => null);
-                if (token) headers.Authorization = `Bearer ${token}`;
-              } catch (e) {}
-              const r = await fetch(
-                `${API_BASE}/api/course/${encodeURIComponent(
-                  course.id
-                )}/my-rating`,
-                {
-                  method: "GET",
-                  headers,
-                  credentials: "include",
-                }
-              );
-              if (!r.ok) return null;
-              const d = await r.json().catch(() => null);
-              if (d && d.success && d.myRating)
-                return { courseId: course.id, rating: d.myRating.rating };
-            } catch (err) {
-              return null;
-            }
-            return null;
-          });
-
-          const results = await Promise.all(promises);
-          const map = {};
-          results.forEach((it) => {
-            if (it && it.courseId) map[it.courseId] = it.rating;
-          });
-          if (mounted && Object.keys(map).length) {
-            setRatings((prev) => ({ ...prev, ...map }));
-          }
-        }
       })
       .catch((err) => {
         console.error("Failed to load courses:", err);
@@ -218,23 +157,19 @@ const CoursePage = () => {
     return () => {
       mounted = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSignedIn]);
-
-  //to send the rating to server
+  }, []);
 
   const submitRatingToServer = async (courseId, ratingValue) => {
     try {
       const headers = { "Content-Type": "application/json" };
-      try {
-        const token = await getToken().catch(() => null);
-        if (token) headers.Authorization = `Bearer ${token}`;
-      } catch (e) {
-        //ignore
+      
+      const token = localStorage.getItem("token");
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
       }
 
       const res = await fetch(
-        `${API_BASE}/api/course/${encodeURIComponent(courseId)}/rating`,
+        `${API_BASE}/api/course/${encodeURIComponent(courseId)}/rate`,
         {
           method: "POST",
           headers,
@@ -245,17 +180,15 @@ const CoursePage = () => {
 
       const data = await res.json().catch(() => null);
       if (!res.ok && !data.success) {
-       const msg =
+        const msg =
           (data && (data.message || data.error)) || 
           `Failed to rate (${res.status})`;
-          if (res.status === 401) toast.error("Please login to submit rating");
-          throw new Error(msg);
+        if (res.status === 401) toast.error("Please login to submit rating");
+        throw new Error(msg);
       }
 
-      // update course aggregates from server response if provided
-      const avg = data.avgRating ?? data.course?.avgRating ?? data.avg ?? null;
-      const total =
-        data.totalRatings ?? data.course?.totalRatings ?? data.count ?? null;
+      const avg = data.avgRating ?? null;
+      const total = data.totalRatings ?? null;
 
       if (avg !== null || total !== null) {
         setCourses((prev) =>
@@ -264,36 +197,36 @@ const CoursePage = () => {
               ? {
                   ...c,
                   avgRating: typeof avg === "number" ? avg : c.avgRating,
-                  totalRatings:
-                    typeof total === "number" ? total : c.totalRatings,
+                  totalRatings: typeof total === "number" ? total : c.totalRatings,
                 }
               : c
           )
         );
       }
 
-      // persist user's rating locally
       setRatings((prev) => ({ ...prev, [courseId]: ratingValue }));
       toast.success("Thanks for rating!");
       return true;
 
     } catch (err) {
       console.error("Error submitting rating:", err);
-      toast.error(
-        err.message || "Failed to submit rating. Please try again later."
-      );
+      toast.error(err.message || "Failed to submit rating");
       return false;
     }
   };
 
   const handleRating = async (courseId, newRating, e) => {
-    if (e && e.stopPropagation) {e.preventDefault();
-     e.stopPropagation(); }
+    if (e && e.stopPropagation) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
 
-     if(!isSignedIn) {
-      toast("Please signin to submit rating", {icon: "⭐"});
+    const token = localStorage.getItem("token");
+    if (!token) {
+      toast.error("Please login to submit rating");
       return;
-     }
+    }
+
     setRatings((prev) => ({
       ...prev,
       [courseId]: newRating,
@@ -302,43 +235,36 @@ const CoursePage = () => {
   };
 
   const filteredCourses = courses.filter((course) =>
-course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-course.instructor.toLowerCase().includes(searchQuery.toLowerCase()) ||
-course.category.toLowerCase().includes(searchQuery.toLowerCase())
-);
-
-  // Decide which courses to show (9 by default for 3x3 grid)
+    course.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    course.teacher.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    course.category.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const VISIBLE_COUNT = 9;
   const visibleCourses = showAll
     ? filteredCourses
     : filteredCourses.slice(0, VISIBLE_COUNT);
 
-
   const showLoginToast = () => {
     toast.error("Please login to access this course", {
       position: "top-right",
       transition: Slide,
       autoClose: 3000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
       theme: "dark",
     });
   };
 
   const openCourse = (courseId) => {
     const token = localStorage.getItem("token");
-    if (token) {
+    if (!token) { 
       showLoginToast();
       return;
     }
-    navigate(`/course/${courseId}`);
+    navigate(`/courses/${courseId}`);
   };
 
   const isCourseFree = (course) => {
-    return course.isFree || !course.price;
+    return course.isFree || course.priceOriginal === 0;
   };
 
   const getPriceDisplay = (course) => {
@@ -346,40 +272,63 @@ course.category.toLowerCase().includes(searchQuery.toLowerCase())
       return "Free";
     }
 
-    const price = course.price || {};
-
-    if (price.sale != null && price.sale !== 0) {
+    if (course.priceSale && course.priceSale > 0 && course.priceSale < course.priceOriginal) {
       return {
-        current: `Rs:${price.sale}`,
-        original:
-          price.original && price.original > course.price.sale
-            ? `Rs:${price.original}`
-            : null,
+        current: `Rs ${course.priceSale}`,
+        original: `Rs ${course.priceOriginal}`
       };
     }
 
-    if (price.original != null) {
-      return {
-        current: `Rs:${price.original}`,
-        original: null,
-      };
-    }
-
-    return "Free";
+    return {
+      current: `Rs ${course.priceOriginal}`,
+      original: null
+    };
   };
 
-  if(loading) 
-    return <div className= "p-6 text-center"> Loading courses...</div>
-  if(error) 
-    return <div className= "p-6 text-center text-red-500"> {error} </div>
-  
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <div className="text-xl font-semibold text-gray-700">Loading courses...</div>
+        </div>
+      </div>
+    );
+  }
 
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center p-8 max-w-md">
+          <div className="mb-6 flex justify-center">
+            <BookOpen className="w-32 h-32 text-blue-600" strokeWidth={1.5} />
+          </div>
+          <h2 className="text-3xl font-bold text-gray-800 mb-4">Courses Coming Soon!</h2>
+          <p className="text-gray-600 mb-4">The course management system is being set up by the admin.</p>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="text-sm text-red-600 font-mono">{error}</p>
+          </div>
+          <button
+            onClick={() => navigate('/home')}
+            className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg cursor-pointer"
+          >
+            ← Back to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Main content
   return (
     <div className={coursePageStyles.pageContainer}>
-      <Toaster position="top-right"/>
       <div className={coursePageStyles.headerContainer}>
         <div className={coursePageStyles.headerTransform}>
-          <h1 className={coursePageStyles.headerTitle} style={{ color: '#1c398e' }}>LEARN & GROW</h1>
+          <h1 className={coursePageStyles.headerTitle} style={{ color: '#1c398e' }}>
+            LEARN & GROW
+          </h1>
         </div>
 
         <p className={coursePageStyles.headerSubtitle}>
@@ -393,7 +342,6 @@ course.category.toLowerCase().includes(searchQuery.toLowerCase())
               <SearchIcon />
             </div>
 
-        
             <input
               type="text"
               placeholder="Search courses by name, instructor, or category...."
@@ -419,8 +367,6 @@ course.category.toLowerCase().includes(searchQuery.toLowerCase())
           </div>
         </div>
 
-        {/* result count */}
-
         {searchQuery && (
           <div className="text-center">
             <p className={coursePageStyles.resultsCount}>
@@ -430,8 +376,6 @@ course.category.toLowerCase().includes(searchQuery.toLowerCase())
           </div>
         )}
       </div>
-
-      {/* Courses Grid */}
 
       <div className={coursePageStyles.coursesGrid}>
         {filteredCourses.length === 0 ? (
@@ -443,112 +387,123 @@ course.category.toLowerCase().includes(searchQuery.toLowerCase())
             <button
               onClick={() => {
                 setSearchQuery("");
-                setShowAll(false);
+                setShowAll(true);
               }}
-              className={coursePageStyles.noCoursesButton}
+              className={`${coursePageStyles.noCoursesButton} cursor-pointer`}
             >
               Show All Courses
             </button>
           </div>
         ) : (
-          <div className={coursePageStyles.coursesGridContainer} style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-            gap: '2rem',
-            maxWidth: '1400px',
-            margin: '0 auto'
-          }}>
-            {visibleCourses.map((course, index) => {
-              const userRating = ratings[course.id] || 0;
-              const isFree = isCourseFree(course);
-              const priceDisplay = getPriceDisplay(course);
+          <>
+            <div className={coursePageStyles.coursesGridContainer} style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
+              gap: '2rem',
+              maxWidth: '1400px',
+              margin: '0 auto'
+            }}>
+              {visibleCourses.map((course, index) => {
+                const userRating = ratings[course.id] || 0;
+                const isFree = isCourseFree(course);
+                const priceDisplay = getPriceDisplay(course);
 
-              return (
-                <div
-                  key={course.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => openCourse(course.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") openCourse(course.id);
-                  }}
-                  className={coursePageStyles.courseCard}
-                  style={{ 
-                    animationDelay: `${index * 80}ms`,
-                    minHeight: '480px',
-                    width: '100%'
-                  }}
-                >
-                  <div className={coursePageStyles.courseCardInner}>
-                    <div className={coursePageStyles.courseCardContent}>
-                      <div className={coursePageStyles.courseImageContainer} style={{ height: '260px' }}>
-                        <img
-                          src={course.image}
-                          alt={course.name}
-                          className={coursePageStyles.courseImage}
-                        />
-                      </div>
-
-                      <div className={coursePageStyles.courseInfo} style={{ padding: '1.25rem' }}>
-                        <h3 className={coursePageStyles.courseName} style={{ fontSize: '1.25rem', marginBottom: '0.75rem' }}>
-                          {course.name}
-                        </h3>
-
-                        <div className={coursePageStyles.teacherContainer} style={{ marginBottom: '1rem' }}>
-                          <UserIcon />
-                          <span className={coursePageStyles.teacherName}>
-                            {course.teacher}
-                          </span>
+                return (
+                  <div
+                    key={course.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => openCourse(course.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") openCourse(course.id);
+                    }}
+                    className={coursePageStyles.courseCard}
+                    style={{ 
+                      animationDelay: `${index * 80}ms`,
+                      minHeight: '480px',
+                      width: '100%'
+                    }}
+                  >
+                    <div className={coursePageStyles.courseCardInner}>
+                      <div className={coursePageStyles.courseCardContent}>
+                        <div className={coursePageStyles.courseImageContainer} style={{ height: '260px' }}>
+                          <img
+                            src={course.image}
+                            alt={course.name}
+                            className={coursePageStyles.courseImage}
+                          />
                         </div>
 
-                        <div className={coursePageStyles.ratingContainer} style={{ marginBottom: '1rem' }}>
-                          <div className={coursePageStyles.ratingStars}>
-                            <div className={coursePageStyles.ratingStarsInner}>
-                            < RatingStars
+                        <div className={coursePageStyles.courseInfo} style={{ padding: '1.25rem' }}>
+                          <h3 className={coursePageStyles.courseName} style={{ fontSize: '1.25rem', marginBottom: '0.75rem' }}>
+                            {course.name}
+                          </h3>
+
+                          <div className={coursePageStyles.teacherContainer} style={{ marginBottom: '1rem' }}>
+                            <UserIcon />
+                            <span className={coursePageStyles.teacherName}>
+                              {course.teacher}
+                            </span>
+                          </div>
+
+                          <div className={coursePageStyles.ratingContainer} style={{ marginBottom: '1rem' }}>
+                            <RatingStars
                               courseId={course.id}
                               userRating={userRating}
                               avgRating={course.avgRating}
                               totalRatings={course.totalRatings}
                               onRate={handleRating}
-                            />  
-                            </div>
+                            />
                           </div>
-                        </div>
 
-                        <div className={coursePageStyles.priceContainer}>
-                          <div className="flex items-center space-x-2">
-                            {isFree ? (
-                              <span className={coursePageStyles.priceFree} style={{ fontSize: '1.125rem' }}>
-                                Free
-                              </span>
-                            ) : (
-                              <>
-                                <span className={coursePageStyles.priceCurrent} style={{ fontSize: '1.125rem' }}>
-                                  {typeof priceDisplay === "object"
-                                    ? priceDisplay.current
-                                    : priceDisplay}
+                          <div className={coursePageStyles.priceContainer}>
+                            <div className="flex items-center space-x-2">
+                              {isFree ? (
+                                <span className={coursePageStyles.priceFree} style={{ fontSize: '1.125rem' }}>
+                                  Free
                                 </span>
-                                {typeof priceDisplay === "object" &&
-                                  priceDisplay.original && (
-                                    <span
-                                      className={
-                                        coursePageStyles.priceOriginal
-                                      }
-                                    >
-                                      {priceDisplay.original}
-                                    </span>
-                                  )}
-                              </>
-                            )}
+                              ) : (
+                                <>
+                                  <span className={coursePageStyles.priceCurrent} style={{ fontSize: '1.125rem' }}>
+                                    {typeof priceDisplay === "object"
+                                      ? priceDisplay.current
+                                      : priceDisplay}
+                                  </span>
+                                  {typeof priceDisplay === "object" &&
+                                    priceDisplay.original && (
+                                      <span className={coursePageStyles.priceOriginal}>
+                                        {priceDisplay.original}
+                                      </span>
+                                    )}
+                                </>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+
+            {/* Show More Button */}
+            {!showAll && filteredCourses.length > VISIBLE_COUNT && (
+              <div className="flex justify-center mt-12 mb-8">
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log("Show All Courses clicked");
+                    setShowAll(true);
+                  }}
+                  className="px-10 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105 cursor-pointer"
+                >
+                  Show All Courses ({filteredCourses.length - VISIBLE_COUNT} more)
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -559,7 +514,12 @@ course.category.toLowerCase().includes(searchQuery.toLowerCase())
         theme="dark"
       />
 
-      <style>{coursePageCustomStyles}</style>
+      {/* Fixed style tag */}
+      {typeof coursePageCustomStyles === 'string' ? (
+        <style dangerouslySetInnerHTML={{ __html: coursePageCustomStyles }} />
+      ) : (
+        <style>{coursePageCustomStyles}</style>
+      )}
     </div>
   );
 };

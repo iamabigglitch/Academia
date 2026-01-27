@@ -59,7 +59,7 @@ const signin = async (req, res) => {
 const signUp = async (req, res) => {
   console.log("signup api hit");
   try {
-    const { email, password, username, number } = req.body;
+    const { email, password, username, number,role } = req.body;
     
     if (!email || !password || !username || !number) {
       return res.status(400).json({ success: false, message: "All fields are required" });
@@ -87,7 +87,7 @@ const signUp = async (req, res) => {
       email,
       password: hashedPassword,
       number,
-      role: "user"
+      role
     });
 
     const userData = {
