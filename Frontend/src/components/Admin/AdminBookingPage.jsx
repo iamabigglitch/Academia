@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { bookingsStyles } from "../../assets/dummyStylesAdmin";
-import { Search, User, BookOpen, BadgeDollarSign, GraduationCap } from 'lucide-react';
+import { Search, User, BookOpen, BadgeDollarSign, GraduationCap, AlertCircle } from 'lucide-react';
 
-const API_BASE = "http://localhost:3000"; 
+const API_BASE = "http://localhost:3000";
 
 const BookingPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -29,14 +28,30 @@ const BookingPage = () => {
       q.set("limit", String(limit));
       q.set("page", String(page));
 
+      const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+      
+      const headers = {
+        "Content-Type": "application/json"
+      };
+    
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+
       const res = await fetch(`${API_BASE}/api/booking?${q.toString()}`, {
         method: "GET",
         signal: controller.signal,
-        headers: { "Content-Type": "application/json" },
+        headers: headers,
       });
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
+        
+        // Handle specific authorization error
+        if (res.status === 401) {
+          throw new Error("Authentication required. Please log in to view bookings.");
+        }
+        
         throw new Error(
           body.message || `Request failed with status ${res.status}`
         );
@@ -51,7 +66,11 @@ const BookingPage = () => {
           price: b.price ?? 0,
           teacherName: b.teacherName || "Unknown teacher",
           purchaseDate: b.createdAt
-            ? new Date(b.createdAt).toISOString().split("T")[0]
+            ? new Date(b.createdAt).toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+              })
             : b.purchaseDate || "",
           raw: b,
         }));
@@ -59,7 +78,7 @@ const BookingPage = () => {
         setBookings(normalized);
       } else {
         setBookings([]);
-        setError(data?.message || "No data");
+        setError(data?.message || "No data available");
       }
     } catch (err) {
       if (err.name === "AbortError") {
@@ -92,105 +111,158 @@ const BookingPage = () => {
   }, [searchTerm]);
 
   return (
-    <div className={bookingsStyles.pageContainer}>
-      <div className={bookingsStyles.contentContainer}>
-        <div className={bookingsStyles.headerContainer}>
-          <h1 className={bookingsStyles.headerTitle}>Course Bookings</h1>
-          <p className={bookingsStyles.headerSubtitle}>
-            Manage all course bookings and view booking details.
+    <div className="min-h-screen bg-[#F1F5F9] pt-24 pb-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2" style={{ fontFamily: "'Inter', sans-serif" }}>
+            Course Bookings
+          </h1>
+          <p className="text-base text-gray-600" style={{ fontFamily: "'Inter', sans-serif" }}>
+            Manage and track all course enrollments
           </p>
         </div>
 
-        {/* Search */}
-        <div className={bookingsStyles.searchContainer}>
-          <div className={bookingsStyles.searchInputContainer}>
-            <Search className={bookingsStyles.searchIcon}/>
+        {/* Search Bar */}
+        <div className="mb-8">
+          <div className="relative max-w-xl">
+            <Search 
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" 
+            />
             <input 
               type="text" 
-              placeholder="Search by student, course, or teacher...."
+              placeholder="Search by student, course, or teacher..."
               value={searchTerm} 
               onChange={(e) => setSearchTerm(e.target.value)}
-              className={bookingsStyles.searchInput} 
+              className="w-full pl-12 pr-4 py-3.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm transition-all text-gray-900 placeholder-gray-400 font-medium"
             />
           </div>
         </div>
 
-        <div style={{ minHeight: 36 }}>
-          {loading && (
-            <div className={bookingsStyles.loadingText}>
-              <p>Loading bookings...</p>
-            </div>
-          )}
+        {/* Loading State */}
+        {loading && (
+          <div className="text-center py-16">
+            <div 
+              className="inline-block w-12 h-12 border-4 rounded-full animate-spin mb-4 border-gray-200"
+              style={{
+                borderTopColor: "#4F46E5"
+              }}
+            ></div>
+            <p className="text-gray-600 font-medium text-lg">Loading bookings...</p>
+          </div>
+        )}
 
-          {!loading && error && (
-            <div className={bookingsStyles.errorState}>
-              <p>Error: {error}</p>
+        {/* Error State */}
+        {!loading && error && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-8 shadow-sm">
+            <div className="flex items-start">
+              <AlertCircle className="w-6 h-6 text-red-500 mr-3 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-red-800 font-semibold text-lg mb-1">Error Loading Bookings</h3>
+                <p className="text-red-600 font-medium">{error}</p>
+                {error.includes("Authentication") && (
+                  <button 
+                    onClick={() => window.location.href = '/login'}
+                    className="mt-4 px-6 py-2.5 bg-[#EF4444] text-white rounded-lg font-semibold hover:bg-red-700 transition-colors shadow-sm"
+                  >
+                    Go to Login
+                  </button>
+                )}
+              </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* booking grid */}
-        <div className={bookingsStyles.bookingsGrid}>
-          {!loading &&
-            bookings.map((booking) => (
-              <div key={booking.id} className={bookingsStyles.bookingCard}>
-                <div className={bookingsStyles.studentSection}>
-                  <div className={bookingsStyles.studentIconContainer}>
-                    <User className={bookingsStyles.studentIcon} />
+        {/* Bookings Grid */}
+        {!loading && !error && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {bookings.map((booking) => (
+              <div 
+                key={booking.id} 
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group"
+              >
+                {/* Student Header */}
+                <div className="flex items-center mb-5 pb-4 border-b border-gray-100">
+                  <div 
+                    className="p-3 rounded-xl shadow-sm bg-indigo-50 group-hover:shadow-md transition-shadow"
+                  >
+                    <User className="h-6 w-6 text-indigo-600" />
                   </div>
                   
-                  <div className={bookingsStyles.studentInfo}>
-                    <h3 className={bookingsStyles.studentName}>
+                  <div className="ml-3 flex-1 min-w-0">
+                    <h3 className="font-bold text-lg truncate text-gray-900">
                       {booking.studentName}
                     </h3>
-                    <p className={bookingsStyles.purchaseDate}>
-                      Purchased on: {booking.purchaseDate}
+                    <p className="text-sm font-medium text-gray-500">
+                      {booking.purchaseDate}
                     </p>
                   </div>
                 </div>
 
                 {/* Course Details */}
-                <div className={bookingsStyles.courseDetails}>
-                  <div className={bookingsStyles.detailItem}>
-                    <BookOpen className={bookingsStyles.detailIcon} />
-                    <span className={bookingsStyles.detailLabel}>Course: </span>
-                    <span className={bookingsStyles.detailValue}>
-                      {booking.courseName}
-                    </span>
+                <div className="space-y-3.5 mb-5">
+                  <div className="flex items-start">
+                    <BookOpen className="h-5 w-5 mr-2.5 flex-shrink-0 mt-0.5 text-indigo-600" />
+                    <div className="min-w-0 flex-1">
+                      <span className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5">
+                        Course
+                      </span>
+                      <span className="block font-semibold text-gray-900 leading-tight">
+                        {booking.courseName}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className={bookingsStyles.detailItem}>
-                    <BadgeDollarSign className={bookingsStyles.detailIcon} />
-                    <span className={bookingsStyles.detailLabel}>Price: </span>
-                    <span className={bookingsStyles.detailValue}>
-                      Rs: {booking.price}
-                    </span>
+                  <div className="flex items-start">
+                    <BadgeDollarSign className="h-5 w-5 mr-2.5 flex-shrink-0 mt-0.5 text-[#22C55E]" />
+                    <div>
+                      <span className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5">
+                        Price
+                      </span>
+                      <span className="block font-bold text-xl text-[#22C55E]">
+                        Rs:{booking.price.toLocaleString()}
+                      </span>
+                    </div>
                   </div>
 
-                  <div className={bookingsStyles.detailItem}>
-                    <GraduationCap className={bookingsStyles.detailIcon} />
-                    <span className={bookingsStyles.detailLabel}>Teacher: </span>
-                    <span className={bookingsStyles.detailValue}>
-                      {booking.teacherName}
-                    </span>
+                  <div className="flex items-start">
+                    <GraduationCap className="h-5 w-5 mr-2.5 flex-shrink-0 mt-0.5 text-indigo-600" />
+                    <div className="min-w-0 flex-1">
+                      <span className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-0.5">
+                        Instructor
+                      </span>
+                      <span className="block font-semibold text-gray-900 leading-tight">
+                        {booking.teacherName}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                <div className={bookingsStyles.statusContainer}>
-                  <span className={bookingsStyles.statusLabel}>Completed</span>
+                {/* Status Badge */}
+                <div className="pt-4 border-t border-gray-100">
+                  <span 
+                    className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm bg-green-50 text-[#22C55E]"
+                  >
+                    ✓ Completed
+                  </span>
                 </div>
               </div>
             ))}
-        </div>
+          </div>
+        )}
 
-        {/* no results */}
+        {/* No Results */}
         {!loading && bookings.length === 0 && !error && (
-          <div className={bookingsStyles.emptyState}>
-            <div className={bookingsStyles.emptyContainer}>
-              <Search className={bookingsStyles.emptyIcon} />
-              <h3 className={bookingsStyles.emptyTitle}>No bookings found</h3>
-              <p className={bookingsStyles.emptyText}>
-                Try adjusting your search or filter to find bookings.
+          <div className="text-center py-16">
+            <div className="bg-white rounded-2xl p-12 max-w-md mx-auto shadow-lg border border-gray-200 hover:shadow-xl transition-shadow">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-full flex items-center justify-center bg-indigo-50 ring-4 ring-indigo-100">
+                <Search className="h-10 w-10 text-indigo-600" />
+              </div>
+              <h3 className="text-2xl font-bold mb-3 text-gray-900">
+                No bookings found
+              </h3>
+              <p className="text-gray-600 font-medium">
+                Try adjusting your search or check back later for new enrollments.
               </p>
             </div>
           </div>

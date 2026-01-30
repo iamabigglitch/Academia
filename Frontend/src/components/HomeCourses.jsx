@@ -5,7 +5,14 @@ import { ArrowRight, Star, User } from "lucide-react";
 import { toast, ToastContainer, Slide } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
-const API_BASE = 'http://localhost:3000';  
+const API_BASE = "http://localhost:3000";
+
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return "https://via.placeholder.com/400x240?text=Course";
+  if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) return imagePath;
+  if (imagePath.startsWith("/")) return `${API_BASE}${imagePath}`;
+  return `${API_BASE}/uploads/${imagePath}`.replace(/\/\/+/g, "/");
+};
 
 const HomeCourses = () => {
   const navigate = useNavigate();
@@ -52,12 +59,12 @@ const HomeCourses = () => {
       })
       .then((json) => {
         if (!mounted) return;
-        const items = (json && (json.items || json.courses || [])) || [];
+        const items = (json && (json.items || json.courses || json.data || [])) || [];
         const mapped = items.map((c) => ({
           id: c._id || c.id,
-          name: c.name,
-          teacher: c.teacher,
-          image: c.image,
+          name: c.name || "Untitled Course",
+          teacher: c.teacher || "Instructor",
+          image: getImageUrl(c.image),
           price: c.price || {
             original: c.price?.original,
             sale: c.price?.sale,
@@ -239,9 +246,21 @@ const HomeCourses = () => {
         </div>
 
         {loading ? (
-          <div className="p-6 text-center">Loading courses...</div>
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4" />
+            <p className="text-gray-600 font-medium">Loading courses...</p>
+          </div>
         ) : error ? (
-          <div className="p-6 text-center text-red-500">{error}</div>
+          <div className="max-w-md mx-auto text-center py-12 px-6 bg-white/80 backdrop-blur-sm rounded-2xl border border-red-100 shadow-lg">
+            <p className="text-red-600 font-medium mb-4">{error}</p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="px-6 py-2.5 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors"
+            >
+              Try again
+            </button>
+          </div>
         ) : (
           <>
             <div className={homeCoursesStyles.coursesGrid}>
@@ -254,12 +273,15 @@ const HomeCourses = () => {
                     onClick={() => handleCourseClick(course.id)}
                     className={homeCoursesStyles.coursesCard}
                   >
-                    <div className={homeCoursesStyles.imageContainer}>
+                    <div className={`${homeCoursesStyles.imageContainer} aspect-video bg-gray-100`}>
                       <img
                         src={course.image}
                         alt={course.name}
-                        className={homeCoursesStyles.courseImage}
+                        className="w-full h-48 object-cover transition-transform duration-300 group-hover:scale-105"
                         loading="lazy"
+                        onError={(e) => {
+                          e.target.src = "https://via.placeholder.com/400x240?text=Course";
+                        }}
                       />
                     </div>
 
@@ -314,30 +336,13 @@ const HomeCourses = () => {
 
         <div className={homeCoursesStyles.ctaContainer}>
           <div className={homeCoursesStyles.ctaWrapper}>
-            <span
-              className={homeCoursesStyles.ctaGlow}
-              style={{
-                zIndex: 0,
-                background:
-                  "conic-gradient(from 0deg, rgba(236,72,153,0.9), rgba(99,102,241,0.9), rgba(139,92,246,0.9), rgba(236,72,153,0.9))",
-                filter: "blur(5px)",
-                opacity: 0.8,
-              }}
-            />
             <button
+              type="button"
               onClick={handleBrowseClick}
-              className={homeCoursesStyles.ctaButton}
-              style={{
-                background:
-                  "linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))",
-              }}
+              className="relative z-10 inline-flex items-center gap-3 px-8 py-4 text-lg font-bold rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl hover:from-indigo-700 hover:to-purple-700 hover:shadow-2xl transition-all duration-300 cursor-pointer active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-indigo-300/50"
             >
-              <span className={homeCoursesStyles.ctaButtonContent}>
-                <span className={homeCoursesStyles.ctaText}>
-                  Discover Courses
-                </span>
-                <ArrowRight className={homeCoursesStyles.ctaIcon} />
-              </span>
+              <span>Discover Courses</span>
+              <ArrowRight className="w-5 h-5" />
             </button>
           </div>
         </div>
@@ -350,7 +355,7 @@ const HomeCourses = () => {
         transition={Slide}
       />
 
-      <style jsx>{homeCoursesStyles.animations}</style>
+      <style>{homeCoursesStyles.animations}</style>
     </div>
   );
 };

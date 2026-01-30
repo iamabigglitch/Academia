@@ -1,50 +1,56 @@
 import React, { useState } from 'react';
 import { Mail, Lock, BookOpen, Shield, ArrowLeft, CheckCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Toaster, toast } from 'react-hot-toast';
 import axios from 'axios';
 
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 const ForgotPassword = () => {
-  // State for loading during API call
   const [loading, setLoading] = useState(false);
-  
-  // State for success message
   const [emailSent, setEmailSent] = useState(false);
-  
-  // State for email input
   const [email, setEmail] = useState('');
 
-  // Handle Forgot Password submission
-  
-  const handleForgotPassword = async () => {
-  if (!email) {
-    alert("Please enter your email");
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    const response = await axios.post(
-      `${import.meta.env.VITE_API_URL}/api/auth/forgot-password`,
-      { email }
-    );
-
-    if (response.status === 200) {
-      setEmailSent(true);
+  const handleForgotPassword = async (e) => {
+    e?.preventDefault?.();
+    const trimmed = (email || '').trim();
+    if (!trimmed) {
+      toast.error('Please enter your email');
+      return;
     }
-  } catch (error) {
-    if (error.response) {
-      alert(error.response.data.message || "Failed to send reset email");
-    } else {
-      alert("Error connecting to server");
+
+    setLoading(true);
+    try {
+      const response = await axios.post(
+        `${API_BASE}/auth/forgot-password`,
+        { email: trimmed },
+        { headers: { 'Content-Type': 'application/json' }, timeout: 15000 }
+      );
+
+      if (response.status === 200 && (response.data?.success !== false)) {
+        setEmailSent(true);
+        toast.success('If an account exists, we\'ve sent reset instructions.');
+      } else {
+        setEmailSent(true);
+      }
+    } catch (error) {
+      if (error.code === 'ERR_NETWORK' || error.message?.includes('Network')) {
+        toast.error('Unable to connect. Please try again later.');
+      } else if (error.response?.status === 404) {
+        toast.error('Password reset is not configured yet. Please contact support.');
+      } else {
+        const msg = error.response?.data?.message || 'Failed to send reset email.';
+        toast.error(msg);
+      }
+      console.error('Forgot password error:', error);
+    } finally {
+      setLoading(false);
     }
-    console.error("Forgot password error:", error);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-950 flex items-center justify-center p-4 sm:p-6 relative overflow-hidden">
+      <Toaster position="top-center" toastOptions={{ duration: 4000 }} />
       {/* Background Decorative Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Animated gradient orbs */}
@@ -59,26 +65,23 @@ const ForgotPassword = () => {
       <div className="w-full max-w-5xl flex flex-col lg:flex-row items-center gap-8 lg:gap-12 relative z-10">
         {/* Left Side - Information */}
         <div className="w-full lg:w-1/2 text-white space-y-8">
-          {/* Logo for mobile */}
           <div className="lg:hidden flex justify-center mb-8">
-            <div className="bg-white p-4 rounded-2xl">
-              <BookOpen className="w-10 h-10 text-blue-900" />
+            <div className="bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/20">
+              <BookOpen className="w-10 h-10 text-white" />
             </div>
           </div>
 
-          {/* Desktop logo and title */}
           <div className="hidden lg:flex items-center gap-4 mb-8">
-            <div className="bg-white p-4 rounded-2xl animate-pulse-gentle">
-              <BookOpen className="w-12 h-12 text-blue-900" />
+            <div className="bg-white/10 backdrop-blur-sm p-4 rounded-2xl border border-white/20 animate-pulse-gentle">
+              <BookOpen className="w-12 h-12 text-white" />
             </div>
-            <h1 className="text-5xl font-bold">Academia</h1>
+            <h1 className="text-4xl xl:text-5xl font-bold tracking-tight">Academia</h1>
           </div>
 
-          {/* Information cards */}
           <div className="space-y-6">
             <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-6 hover:bg-white/15 transition-all">
               <div className="flex items-start gap-4">
-                <div className="bg-blue-500 p-3 rounded-lg">
+                <div className="bg-indigo-500/80 p-3 rounded-xl shrink-0">
                   <Shield className="w-6 h-6 text-white" />
                 </div>
                 <div>
@@ -92,7 +95,7 @@ const ForgotPassword = () => {
 
             <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-6 hover:bg-white/15 transition-all">
               <div className="flex items-start gap-4">
-                <div className="bg-blue-500 p-3 rounded-lg">
+                <div className="bg-indigo-500/80 p-3 rounded-xl shrink-0">
                   <Mail className="w-6 h-6 text-white" />
                 </div>
                 <div>
@@ -106,7 +109,7 @@ const ForgotPassword = () => {
 
             <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-6 hover:bg-white/15 transition-all">
               <div className="flex items-start gap-4">
-                <div className="bg-blue-500 p-3 rounded-lg">
+                <div className="bg-indigo-500/80 p-3 rounded-xl shrink-0">
                   <Lock className="w-6 h-6 text-white" />
                 </div>
                 <div>
@@ -122,114 +125,91 @@ const ForgotPassword = () => {
 
         {/* Right Side - Reset Form */}
         <div className="w-full lg:w-1/2">
-          <div className="bg-white rounded-2xl shadow-2xl p-8 lg:p-10 animate-fadeIn">
+          <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 p-8 lg:p-10 animate-fadeIn">
             {!emailSent ? (
               <>
-                {/* Form Header */}
                 <div className="text-center mb-8">
                   <div className="flex justify-center mb-4">
-                    <div className="bg-blue-100 p-4 rounded-full">
-                      <Lock className="w-8 h-8 text-blue-900" />
+                    <div className="bg-indigo-100 p-4 rounded-2xl">
+                      <Lock className="w-8 h-8 text-indigo-600" />
                     </div>
                   </div>
-                  <h2 className="text-3xl font-bold text-gray-800 mb-2">Forgot Password?</h2>
-                  <p className="text-gray-600">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Forgot Password?</h2>
+                  <p className="text-gray-600 text-sm sm:text-base">
                     No worries! Enter your email and we'll send you reset instructions.
                   </p>
                 </div>
 
-                {/* Email Input Form */}
-                <div className="space-y-6">
-                  {/* Email Input */}
+                <form onSubmit={handleForgotPassword} className="space-y-6">
                   <div className="relative group">
-                    <Mail className="absolute left-3 top-3 w-5 h-5 text-gray-400 group-focus-within:text-blue-900 transition-colors" />
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
                     <input
                       type="email"
                       placeholder="Enter your email address"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-900 focus:outline-none transition-all"
+                      className="w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all text-gray-900 placeholder-gray-400"
                     />
                   </div>
 
-                  {/* Submit Button */}
                   <button
-                    onClick={handleForgotPassword}
+                    type="submit"
                     disabled={loading}
-                    className="w-full bg-blue-900 text-white py-3 rounded-lg font-semibold hover:bg-blue-800 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3.5 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? 'Sending...' : 'Send Reset Link'}
                   </button>
 
-                  {/* Back to Login */}
-                  <a
-                    href="/login"
-                    className="flex items-center justify-center gap-2 text-gray-600 hover:text-blue-900 transition-colors"
+                  <Link
+                    to="/login"
+                    className="flex items-center justify-center gap-2 text-gray-600 hover:text-indigo-600 font-medium transition-colors"
                   >
                     <ArrowLeft className="w-4 h-4" />
                     Back to Login
-                  </a>
-                </div>
+                  </Link>
+                </form>
               </>
             ) : (
-              // Success State
-              <div className="text-center py-8 animate-scaleIn">
+              <div className="text-center py-6 animate-scaleIn">
                 <div className="flex justify-center mb-6">
-                  <div className="bg-green-100 p-4 rounded-full animate-bounce-once">
-                    <CheckCircle className="w-16 h-16 text-green-600" />
+                  <div className="bg-green-100 p-4 rounded-2xl animate-bounce-once">
+                    <CheckCircle className="w-14 h-14 text-green-600" />
                   </div>
                 </div>
-                
-                <h2 className="text-3xl font-bold text-gray-800 mb-4">Check Your Email!</h2>
-                
-                <p className="text-gray-600 mb-2">
-                  We've sent password reset instructions to:
-                </p>
-                <p className="text-blue-900 font-semibold mb-6">{email}</p>
-                
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                  <p className="text-sm text-blue-800">
-                    <strong>Didn't receive the email?</strong>
-                    <br />
-                    Check your spam folder or try resending in a few minutes.
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-3">Check Your Email</h2>
+                <p className="text-gray-600 mb-1 text-sm sm:text-base">If an account exists for:</p>
+                <p className="text-indigo-600 font-semibold mb-6 break-all">{email}</p>
+                <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-6 text-left">
+                  <p className="text-sm text-indigo-800">
+                    <strong>Didn't receive the email?</strong> Check your spam folder or try another email below.
                   </p>
                 </div>
-
-                {/* Action Buttons */}
                 <div className="space-y-3">
                   <button
-                    onClick={() => {
-                      setEmailSent(false);
-                      setEmail('');
-                    }}
-                    className="w-full bg-blue-900 text-white py-3 rounded-lg font-semibold hover:bg-blue-800 transition-all"
+                    type="button"
+                    onClick={() => { setEmailSent(false); setEmail(''); }}
+                    className="w-full bg-gray-100 text-gray-800 py-3 rounded-xl font-semibold hover:bg-gray-200 transition-all"
                   >
                     Try Another Email
                   </button>
-                  
-                  <a
-                    href="/login"
-                    className="flex items-center justify-center gap-2 text-gray-600 hover:text-blue-900 transition-colors py-2"
+                  <Link
+                    to="/login"
+                    className="flex items-center justify-center gap-2 text-indigo-600 hover:text-indigo-700 font-semibold py-2 transition-colors"
                   >
                     <ArrowLeft className="w-4 h-4" />
                     Back to Login
-                  </a>
+                  </Link>
                 </div>
               </div>
             )}
           </div>
-
-          {/* Help Text */}
           <p className="text-center text-white/70 text-sm mt-6">
-            Need help? Contact our{' '}
-            <a href="/support" className="text-white hover:underline font-semibold">
-              support team
-            </a>
+            Need help? <Link to="/contact" className="text-white hover:underline font-semibold">Contact support</Link>
           </p>
         </div>
       </div>
 
-      {/* Custom CSS for animations */}
+      {/* Custom CSS for animations - keep for drift/pulse/bounce */}
       <style>{`
         @keyframes fadeIn {
           from {

@@ -1,8 +1,12 @@
 import jwt from "jsonwebtoken";
 import { User } from "../models/userModel.js";
+import dotenv from "dotenv";
 
-import dotenv from "dotenv"
-dotenv.config()
+dotenv.config();
+
+// Use the same fallback secret as JWT utility to keep verification consistent
+const JWT_SECRET = process.env.JWT_SECRET || "default_jwt_secret_key_change_in_env";
+
 export const protect = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -13,7 +17,7 @@ export const protect = async (req, res, next) => {
 
     const token = authHeader.split(" ")[1];
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
 
     const user = await User.findOne({
       where: { id: decoded.id },

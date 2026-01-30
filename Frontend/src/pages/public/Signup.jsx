@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import {Eye, EyeOff, User, Mail, Phone, Lock, BookOpen, Sparkles, Globe, Clock, } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff, User, Mail, Phone, Lock, BookOpen, Sparkles, Globe, Clock } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import { Toaster, toast } from "react-hot-toast";
 import api from "../../api/axios.js";
 
 const Signup = () => {
@@ -16,29 +17,27 @@ const Signup = () => {
     number: "",
   });
 
- const handleSignup = async () => {
-  setLoading(true);
-
-  try {
-    const res = await api.post("/auth/signup", signupData);
-    console.log(res.data.token);
-    localStorage.setItem("token", res.data.token);
-    localStorage.setItem("user", JSON.stringify(res.data.user));
-    alert(res.data.message || "Account created successfully!");
-    
-    // Navigate to courses after successful signup
-    navigate('/courses');
-    
-  } catch (error) {
-    alert(error.response?.data?.message || "Signup failed. Please try again.");
-    console.error('Signup error:', error);
-  } finally {
-    setLoading(false);
-  }
-};
+  const handleSignup = async (e) => {
+    e?.preventDefault?.();
+    setLoading(true);
+    try {
+      const res = await api.post("/auth/signup", signupData);
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+      toast.success(res.data.message || "Account created successfully!");
+      navigate("/courses");
+    } catch (error) {
+      const msg = error.response?.data?.message || "Signup failed. Please try again.";
+      toast.error(msg);
+      console.error("Signup error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-blue-900 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-950 flex items-center justify-center p-4 sm:p-6 relative overflow-hidden">
+      <Toaster position="top-center" toastOptions={{ duration: 4000 }} />
 
       {/* Background Decorative Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -50,121 +49,101 @@ const Signup = () => {
 
       {/* Left Side - Sign Up Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center relative z-10">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 lg:p-10 animate-slideIn">
-
-          {/* Mobile Logo */}
+        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 w-full max-w-md p-8 lg:p-10 animate-slideIn">
           <div className="lg:hidden flex justify-center mb-6">
-            <div className="bg-blue-900 p-3 rounded-full animate-bounce-slow">
+            <div className="bg-gradient-to-br from-indigo-600 to-purple-600 p-3 rounded-2xl shadow-lg">
               <BookOpen className="w-8 h-8 text-white" />
             </div>
           </div>
 
-          {/* Header */}
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-800 mb-2">Join Academia</h2>
-            <p className="text-gray-600">Start your learning journey today</p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Join Academia</h2>
+            <p className="text-gray-600 text-sm sm:text-base">Start your learning journey today</p>
           </div>
 
-          {/* Form */}
-          <div className="space-y-4">
+          <form onSubmit={handleSignup} className="space-y-4">
             <div className="relative group">
-              <User className="absolute left-3 top-3 w-5 h-5 text-gray-400 group-focus-within:text-blue-900 transition-colors" />
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
               <input
                 type="text"
                 placeholder="Username"
                 value={signupData.username}
-                onChange={(e) =>
-                  setSignupData({ ...signupData, username: e.target.value })
-                }
-                className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-900 focus:outline-none transition-all"
+                onChange={(e) => setSignupData({ ...signupData, username: e.target.value })}
+                className="w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all text-gray-900 placeholder-gray-400"
               />
             </div>
 
             <div className="relative group">
-              <Mail className="absolute left-3 top-3 w-5 h-5 text-gray-400 group-focus-within:text-blue-900 transition-colors" />
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
               <input
                 type="email"
                 placeholder="Email Address"
                 value={signupData.email}
-                onChange={(e) =>
-                  setSignupData({ ...signupData, email: e.target.value })
-                }
-                className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-900 focus:outline-none transition-all"
+                onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
+                className="w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all text-gray-900 placeholder-gray-400"
               />
             </div>
 
             <div className="relative group">
-              <Phone className="absolute left-3 top-3 w-5 h-5 text-gray-400 group-focus-within:text-blue-900 transition-colors" />
+              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
               <input
                 type="tel"
                 placeholder="Phone Number"
                 value={signupData.number}
-                onChange={(e) =>
-                  setSignupData({ ...signupData, number: e.target.value })
-                }
-                className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-900 focus:outline-none transition-all"
+                onChange={(e) => setSignupData({ ...signupData, number: e.target.value })}
+                className="w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all text-gray-900 placeholder-gray-400"
               />
             </div>
 
             <div className="relative group">
-              <Lock className="absolute left-3 top-3 w-5 h-5 text-gray-400 group-focus-within:text-blue-900 transition-colors" />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
               <input
                 type={showPassword ? "text" : "password"}
                 placeholder="Password"
                 value={signupData.password}
-                onChange={(e) =>
-                  setSignupData({ ...signupData, password: e.target.value })
-                }
-                className="w-full pl-11 pr-12 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-900 focus:outline-none transition-all"
+                onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
+                className="w-full pl-12 pr-12 py-3.5 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all text-gray-900 placeholder-gray-400"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-3 text-gray-400 hover:text-blue-900 transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-600 transition-colors"
               >
-                {showPassword ? (
-                  <Eye className="w-5 h-5" />
-                ) : (
-                  <EyeOff className="w-5 h-5" />
-                )}
+                {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
               </button>
             </div>
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-              <p className="text-xs text-blue-800">
-                <strong>Password must contain:</strong>
-                <br />• At least 6 characters
-                <br />• At least one number
+            <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3">
+              <p className="text-xs text-indigo-800">
+                <strong>Password must contain:</strong> At least 6 characters, one number
               </p>
             </div>
 
             <button
-              onClick={handleSignup}
+              type="submit"
               disabled={loading}
-              className="w-full bg-blue-900 text-white py-3 rounded-lg font-semibold hover:bg-blue-800 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3.5 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Creating Account..." : "Create Account"}
             </button>
-          </div>
+          </form>
 
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
+              <div className="w-full border-t border-gray-200"></div>
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">
-                Already have an account?
-              </span>
-            </div>
+            <span className="relative flex justify-center">
+              <span className="bg-white px-3 text-sm text-gray-500">Already have an account?</span>
+            </span>
           </div>
 
-          <p className="text-center text-gray-600">
-            <a
-              href="/login"
-              className="text-blue-900 font-semibold hover:underline transition-all"
+          <p className="text-center text-gray-600 text-sm">
+            <Link
+              to="/login"
+              className="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline transition-all"
             >
               Sign in instead
-            </a>
+            </Link>
           </p>
         </div>
       </div>
@@ -173,44 +152,40 @@ const Signup = () => {
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-center items-center text-white relative z-10 px-12">
         <div className="max-w-md">
           <div className="flex items-center gap-3 mb-8">
-            <div className="bg-white p-3 rounded-xl animate-bounce-slow">
-              <BookOpen className="w-10 h-10 text-blue-900" />
+            <div className="bg-white/10 backdrop-blur-sm p-3 rounded-2xl border border-white/20 shadow-xl">
+              <BookOpen className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-5xl font-bold">Academia</h1>
+            <h1 className="text-4xl xl:text-5xl font-bold tracking-tight">Academia</h1>
           </div>
-
-          <h3 className="text-2xl font-semibold mb-8 text-blue-100">
+          <h3 className="text-xl xl:text-2xl font-semibold mb-8 text-blue-100/90">
             Why join Academia?
           </h3>
-
           <div className="space-y-6">
             <div className="flex items-start gap-4 group">
-              <div className="bg-purple-700 p-3 rounded-lg group-hover:scale-110 transition-transform">
+              <div className="bg-indigo-500/80 p-3 rounded-xl shrink-0 group-hover:scale-105 transition-transform">
                 <Sparkles className="w-6 h-6" />
               </div>
               <div>
                 <h4 className="font-semibold text-lg">Unlimited Access</h4>
-                <p className="text-blue-200">Access thousands of courses anytime</p>
+                <p className="text-blue-200/90 text-sm">Access thousands of courses anytime</p>
               </div>
             </div>
-
             <div className="flex items-start gap-4 group">
-              <div className="bg-purple-700 p-3 rounded-lg group-hover:scale-110 transition-transform">
+              <div className="bg-indigo-500/80 p-3 rounded-xl shrink-0 group-hover:scale-105 transition-transform">
                 <Globe className="w-6 h-6" />
               </div>
               <div>
                 <h4 className="font-semibold text-lg">Learn Anywhere</h4>
-                <p className="text-blue-200">Study on any device, at your own pace</p>
+                <p className="text-blue-200/90 text-sm">Study on any device, at your own pace</p>
               </div>
             </div>
-
             <div className="flex items-start gap-4 group">
-              <div className="bg-purple-700 p-3 rounded-lg group-hover:scale-110 transition-transform">
+              <div className="bg-indigo-500/80 p-3 rounded-xl shrink-0 group-hover:scale-105 transition-transform">
                 <Clock className="w-6 h-6" />
               </div>
               <div>
                 <h4 className="font-semibold text-lg">Flexible Schedule</h4>
-                <p className="text-blue-200">Learn at times that work for you</p>
+                <p className="text-blue-200/90 text-sm">Learn at times that work for you</p>
               </div>
             </div>
           </div>

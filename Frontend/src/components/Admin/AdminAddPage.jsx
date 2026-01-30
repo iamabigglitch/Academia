@@ -1,13 +1,11 @@
 import React, { useState } from 'react';
-import { addPageStyles } from '../../assets/dummyStylesAdmin';
 import { useNavigate } from "react-router-dom";
 import { toast, Toaster } from "react-hot-toast";
 import { DollarSign, Star } from 'lucide-react';
 import { Image as ImageIcon, Upload, Video, Plus, BookOpenText, Clock, ListOrdered, PenLine, UserPen, ChevronUp, ChevronDown, X } from 'lucide-react';
 
-const API_BASE = 'http://localhost:4000';
+const API_BASE = 'http://localhost:3000';
 
-// formatDuration accepts either {hours, minutes} or (hours, minutes)
 const formatDuration = (a, b) => {
   let hours = 0;
   let minutes = 0;
@@ -255,13 +253,8 @@ const AddPage = () => {
         toast.error("Please enter valid original price for paid course");
         return false;
       }
-      if (!formData.price.sale || parseFloat(formData.price.sale) <= 0) {
-        toast.error("Please enter valid sale price for paid course");
-        return false;
-      }
-      if (
-        parseFloat(formData.price.sale) >= parseFloat(formData.price.original)
-      ) {
+     
+      if (formData.price.sale && parseFloat(formData.price.sale) >= parseFloat(formData.price.original)) {
         toast.error("Sale price should be less than original price");
         return false;
       }
@@ -481,8 +474,11 @@ const AddPage = () => {
 
       if (formData.image?.file) fd.append("image", formData.image.file);
 
+      const token = localStorage.getItem("token");
+
       const res = await fetch(`${API_BASE}/api/course`, {
         method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: fd,
       });
 
@@ -512,63 +508,68 @@ const AddPage = () => {
   };
 
   const StarRating = ({ rating, onRatingChange }) => (
-    <div className={addPageStyles.starRating}>
+    <div className="flex items-center gap-1">
       {[1, 2, 3, 4, 5].map((star) => (
         <button
           key={star}
           type="button"
           onClick={() => onRatingChange(star)}
-          className={addPageStyles.starButton}
+          className="transition-all duration-200 hover:scale-110 focus:outline-none"
         >
           {star <= rating ? (
-            <Star className={addPageStyles.starFull} size={28} />
+            <Star className="fill-yellow-400 text-yellow-400" size={24} />
           ) : (
-            <Star className={addPageStyles.starEmpty} size={28} />
+            <Star className="text-gray-300 hover:text-yellow-300" size={24} />
           )}
         </button>
       ))}
     </div>
   );
 
+  const PRIMARY_COLOR = "#4F46E5";
+  const SUCCESS_COLOR = "#22C55E";
+  const WARNING_COLOR = "#F59E0B";
+  const DANGER_COLOR = "#EF4444";
+  
   return (
-    <div className={addPageStyles.pageContainer}>
+    
+    <div className="min-h-screen bg-[#F1F5F9] pt-24 pb-8 px-4 sm:px-6 lg:px-8">
       <Toaster position='top-right' toastOptions={{ duration: 3000 }} />
 
-      <div className={addPageStyles.contentContainer}>
-        <div className={addPageStyles.headerContainer}>
-          <div className={addPageStyles.headerGradient}>
-            <div className={addPageStyles.headerGlow}></div>
-            <h1 className={addPageStyles.headerTitle}>Create New Course</h1>
-          </div>
-
-          <p className={addPageStyles.headerSubtitle}>
-            Craft an exceptional learning experience with our intuitive Course Creation Platform.
+      <div className="max-w-5xl mx-auto">
+       
+        <div className="mb-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2" style={{ fontFamily: "'Inter', sans-serif" }}>
+            Create New Course
+          </h1>
+          <p className="text-base text-gray-600" style={{ fontFamily: "'Inter', sans-serif" }}>
+            Build an exceptional learning experience for your students
           </p>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className={addPageStyles.form}>
+        <form onSubmit={handleSubmit} className="space-y-6">
           {/* Course Type */}
-          <div className={`${addPageStyles.card} ${addPageStyles.courseTypeCard}`}>
-            <div className={addPageStyles.cardHeader}>
-              <div className={addPageStyles.cardIconContainer}>
-                <BookOpenText className={addPageStyles.cardIcon} size={20} />
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+
+            <div className="flex items-start gap-3 mb-5">
+              <div className="p-2.5 rounded-lg bg-indigo-50">
+                <BookOpenText className="text-indigo-600" size={20} />
               </div>
               <div>
-                <h2 className={addPageStyles.cardTitle}>Course Type</h2>
-                <p className={addPageStyles.cardSubtitle}>
-                  Select the type of course you want to create
-                </p>
+                <h2 className="text-lg font-semibold text-gray-900" style={{ fontFamily: "'Inter', sans-serif" }}>Course Type</h2>
+                <p className="text-sm text-gray-600 mt-0.5">Select the type of course you want to create</p>
               </div>
             </div>
 
-            <div className={addPageStyles.courseTypeGrid}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <label
                 htmlFor="top"
-                className={addPageStyles.courseTypeLabel(
-                  formData.courseType === "top",
-                  "top"
-                )}
+                className={`relative flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                  formData.courseType === "top"
+                    ? 'border-[#F59E0B] bg-amber-50/50'
+                    : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                }`}
               >
                 <input
                   type="radio"
@@ -577,19 +578,21 @@ const AddPage = () => {
                   value="top"
                   checked={formData.courseType === "top"}
                   onChange={() => handleCourseTypeChange("top")}
-                  className={`${addPageStyles.courseTypeInput} text-orange-500`}
+                  className="w-4 h-4 text-[#F59E0B] border-gray-300 focus:ring-[#F59E0B] focus:ring-2"
                 />
-                <div>
-                  <h3 className={addPageStyles.courseTypeText}>Top Course</h3>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-gray-900">Top Course</h3>
                 </div>
               </label>
 
               <label
                 htmlFor="regular"
-                className={addPageStyles.courseTypeLabel(
-                  formData.courseType === "regular",
-                  "regular"
-                )}
+                className={`relative flex items-center p-4 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
+                  formData.courseType === "regular"
+                    ? `bg-indigo-50/50 border-[${PRIMARY_COLOR}]`
+                    : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                }`}
+                style={formData.courseType === "regular" ? { borderColor: PRIMARY_COLOR } : {}}
               >
                 <input
                   type="radio"
@@ -598,35 +601,33 @@ const AddPage = () => {
                   value="regular"
                   checked={formData.courseType === "regular"}
                   onChange={() => handleCourseTypeChange("regular")}
-                  className={`${addPageStyles.courseTypeInput} text-blue-500`}
+                  className="w-4 h-4 border-gray-300 focus:ring-2"
+                  style={{ color: PRIMARY_COLOR, accentColor: PRIMARY_COLOR }}
                 />
-                <div>
-                  <h3 className={addPageStyles.courseTypeText}>
-                    Regular Course
-                  </h3>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-gray-900">Regular Course</h3>
                 </div>
               </label>
             </div>
           </div>
 
           {/* Basic Info */}
-          <div className={`${addPageStyles.card} ${addPageStyles.courseInfoCard}`}>
-            <div className={addPageStyles.cardHeader}>
-              <div className={addPageStyles.cardIconContainer}>
-                <BookOpenText className={addPageStyles.cardIcon} size={20} />
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-start gap-3 mb-5">
+              <div className="p-2.5 rounded-lg bg-indigo-50">
+                <BookOpenText className="text-indigo-600" size={20} />
               </div>
               <div>
-                <h2 className={addPageStyles.cardTitle}>Course Information</h2>
-                <p className={addPageStyles.cardSubtitle}>
-                  Basic details about your course
-                </p>
+                <h2 className="text-lg font-semibold text-gray-900" style={{ fontFamily: "'Inter', sans-serif" }}>Course Information</h2>
+                <p className="text-sm text-gray-600 mt-0.5">Basic details about your course</p>
               </div>
             </div>
 
-            <div className={addPageStyles.formGrid}>
-              <div className={addPageStyles.inputContainer}>
-                <label className={addPageStyles.inputLabel}>
-                  <PenLine size={16} className={addPageStyles.inputIcon} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* Course Name */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <PenLine size={16} className="text-indigo-600" />
                   Course Name *
                 </label>
                 <input
@@ -634,15 +635,17 @@ const AddPage = () => {
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  className={addPageStyles.input}
-                  placeholder="e.g., React Masterclass"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-gray-900"
+                  style={{ fontFamily: "'Inter', sans-serif" }}
+                  placeholder="Course Name"
                   required
                 />
               </div>
 
-              <div className={addPageStyles.inputContainer}>
-                <label className={addPageStyles.inputLabel}>
-                  <UserPen size={16} className={addPageStyles.inputIcon} />
+              {/* Instructor Name */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <UserPen size={16} className="text-indigo-600" />
                   Instructor Name *
                 </label>
                 <input
@@ -650,18 +653,20 @@ const AddPage = () => {
                   name="teacher"
                   value={formData.teacher}
                   onChange={handleInputChange}
-                  className={addPageStyles.input}
-                  placeholder="e.g., Sophia Miller"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-gray-900"
+                  style={{ fontFamily: "'Inter', sans-serif" }}
+                  placeholder="Instructor Name"
                   required
                 />
               </div>
 
-              <div className={addPageStyles.inputContainer}>
-                <label className={addPageStyles.inputLabel}>
-                  <Star size={16} className={addPageStyles.inputIcon} />
+              {/* Course Rating */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <Star size={16} className="text-indigo-600" />
                   Course Rating
                 </label>
-                <div className="p-2 sm:p-3 bg-white border-2 border-gray-200 rounded-full shadow-sm">
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
                   <StarRating
                     rating={formData.rating}
                     onRatingChange={handleRatingChange}
@@ -669,12 +674,13 @@ const AddPage = () => {
                 </div>
               </div>
 
-              <div className={addPageStyles.inputContainer}>
-                <label className={addPageStyles.inputLabel}>
-                  <Clock size={16} className={addPageStyles.inputIcon} />
+              {/* Total Duration */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <Clock size={16} className="text-indigo-600" />
                   Total Duration *
                 </label>
-                <div className={addPageStyles.durationGrid}>
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <input
                       type="number"
@@ -683,9 +689,9 @@ const AddPage = () => {
                       onChange={handleInputChange}
                       placeholder="Hours"
                       min="0"
-                      className={addPageStyles.input}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-gray-900"
                     />
-                    <span className={addPageStyles.durationHelper}>Hours</span>
+                    <span className="text-xs text-gray-500 mt-1 block">Hours</span>
                   </div>
                   <div>
                     <input
@@ -696,22 +702,22 @@ const AddPage = () => {
                       placeholder="Minutes"
                       min="0"
                       max="59"
-                      className={addPageStyles.input}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-gray-900"
                     />
-                    <span className={addPageStyles.durationHelper}>Minutes</span>
+                    <span className="text-xs text-gray-500 mt-1 block">Minutes</span>
                   </div>
                 </div>
-                {(formData.totalDuration.hours ||
-                  formData.totalDuration.minutes) && (
-                  <p className={addPageStyles.durationFormatted}>
-                    Formatted: {formatTotalDuration()}
+                {(formData.totalDuration.hours || formData.totalDuration.minutes) && (
+                  <p className="text-sm text-gray-600 mt-2">
+                    Total: {formatTotalDuration()}
                   </p>
                 )}
               </div>
 
-              <div className={addPageStyles.inputContainer}>
-                <label className={addPageStyles.inputLabel}>
-                  <ListOrdered size={16} className={addPageStyles.inputIcon} />
+              {/* Total Lectures */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <ListOrdered size={16} className="text-indigo-600" />
                   Total Lectures *
                 </label>
                 <input
@@ -720,33 +726,36 @@ const AddPage = () => {
                   value={formData.totalLectures}
                   onChange={handleInputChange}
                   min="1"
-                  className={addPageStyles.input}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-gray-900"
                   placeholder="Enter total number of lectures"
                   required
                 />
               </div>
 
-              <div className={addPageStyles.inputContainer}>
-                <label className={addPageStyles.inputLabel}>
-                  <DollarSign size={16} className={addPageStyles.inputIcon} />
-                  Course Type *
+              {/* Pricing Type */}
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <DollarSign size={16} className="text-indigo-600" />
+                  Pricing Type *
                 </label>
                 <select
                   name="pricingType"
                   value={formData.pricingType}
                   onChange={handleInputChange}
-                  className={addPageStyles.select}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-gray-900"
+                  style={{ fontFamily: "'Inter', sans-serif" }}
                 >
                   <option value="free">Free Course</option>
                   <option value="paid">Paid Course</option>
                 </select>
               </div>
 
+              {/* Paid Course Prices */}
               {formData.pricingType === "paid" && (
                 <>
-                  <div className={addPageStyles.inputContainer}>
-                    <label className={addPageStyles.inputLabel}>
-                      <DollarSign size={16} className={addPageStyles.inputIcon} />
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                      <DollarSign size={16} className="text-indigo-600" />
                       Original Price *
                     </label>
                     <input
@@ -756,15 +765,15 @@ const AddPage = () => {
                       onChange={handleInputChange}
                       min="1"
                       step="0.01"
-                      className={addPageStyles.input}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-gray-900"
                       placeholder="200"
                       required={formData.pricingType === "paid"}
                     />
                   </div>
-                  <div className={addPageStyles.inputContainer}>
-                    <label className={addPageStyles.inputLabel}>
-                      <DollarSign size={16} className={addPageStyles.inputIcon} />
-                      Sale Price *
+                  <div>
+                    <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                      <DollarSign size={16} className="text-indigo-600" />
+                      Sale Price (Optional)
                     </label>
                     <input
                       type="number"
@@ -773,52 +782,51 @@ const AddPage = () => {
                       onChange={handleInputChange}
                       min="1"
                       step="0.01"
-                      className={addPageStyles.input}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-gray-900"
                       placeholder="99"
-                      required={formData.pricingType === "paid"}
                     />
                   </div>
                 </>
               )}
 
-              <div className={addPageStyles.formFullWidth}>
-                <label className={addPageStyles.inputLabel}>
-                  <ImageIcon size={16} className={addPageStyles.inputIcon} />
+              {/* Course Image */}
+              <div className="md:col-span-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <ImageIcon size={16} className="text-indigo-600" />
                   Course Image *
                 </label>
-                <div className={addPageStyles.uploadContainer}>
-                  <label className={addPageStyles.uploadLabel}>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <label className="flex-1 cursor-pointer">
                     <input
                       type="file"
                       accept="image/*"
                       onChange={handleImageUpload}
-                      className={addPageStyles.uploadInput}
+                      className="hidden"
                       required
                     />
-                    <div className={addPageStyles.uploadBox}>
-                      <Upload size={18} className={addPageStyles.uploadIcon} />
-                      <span className="font-medium text-center sm:text-left">
-                        {formData.image
-                          ? "Change Image"
-                          : "Upload Course Image"}
+                    <div className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-indigo-400 hover:bg-indigo-50/30 transition-colors">
+                      <Upload size={18} className="text-gray-500" />
+                      <span className="text-sm font-medium text-gray-700">
+                        {formData.image ? "Change Image" : "Upload Course Image"}
                       </span>
                     </div>
                   </label>
                   {formData.image && (
-                    <div className={addPageStyles.imagePreview}>
+                    <div className="w-full sm:w-48 h-32 border border-gray-200 rounded-lg overflow-hidden bg-gray-50 shadow-sm">
                       <img
                         src={formData.image.preview}
                         alt="Course preview"
-                        className="w-full h-full object-contain"
+                        className="w-full h-full object-cover"
                       />
                     </div>
                   )}
                 </div>
               </div>
 
-              <div className={addPageStyles.formFullWidth}>
-                <label className={addPageStyles.inputLabel}>
-                  <BookOpenText size={16} className={addPageStyles.inputIcon} />
+              {/* Course Overview */}
+              <div className="md:col-span-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
+                  <BookOpenText size={16} className="text-indigo-600" />
                   Course Overview *
                 </label>
                 <textarea
@@ -826,147 +834,130 @@ const AddPage = () => {
                   value={formData.overview}
                   onChange={handleInputChange}
                   rows="4"
-                  className={addPageStyles.textarea}
-                  placeholder="Describe what students will learn..."
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-gray-900 resize-none"
+                  style={{ fontFamily: "'Inter', sans-serif" }}
+                  placeholder="Describe what students will learn in this course..."
                   required
                 />
               </div>
             </div>
           </div>
 
-          {/* Lectures */}
-          <div className={`${addPageStyles.card} ${addPageStyles.lecturesCard}`}>
-            <div className={addPageStyles.lecturesHeader}>
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className={addPageStyles.cardIconContainer}>
-                  <Video className={addPageStyles.cardIcon} size={20} />
+          {/* Lectures Section */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-start justify-between mb-5">
+              <div className="flex items-start gap-3">
+                <div className="p-2.5 rounded-lg bg-indigo-50">
+                  <Video className="text-indigo-600" size={20} />
                 </div>
                 <div>
-                  <h2 className={addPageStyles.cardTitle}>Course Content</h2>
+                  <h2 className="text-lg font-semibold text-gray-900" style={{ fontFamily: "'Inter', sans-serif" }}>Course Content</h2>
                   {formData.lectures.length > 0 ? (
-                    <p className={addPageStyles.cardSubtitle}>
-                      {calculateTotalLectures()} lectures •{" "}
-                      {calculateTotalCourseDuration()} total duration
+                    <p className="text-sm text-gray-600 mt-0.5">
+                      {calculateTotalLectures()} lectures • {calculateTotalCourseDuration()} total
                     </p>
                   ) : (
-                    <p className={addPageStyles.cardSubtitle}>
-                      Add lectures and chapters to structure your course
-                    </p>
+                    <p className="text-sm text-gray-600 mt-0.5">Add lectures and chapters to structure your course</p>
                   )}
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowLectureForm(true)}
-                className={addPageStyles.addLectureButton}
+                className="flex items-center gap-2 px-4 py-2 bg-[#4F46E5] text-white rounded-lg text-sm font-medium transition-all hover:bg-indigo-700 shadow-sm"
               >
                 <Plus size={16} /> Add Lecture
               </button>
             </div>
 
-            <div className={addPageStyles.lecturesList}>
+            {/* Lectures List */}
+            <div className="space-y-3">
               {formData.lectures.map((lecture, lectureIndex) => (
-                <div key={lecture.id} className={addPageStyles.lectureCard}>
-                  <div className={addPageStyles.lectureHeader}>
-                    <div className={addPageStyles.lectureContent}>
+                <div key={lecture.id} className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                  <div className="flex items-center justify-between p-4 bg-gray-50">
+                    <div className="flex items-center gap-3 flex-1">
                       <button
                         type="button"
                         onClick={() => toggleLecture(lectureIndex)}
-                        className={addPageStyles.lectureToggleButton}
+                        className="text-gray-500 hover:text-gray-700 transition-colors"
                       >
                         {expandedLectures.includes(lectureIndex) ? (
-                          <ChevronUp size={16} />
+                          <ChevronUp size={18} />
                         ) : (
-                          <ChevronDown size={16} />
+                          <ChevronDown size={18} />
                         )}
                       </button>
-                      <div className={addPageStyles.lectureInfo}>
-                        <h3 className={addPageStyles.lectureTitle}>
-                          {lecture.title}
-                        </h3>
-                        <p className={addPageStyles.lectureMeta}>
-                          <Clock size={14} /> {formatDuration(lecture.duration)}
-                          {lecture.chapters?.length > 0 &&
-                            ` • ${lecture.chapters.length} chapters`}
+                      <div className="flex-1">
+                        <h3 className="text-sm font-medium text-gray-900">{lecture.title}</h3>
+                        <p className="text-xs text-gray-600 mt-0.5 flex items-center gap-1">
+                          <Clock size={12} /> {formatDuration(lecture.duration)}
+                          {lecture.chapters?.length > 0 && ` • ${lecture.chapters.length} chapters`}
                         </p>
                       </div>
                     </div>
-                    <div className={addPageStyles.lectureActions}>
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => openAddChapter(lectureIndex)}
-                        className={addPageStyles.addChapterButton}
+                        className="px-3 py-1.5 text-xs font-medium bg-[#4F46E5] text-white rounded-lg transition-all hover:bg-indigo-700"
                       >
-                        <Plus size={14} /> Add Chapter
+                        <Plus size={12} className="inline mr-1" /> Chapter
                       </button>
                       <button
                         type="button"
                         onClick={() => removeLecture(lectureIndex)}
-                        className={addPageStyles.deleteButton}
+                        className="p-1.5 text-[#EF4444] hover:bg-red-50 rounded transition-colors"
                       >
                         <X size={16} />
                       </button>
                     </div>
                   </div>
 
-                  {expandedLectures.includes(lectureIndex) &&
-                    lecture.chapters?.length > 0 && (
-                      <div className={addPageStyles.chaptersContainer(true)}>
-                        {lecture.chapters.map((chapter, chapterIndex) => (
-                          <div
-                            key={chapter.id}
-                            className={addPageStyles.chapterCard}
-                          >
-                            <div className={addPageStyles.chapterContent}>
-                              <div className={addPageStyles.chapterInfo}>
-                                <h4 className={addPageStyles.chapterTitle}>
-                                  {chapter.name}
-                                </h4>
-                                <p className={addPageStyles.chapterTopic}>
-                                  {chapter.topic}
-                                </p>
-                                <div className={addPageStyles.chapterMeta}>
-                                  <span className={addPageStyles.chapterDuration}>
-                                    <Clock size={12} />{" "}
-                                    {formatDuration(chapter.duration)}
-                                  </span>
-                                  <p className={addPageStyles.chapterUrl}>
-                                    {chapter.videoUrl}
-                                  </p>
-                                </div>
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  removeChapter(lectureIndex, chapterIndex)
-                                }
-                                className={addPageStyles.chapterDeleteButton}
-                              >
-                                <X size={14} />
-                              </button>
+                  {/* Chapters */}
+                  {expandedLectures.includes(lectureIndex) && lecture.chapters?.length > 0 && (
+                    <div className="p-4 space-y-2 bg-white">
+                      {lecture.chapters.map((chapter, chapterIndex) => (
+                        <div
+                          key={chapter.id}
+                          className="flex items-start justify-between p-3 border border-gray-100 rounded-lg hover:border-gray-200 transition-colors bg-gray-50/50"
+                        >
+                          <div className="flex-1">
+                            <h4 className="text-sm font-medium text-gray-900">{chapter.name}</h4>
+                            <p className="text-xs text-gray-600 mt-0.5">{chapter.topic}</p>
+                            <div className="flex items-center gap-3 mt-1.5">
+                              <span className="text-xs text-gray-500 flex items-center gap-1">
+                                <Clock size={11} /> {formatDuration(chapter.duration)}
+                              </span>
+                              <p className="text-xs text-gray-400 truncate max-w-xs">{chapter.videoUrl}</p>
                             </div>
                           </div>
-                        ))}
-                      </div>
-                    )}
+                          <button
+                            type="button"
+                            onClick={() => removeChapter(lectureIndex, chapterIndex)}
+                            className="p-1 text-[#EF4444] hover:bg-red-50 rounded transition-colors ml-2"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Submit */}
-          <div className={addPageStyles.submitContainer}>
+          {/* Submit Button */}
+          <div className="flex justify-end">
             <button
               type="submit"
-              className={addPageStyles.submitButton}
+              className="relative px-8 py-3 bg-[#4F46E5] text-white rounded-lg font-medium text-base transition-all hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden group shadow-lg shadow-indigo-500/30"
               disabled={loading}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-              {loading
-                ? "Creating..."
-                : `Create ${
-                    formData.courseType === "top" ? "Top" : "Regular"
-                  } Course`}
+              <span className="relative">
+                {loading ? "Creating..." : `Create ${formData.courseType === "top" ? "Top" : "Regular"} Course`}
+              </span>
             </button>
           </div>
         </form>
@@ -974,33 +965,33 @@ const AddPage = () => {
 
       {/* Lecture Modal */}
       {showLectureForm && (
-        <div className={addPageStyles.modalOverlay}>
-          <div className={addPageStyles.modal}>
-            <div className={addPageStyles.modalHeader}>
-              <div className={addPageStyles.modalIconContainer("bg-sky-300")}>
-                <Video className="text-white" size={20} />
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-5">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-indigo-50">
+                  <Video className="text-indigo-600" size={20} />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">Add New Lecture</h3>
               </div>
-              <h3 className={addPageStyles.modalTitle}>Add New Lecture</h3>
             </div>
 
-            <div className={addPageStyles.modalContent}>
+            <div className="p-5 space-y-4">
               <div>
-                <label className={addPageStyles.inputLabel}>
-                  Lecture Title *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Lecture Title *</label>
                 <input
                   type="text"
                   name="title"
                   value={currentLecture.title}
                   onChange={handleLectureChange}
-                  placeholder="e.g., Introduction to React"
-                  className={addPageStyles.input}
+                  placeholder="Enter Title of the Lecture"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                 />
               </div>
 
               <div>
-                <label className={addPageStyles.inputLabel}>Duration *</label>
-                <div className={addPageStyles.durationGrid}>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Duration *</label>
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <input
                       type="number"
@@ -1009,9 +1000,9 @@ const AddPage = () => {
                       onChange={handleLectureChange}
                       placeholder="Hours"
                       min="0"
-                      className={addPageStyles.input}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                     />
-                    <span className={addPageStyles.durationHelper}>Hours</span>
+                    <span className="text-xs text-gray-500 mt-1 block">Hours</span>
                   </div>
                   <div>
                     <input
@@ -1022,55 +1013,49 @@ const AddPage = () => {
                       placeholder="Minutes"
                       min="0"
                       max="59"
-                      className={addPageStyles.input}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                     />
-                    <span className={addPageStyles.durationHelper}>Minutes</span>
+                    <span className="text-xs text-gray-500 mt-1 block">Minutes</span>
                   </div>
                 </div>
               </div>
 
               {currentLecture.chapters.length > 0 && (
                 <div>
-                  <label className={addPageStyles.inputLabel}>
-                    Chapters in this lecture:
-                  </label>
-                  <div className={addPageStyles.chaptersList}>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Chapters in this lecture:</label>
+                  <div className="space-y-2">
                     {currentLecture.chapters.map((chapter) => (
-                      <div key={chapter.id} className={addPageStyles.chapterPreview}>
-                        <div className={addPageStyles.chapterPreviewTitle}>
-                          {chapter.name}
-                        </div>
-                        <div className={addPageStyles.chapterPreviewDuration}>
-                          {formatDuration(chapter.duration)}
-                        </div>
+                      <div key={chapter.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <div className="text-sm font-medium text-gray-900">{chapter.name}</div>
+                        <div className="text-xs text-gray-600">{formatDuration(chapter.duration)}</div>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              <div className={addPageStyles.modalActions}>
+              <div className="pt-2">
                 <button
                   type="button"
                   onClick={() => openAddChapter()}
-                  className={`${addPageStyles.modalButton} ${addPageStyles.modalButtonPrimary}`}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   <Plus size={14} /> Add Chapter
                 </button>
               </div>
 
-              <div className="flex gap-2 sm:gap-3 pt-2">
+              <div className="flex gap-3 pt-2">
                 <button
                   type="button"
                   onClick={addLecture}
-                  className={`${addPageStyles.modalButton} ${addPageStyles.modalButtonPrimary}`}
+                  className="flex-1 px-4 py-2.5 bg-[#4F46E5] text-white rounded-lg font-medium transition-all hover:bg-indigo-700"
                 >
                   Add Lecture
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowLectureForm(false)}
-                  className={`${addPageStyles.modalButton} ${addPageStyles.modalButtonSecondary}`}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   Cancel
                 </button>
@@ -1082,48 +1067,47 @@ const AddPage = () => {
 
       {/* Chapter Modal */}
       {showChapterForm && (
-        <div className={addPageStyles.modalOverlay}>
-          <div className={addPageStyles.modal}>
-            <div className={addPageStyles.modalHeader}>
-              <div className={addPageStyles.modalIconContainer("bg-green-100")}>
-                <Plus className="text-green-600" size={20} />
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="sticky top-0 bg-white border-b border-gray-200 p-5">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-green-50">
+                  <Plus className="text-[#22C55E]" size={20} />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {selectedLectureIndex !== null ? "Add Chapter to Lecture" : "Add Chapter to Current Lecture"}
+                </h3>
               </div>
-              <h3 className={addPageStyles.modalTitle}>
-                {selectedLectureIndex !== null
-                  ? "Add Chapter to Lecture"
-                  : "Add Chapter to Current Lecture"}
-              </h3>
             </div>
-            <div className={addPageStyles.modalContent}>
+
+            <div className="p-5 space-y-4">
               <div>
-                <label className={addPageStyles.inputLabel}>
-                  Chapter Name *
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Chapter Name *</label>
                 <input
                   type="text"
                   name="name"
                   value={currentChapter.name}
                   onChange={handleChapterChange}
-                  placeholder="e.g., Course Introduction"
-                  className={addPageStyles.input}
+                  placeholder="Enter Chapter Name"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                 />
               </div>
 
               <div>
-                <label className={addPageStyles.inputLabel}>Topic *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Topic *</label>
                 <input
                   type="text"
                   name="topic"
                   value={currentChapter.topic}
                   onChange={handleChapterChange}
-                  placeholder="e.g., What we'll build"
-                  className={addPageStyles.input}
+                  placeholder="What we'll build"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                 />
               </div>
 
               <div>
-                <label className={addPageStyles.inputLabel}>Duration *</label>
-                <div className={addPageStyles.durationGrid}>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Duration *</label>
+                <div className="grid grid-cols-2 gap-3">
                   <div>
                     <input
                       type="number"
@@ -1132,9 +1116,9 @@ const AddPage = () => {
                       onChange={handleChapterChange}
                       placeholder="Hours"
                       min="0"
-                      className={addPageStyles.input}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                     />
-                    <span className={addPageStyles.durationHelper}>Hours</span>
+                    <span className="text-xs text-gray-500 mt-1 block">Hours</span>
                   </div>
                   <div>
                     <input
@@ -1145,30 +1129,30 @@ const AddPage = () => {
                       placeholder="Minutes"
                       min="0"
                       max="59"
-                      className={addPageStyles.input}
+                      className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                     />
-                    <span className={addPageStyles.durationHelper}>Minutes</span>
+                    <span className="text-xs text-gray-500 mt-1 block">Minutes</span>
                   </div>
                 </div>
               </div>
 
               <div>
-                <label className={addPageStyles.inputLabel}>Video URL *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Video URL *</label>
                 <input
                   type="url"
                   name="videoUrl"
                   value={currentChapter.videoUrl}
                   onChange={handleChapterChange}
                   placeholder="https://youtube.com/watch?v=..."
-                  className={addPageStyles.input}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
                 />
               </div>
 
-              <div className={addPageStyles.modalActions}>
+              <div className="flex gap-3 pt-2">
                 <button
                   type="button"
                   onClick={addChapter}
-                  className={`${addPageStyles.modalButtonCompact} ${addPageStyles.modalButtonCompactPrimary}`}
+                  className="flex-1 px-4 py-2.5 bg-[#4F46E5] text-white rounded-lg font-medium transition-all hover:bg-indigo-700"
                 >
                   Add Chapter
                 </button>
@@ -1178,7 +1162,7 @@ const AddPage = () => {
                     setShowChapterForm(false);
                     setSelectedLectureIndex(null);
                   }}
-                  className={`${addPageStyles.modalButtonCompact} ${addPageStyles.modalButtonCompactSecondary}`}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors"
                 >
                   Cancel
                 </button>

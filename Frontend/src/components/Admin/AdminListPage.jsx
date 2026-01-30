@@ -11,7 +11,7 @@ const AdminListPage = () => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const API_BASE = "http://localhost:4000";
+  const API_BASE = "http://localhost:3000";
 
   // Build image URL for fetching
   const getImageUrl = (imagePath) => {
@@ -274,26 +274,42 @@ const AdminListPage = () => {
     );
   };
 
+  const PRIMARY_COLOR = "#1c398e";
+  const PRIMARY_LIGHT = "#2d4db5";
+
   return (
-    <div className={listStyles.pageContainer}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 py-6 sm:py-8 lg:py-10 px-3 sm:px-4 lg:px-6">
       <Toaster position='top-right' />
-      <div className={listStyles.contentContainer}>
-        <div className={listStyles.headerContainer}>
-          <h1 className={listStyles.headerTitle}>Course Catalog</h1>
-          <p className={listStyles.headerSubtitle}>
-            Manage and browse your courses - clean, light and elegant
+      <div className="max-w-6xl pt-24 pb-10 font-serif mx-auto px-3 sm:px-4">
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold bg-clip-text text-transparent mb-2" style={{ backgroundImage: `linear-gradient(to right, ${PRIMARY_COLOR}, ${PRIMARY_LIGHT})` }}>
+            Course Catalog
+          </h1>
+          <p className="text-gray-600 text-sm sm:text-base max-w-xl mx-auto">
+            Manage and browse your courses — clean, light and elegant
           </p>
         </div>
 
-        <div className={listStyles.searchContainer}>
-          <div className={listStyles.searchInputContainer}>
-            <Search className={listStyles.searchIcon} />
+        <div className="mb-6 sm:mb-8">
+          <div className="relative max-w-md mx-auto">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5" style={{ color: PRIMARY_COLOR }} />
             <input
               type="text"
               placeholder="Search courses, instructors, or categories...."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className={listStyles.searchInput}
+              className="w-full pl-9 sm:pl-10 pr-4 py-2.5 sm:py-3 border rounded-full focus:outline-none focus:ring-2 bg-white/90 backdrop-blur-sm shadow-sm text-sm sm:text-base transition-all"
+              style={{
+                borderColor: `${PRIMARY_COLOR}30`
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = PRIMARY_COLOR;
+                e.target.style.boxShadow = `0 0 0 3px ${PRIMARY_COLOR}20`;
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = `${PRIMARY_COLOR}30`;
+                e.target.style.boxShadow = 'none';
+              }}
             />
           </div>
         </div>

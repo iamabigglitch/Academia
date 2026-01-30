@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, User, Lock, BookOpen, GraduationCap, Users, Award } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
+import { Toaster, toast } from 'react-hot-toast';
 import api from '../../api/axios.js';
 
 const Login = () => {
@@ -29,17 +30,15 @@ const Login = () => {
       
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
-      alert(res.data.message || "Login successful!");
-      // Check user role and redirect accordingly
+      toast.success(res.data.message || "Login successful!");
       if (res.data.user.role === 'admin') {
         navigate('/admin/dashboard');
       } else {
         navigate('/courses');
       }
-
     } catch (error) {
-      // Handle network or server errors
-      alert(error.response?.data?.message || "Login failed. Please try again.");
+      const msg = error.response?.data?.message || "Login failed. Please try again.";
+      toast.error(msg);
       console.error('Login error:', error);
     } finally {
       setLoading(false);
@@ -47,7 +46,8 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-blue-950 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-950 flex items-center justify-center p-4 sm:p-6 relative overflow-hidden">
+      <Toaster position="top-center" toastOptions={{ duration: 4000 }} />
 
       {/* Background Decorative Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -62,48 +62,41 @@ const Login = () => {
       {/* Left Side - Branding */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-center items-center text-white relative z-10 px-12">
         <div className="max-w-md">
-          {/* Logo and Title */}
           <div className="flex items-center gap-3 mb-8">
-            <div className="bg-white p-3 rounded-xl">
-              <BookOpen className="w-10 h-10 text-blue-900" />
+            <div className="bg-white/10 backdrop-blur-sm p-3 rounded-2xl border border-white/20 shadow-xl">
+              <BookOpen className="w-10 h-10 text-white" />
             </div>
-            <h1 className="text-5xl font-bold">Academia</h1>
+            <h1 className="text-4xl xl:text-5xl font-bold tracking-tight">Academia</h1>
           </div>
-
-          {/* Tagline */}
-          <p className="text-2xl mb-12 text-blue-100">
+          <p className="text-xl xl:text-2xl mb-12 text-blue-100/90">
             Empowering Learning, One Course at a Time
           </p>
-
-          {/* Features List */}
           <div className="space-y-6">
             <div className="flex items-start gap-4">
-              <div className="bg-blue-800 p-3 rounded-lg">
+              <div className="bg-indigo-500/80 p-3 rounded-xl shrink-0">
                 <GraduationCap className="w-6 h-6" />
               </div>
               <div>
                 <h3 className="font-semibold text-lg">Expert-Led Courses</h3>
-                <p className="text-blue-200">Learn from industry professionals</p>
+                <p className="text-blue-200/90 text-sm">Learn from industry professionals</p>
               </div>
             </div>
-
             <div className="flex items-start gap-4">
-              <div className="bg-blue-800 p-3 rounded-lg">
+              <div className="bg-indigo-500/80 p-3 rounded-xl shrink-0">
                 <Users className="w-6 h-6" />
               </div>
               <div>
                 <h3 className="font-semibold text-lg">Collaborative Learning</h3>
-                <p className="text-blue-200">Connect with fellow learners</p>
+                <p className="text-blue-200/90 text-sm">Connect with fellow learners</p>
               </div>
             </div>
-
             <div className="flex items-start gap-4">
-              <div className="bg-blue-800 p-3 rounded-lg">
+              <div className="bg-indigo-500/80 p-3 rounded-xl shrink-0">
                 <Award className="w-6 h-6" />
               </div>
               <div>
                 <h3 className="font-semibold text-lg">Earn Certificates</h3>
-                <p className="text-blue-200">Get recognized for your achievements</p>
+                <p className="text-blue-200/90 text-sm">Get recognized for your achievements</p>
               </div>
             </div>
           </div>
@@ -112,88 +105,82 @@ const Login = () => {
 
       {/* Right Side - Login Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center relative z-10">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 lg:p-10 animate-fadeIn">
-          {/* Mobile Logo */}
+        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 w-full max-w-md p-8 lg:p-10 animate-fadeIn">
           <div className="lg:hidden flex justify-center mb-6">
-            <div className="bg-blue-900 p-3 rounded-full">
+            <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-3 rounded-2xl shadow-lg">
               <BookOpen className="w-8 h-8 text-white" />
             </div>
           </div>
 
-          {/* Form Header */}
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-800 mb-2">Welcome Back</h2>
-            <p className="text-gray-600">Sign in to continue to Academia</p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Welcome Back</h2>
+            <p className="text-gray-600 text-sm sm:text-base">Sign in to continue to Academia</p>
           </div>
 
-          {/* Login Form */}
-          <div className="space-y-5">
-            {/* Username Input */}
+          <form
+            onSubmit={(e) => { e.preventDefault(); handleLogin(); }}
+            className="space-y-5"
+          >
             <div className="relative group">
-              <User className="absolute left-3 top-3 w-5 h-5 text-gray-400 group-focus-within:text-blue-900 transition-colors" />
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
               <input
                 type="text"
                 placeholder="Username"
                 value={loginData.username}
                 onChange={(e) => setLoginData({ ...loginData, username: e.target.value })}
-                className="w-full pl-11 pr-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-900 focus:outline-none transition-all"
+                className="w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all text-gray-900 placeholder-gray-400"
               />
             </div>
 
-            {/* Password Input */}
             <div className="relative group">
-              <Lock className="absolute left-3 top-3 w-5 h-5 text-gray-400 group-focus-within:text-blue-900 transition-colors" />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 placeholder="Password"
                 value={loginData.password}
                 onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
-                className="w-full pl-11 pr-12 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-900 focus:outline-none transition-all"
+                className="w-full pl-12 pr-12 py-3.5 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all text-gray-900 placeholder-gray-400"
               />
-              {/* Toggle password visibility */}
               <button
+                type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-3 text-gray-400 hover:text-blue-900 transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-600 transition-colors"
               >
                 {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
               </button>
             </div>
 
-            {/* Forgot Password Link */}
             <div className="text-right">
               <Link
                 to="/forgot-password"
-                className="text-sm text-blue-900 hover:underline transition-all"
+                className="text-sm font-medium text-indigo-600 hover:text-indigo-700 hover:underline transition-all"
               >
                 Forgot Password?
               </Link>
             </div>
 
-            {/* Login Button */}
             <button
-              onClick={handleLogin}
+              type="submit"
               disabled={loading}
-              className="w-full bg-blue-900 text-white py-3 rounded-lg font-semibold hover:bg-blue-800 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3.5 rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-lg"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
-          </div>
+          </form>
 
-          {/* Divider */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
+              <div className="w-full border-t border-gray-200"></div>
             </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">New to Academia?</span>
-            </div>
+            <span className="relative flex justify-center">
+              <span className="bg-white px-3 text-sm text-gray-500">New to Academia?</span>
+            </span>
           </div>
 
-          {/* Sign Up Link */}
-          <p className="text-center text-gray-600">
+          <p className="text-center text-gray-600 text-sm">
             <Link
               to="/signup"
-              className="text-blue-900 font-semibold hover:underline transition-all"
+              className="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline transition-all"
             >
               Create an account
             </Link>

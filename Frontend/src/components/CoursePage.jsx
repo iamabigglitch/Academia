@@ -134,16 +134,31 @@ const CoursePage = () => {
         );
 
         const mapped = regular.map((c) => ({
-          id: String(c.id || ""),
+          id: String(c._id || c.id || ""),
           name: c.name,
-          teacher: c.teacher || "",
+          teacher: c.teacher || c.instructor || "",
           category: c.category || "",
           image: c.image || "",
-          isFree: c.pricingType === "free" || c.priceOriginal === 0,
-          priceOriginal: c.priceOriginal || 0,
-          priceSale: c.priceSale || 0,
-          avgRating: typeof c.avgRating === "number" ? c.avgRating : 0,
-          totalRatings: typeof c.totalRatings === "number" ? c.totalRatings : 0,
+          isFree:
+            c.pricingType === "free" ||
+            !c.price ||
+            (!c.price.sale && !c.price.original),
+          price:
+            c.price ||
+            (c.originalPrice
+              ? { original: c.originalPrice, sale: c.price }
+              : {}),
+          avgRating:
+            typeof c.avgRating === "number"
+              ? c.avgRating
+              : typeof c.rating === "number"
+              ? c.rating
+              : parseFloat(c.rating) || 0,
+          totalRatings:
+            typeof c.totalRatings === "number"
+              ? c.totalRatings
+              : c.ratingCount ?? 0,
+          raw: c,
         }));
 
         setCourses(mapped);
@@ -187,8 +202,9 @@ const CoursePage = () => {
         throw new Error(msg);
       }
 
-      const avg = data.avgRating ?? null;
-      const total = data.totalRatings ?? null;
+      const avg = data.avgRating ?? data.course?.avgRating ?? data.avg ?? null;
+      const total =
+        data.totalRatings ?? data.course?.totalRatings ?? data.count ?? null;
 
       if (avg !== null || total !== null) {
         setCourses((prev) =>
@@ -197,7 +213,8 @@ const CoursePage = () => {
               ? {
                   ...c,
                   avgRating: typeof avg === "number" ? avg : c.avgRating,
-                  totalRatings: typeof total === "number" ? total : c.totalRatings,
+                  totalRatings:
+                    typeof total === "number" ? total : c.totalRatings,
                 }
               : c
           )
@@ -210,7 +227,9 @@ const CoursePage = () => {
 
     } catch (err) {
       console.error("Error submitting rating:", err);
-      toast.error(err.message || "Failed to submit rating");
+      toast.error(
+        err.message || "Failed to submit rating. Please try again later."
+      );
       return false;
     }
   };
@@ -264,7 +283,7 @@ const CoursePage = () => {
   };
 
   const isCourseFree = (course) => {
-    return course.isFree || course.priceOriginal === 0;
+    return course.isFree || !course.price;
   };
 
   const getPriceDisplay = (course) => {
@@ -272,56 +291,60 @@ const CoursePage = () => {
       return "Free";
     }
 
-    if (course.priceSale && course.priceSale > 0 && course.priceSale < course.priceOriginal) {
+    const price = course.price || {};
+
+    if (price.sale != null && price.sale !== 0) {
       return {
-        current: `Rs ${course.priceSale}`,
-        original: `Rs ${course.priceOriginal}`
+        current: `Rs: ${price.sale}`,
+        original:
+          price.original && price.original > price.sale
+            ? `Rs: ${price.original}`
+            : null,
       };
     }
 
-    return {
-      current: `Rs ${course.priceOriginal}`,
-      original: null
-    };
+    if (price.original != null) {
+      return {
+        current: `Rs: ${price.original}`,
+        original: null,
+      };
+    }
+
+    return "Free";
   };
 
-  // Loading state
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <div className="text-xl font-semibold text-gray-700">Loading courses...</div>
-        </div>
+  if (loading) 
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <div className="text-xl font-semibold text-gray-700">Loading courses...</div>
       </div>
-    );
-  }
+    </div>
+  );
 
-  // Error state
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="text-center p-8 max-w-md">
-          <div className="mb-6 flex justify-center">
-            <BookOpen className="w-32 h-32 text-blue-600" strokeWidth={1.5} />
-          </div>
-          <h2 className="text-3xl font-bold text-gray-800 mb-4">Courses Coming Soon!</h2>
-          <p className="text-gray-600 mb-4">The course management system is being set up by the admin.</p>
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <p className="text-sm text-red-600 font-mono">{error}</p>
-          </div>
-          <button
-            onClick={() => navigate('/home')}
-            className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg cursor-pointer"
-          >
-            ← Back to Home
-          </button>
+if (error) 
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="text-center p-8 max-w-md">
+        <div className="mb-6 flex justify-center">
+          <BookOpen className="w-32 h-32 text-blue-600" strokeWidth={1.5} />
         </div>
+        <h2 className="text-3xl font-bold text-gray-800 mb-4">Courses Coming Soon!</h2>
+        <p className="text-gray-600 mb-4">The course management system is being set up by the admin.</p>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+          <p className="text-sm text-red-600 font-mono">{error}</p>
+        </div>
+        <button
+          onClick={() => navigate('/home')}
+          className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg"
+        >
+          ← Back to Home
+        </button>
       </div>
-    );
-  }
+    </div>
+  );
 
-  // Main content
   return (
     <div className={coursePageStyles.pageContainer}>
       <div className={coursePageStyles.headerContainer}>
@@ -387,123 +410,104 @@ const CoursePage = () => {
             <button
               onClick={() => {
                 setSearchQuery("");
-                setShowAll(true);
+                setShowAll(false);
               }}
-              className={`${coursePageStyles.noCoursesButton} cursor-pointer`}
+              className={coursePageStyles.noCoursesButton}
             >
               Show All Courses
             </button>
           </div>
         ) : (
-          <>
-            <div className={coursePageStyles.coursesGridContainer} style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-              gap: '2rem',
-              maxWidth: '1400px',
-              margin: '0 auto'
-            }}>
-              {visibleCourses.map((course, index) => {
-                const userRating = ratings[course.id] || 0;
-                const isFree = isCourseFree(course);
-                const priceDisplay = getPriceDisplay(course);
+          <div className={coursePageStyles.coursesGridContainer} style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
+            gap: '2rem',
+            maxWidth: '1400px',
+            margin: '0 auto'
+          }}>
+            {visibleCourses.map((course, index) => {
+              const userRating = ratings[course.id] || 0;
+              const isFree = isCourseFree(course);
+              const priceDisplay = getPriceDisplay(course);
 
-                return (
-                  <div
-                    key={course.id}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => openCourse(course.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") openCourse(course.id);
-                    }}
-                    className={coursePageStyles.courseCard}
-                    style={{ 
-                      animationDelay: `${index * 80}ms`,
-                      minHeight: '480px',
-                      width: '100%'
-                    }}
-                  >
-                    <div className={coursePageStyles.courseCardInner}>
-                      <div className={coursePageStyles.courseCardContent}>
-                        <div className={coursePageStyles.courseImageContainer} style={{ height: '260px' }}>
-                          <img
-                            src={course.image}
-                            alt={course.name}
-                            className={coursePageStyles.courseImage}
+              return (
+                <div
+                  key={course.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => openCourse(course.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") openCourse(course.id);
+                  }}
+                  className={coursePageStyles.courseCard}
+                  style={{ 
+                    animationDelay: `${index * 80}ms`,
+                    minHeight: '480px',
+                    width: '100%'
+                  }}
+                >
+                  <div className={coursePageStyles.courseCardInner}>
+                    <div className={coursePageStyles.courseCardContent}>
+                      <div className={coursePageStyles.courseImageContainer} style={{ height: '260px' }}>
+                        <img
+                          src={course.image}
+                          alt={course.name}
+                          className={coursePageStyles.courseImage}
+                        />
+                      </div>
+
+                      <div className={coursePageStyles.courseInfo} style={{ padding: '1.25rem' }}>
+                        <h3 className={coursePageStyles.courseName} style={{ fontSize: '1.25rem', marginBottom: '0.75rem' }}>
+                          {course.name}
+                        </h3>
+
+                        <div className={coursePageStyles.teacherContainer} style={{ marginBottom: '1rem' }}>
+                          <UserIcon />
+                          <span className={coursePageStyles.teacherName}>
+                            {course.teacher}
+                          </span>
+                        </div>
+
+                        <div className={coursePageStyles.ratingContainer} style={{ marginBottom: '1rem' }}>
+                          <RatingStars
+                            courseId={course.id}
+                            userRating={userRating}
+                            avgRating={course.avgRating}
+                            totalRatings={course.totalRatings}
+                            onRate={handleRating}
                           />
                         </div>
 
-                        <div className={coursePageStyles.courseInfo} style={{ padding: '1.25rem' }}>
-                          <h3 className={coursePageStyles.courseName} style={{ fontSize: '1.25rem', marginBottom: '0.75rem' }}>
-                            {course.name}
-                          </h3>
-
-                          <div className={coursePageStyles.teacherContainer} style={{ marginBottom: '1rem' }}>
-                            <UserIcon />
-                            <span className={coursePageStyles.teacherName}>
-                              {course.teacher}
-                            </span>
-                          </div>
-
-                          <div className={coursePageStyles.ratingContainer} style={{ marginBottom: '1rem' }}>
-                            <RatingStars
-                              courseId={course.id}
-                              userRating={userRating}
-                              avgRating={course.avgRating}
-                              totalRatings={course.totalRatings}
-                              onRate={handleRating}
-                            />
-                          </div>
-
-                          <div className={coursePageStyles.priceContainer}>
-                            <div className="flex items-center space-x-2">
-                              {isFree ? (
-                                <span className={coursePageStyles.priceFree} style={{ fontSize: '1.125rem' }}>
-                                  Free
+                        <div className={coursePageStyles.priceContainer}>
+                          <div className="flex items-center space-x-2">
+                            {isFree ? (
+                              <span className={coursePageStyles.priceFree} style={{ fontSize: '1.125rem' }}>
+                                Free
+                              </span>
+                            ) : (
+                              <>
+                                <span className={coursePageStyles.priceCurrent} style={{ fontSize: '1.125rem' }}>
+                                  {typeof priceDisplay === "object"
+                                    ? priceDisplay.current
+                                    : priceDisplay}
                                 </span>
-                              ) : (
-                                <>
-                                  <span className={coursePageStyles.priceCurrent} style={{ fontSize: '1.125rem' }}>
-                                    {typeof priceDisplay === "object"
-                                      ? priceDisplay.current
-                                      : priceDisplay}
-                                  </span>
-                                  {typeof priceDisplay === "object" &&
-                                    priceDisplay.original && (
-                                      <span className={coursePageStyles.priceOriginal}>
-                                        {priceDisplay.original}
-                                      </span>
-                                    )}
-                                </>
-                              )}
-                            </div>
+                                {typeof priceDisplay === "object" &&
+                                  priceDisplay.original && (
+                                    <span className={coursePageStyles.priceOriginal}>
+                                      {priceDisplay.original}
+                                    </span>
+                                  )}
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-
-            {/* Show More Button */}
-            {!showAll && filteredCourses.length > VISIBLE_COUNT && (
-              <div className="flex justify-center mt-12 mb-8">
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log("Show All Courses clicked");
-                    setShowAll(true);
-                  }}
-                  className="px-10 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105 cursor-pointer"
-                >
-                  Show All Courses ({filteredCourses.length - VISIBLE_COUNT} more)
-                </button>
-              </div>
-            )}
-          </>
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
 
@@ -514,12 +518,7 @@ const CoursePage = () => {
         theme="dark"
       />
 
-      {/* Fixed style tag */}
-      {typeof coursePageCustomStyles === 'string' ? (
-        <style dangerouslySetInnerHTML={{ __html: coursePageCustomStyles }} />
-      ) : (
-        <style>{coursePageCustomStyles}</style>
-      )}
+      <style>{coursePageCustomStyles}</style>
     </div>
   );
 };

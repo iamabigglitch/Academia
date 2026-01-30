@@ -1,10 +1,10 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Play, Clock, BookOpen, ChevronDown, CheckCircle, Circle, X, ArrowLeft, User, Award, Target, Sparkles, ArrowRight, } from "lucide-react";
-// import { useUser, useAuth } from "@clerk/clerk-react";
+import { Play, Clock, BookOpen, ChevronDown, CheckCircle, Circle, X, ArrowLeft, User, Award, Target, Sparkles, ArrowRight } from "lucide-react";
 import { courseDetailStyles } from "../../assets/dummyStyles";
 
-const API_BASE = "http://localhost:4000";
+const API_BASE = "http://localhost:3000"; 
+const PRIMARY_COLOR = "#1c398e";
 
 const fmtMinutes = (mins) => {
   const h = Math.floor((mins || 0) / 60);
@@ -63,7 +63,7 @@ const toEmbedUrl = (url) => {
       return `https://www.youtube.com/embed/${lastSeg}`;
     }
     return trimmed;
-  } catch (err) {
+  } catch {
     return url;
   }
 };
@@ -84,28 +84,45 @@ const isDirectVideoFile = (url) => {
 const normalizeCourse = (c) => {
   if (!c) return c;
   const course = { ...c };
-  course.lectures = Array.isArray(course.lectures)
-    ? course.lectures.map((l) => {
-        const lecture = { ...l };
-        lecture.durationMin =
-          lecture.durationMin ??
-          lecture.totalMinutes ??
-          (lecture.duration?.hours || 0) * 60 +
-            (lecture.duration?.minutes || 0);
-        lecture.chapters = Array.isArray(lecture.chapters)
-          ? lecture.chapters.map((ch) => {
-              const chapter = { ...ch };
-              chapter.durationMin =
-                chapter.durationMin ??
-                chapter.totalMinutes ??
-                (chapter.duration?.hours || 0) * 60 +
-                  (chapter.duration?.minutes || 0);
-              return chapter;
-            })
-          : [];
-        return lecture;
-      })
+
+  // Support both `Lectures`/`Chapters` (capitalized) and `lectures`/`chapters` (lowercase)
+  const rawLectures = Array.isArray(course.Lectures)
+    ? course.Lectures
+    : Array.isArray(course.lectures)
+    ? course.lectures
     : [];
+
+  course.Lectures = rawLectures.map((l) => {
+    const lecture = { ...l };
+    // Normalize id so later UI can always rely on `lecture.id`
+    lecture.id = lecture.id ?? lecture._id ?? lecture.lectureId ?? lecture.LectureId;
+
+    lecture.durationMin =
+      lecture.totalMinutes ??
+      (lecture.durationHours || 0) * 60 +
+        (lecture.durationMinutes || 0);
+
+    const rawChapters = Array.isArray(lecture.Chapters)
+      ? lecture.Chapters
+      : Array.isArray(lecture.chapters)
+      ? lecture.chapters
+      : [];
+
+    lecture.Chapters = rawChapters.map((ch) => {
+      const chapter = { ...ch };
+      // Normalize chapter id to `chapter.id`
+      chapter.id =
+        chapter.id ?? chapter._id ?? chapter.chapterId ?? chapter.ChapterId;
+
+      chapter.durationMin =
+        chapter.totalMinutes ??
+        (chapter.durationHours || 0) * 60 + (chapter.durationMinutes || 0);
+      return chapter;
+    });
+
+    return lecture;
+  });
+
   return course;
 };
 
@@ -114,9 +131,21 @@ const CourseDetailPage = () => {
   const navigate = useNavigate();
   const courseId = id;
 
-  const { user } = useUser();
-  const { getToken } = useAuth();
-  const isLoggedIn = Boolean(user);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userInfo, setUserInfo] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const user = localStorage.getItem("user");
+    setIsLoggedIn(!!token);
+    if (user) {
+      try {
+        setUserInfo(JSON.parse(user));
+      } catch {
+        setUserInfo(null);
+      }
+    }
+  }, []);
 
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -132,26 +161,7 @@ const CourseDetailPage = () => {
   const [isTeacherAnimating, setIsTeacherAnimating] = useState(false);
   const [isPageLoaded, setIsPageLoaded] = useState(false);
 
-  const studentNameFromUser = useMemo(() => {
-    if (!user) return "";
-    const fullName =
-      user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim();
-    const email =
-      user.primaryEmailAddress?.emailAddress ||
-      (user.emailAddresses && user.emailAddresses[0]?.emailAddress) ||
-      "";
-    return fullName || email || "";
-  }, [user]);
-
-  const studentEmailFromUser = useMemo(() => {
-    if (!user) return "";
-    return (
-      user.primaryEmailAddress?.emailAddress ||
-      (user.emailAddresses && user.emailAddresses[0]?.emailAddress) ||
-      ""
-    );
-  }, [user]);
-
+  // Fetch course
   useEffect(() => {
     let mounted = true;
     setLoading(true);
@@ -172,8 +182,6 @@ const CourseDetailPage = () => {
         }
         const normalized = normalizeCourse(json.course);
         setCourse(normalized);
-
-        // DO NOT auto set isEnrolled for free courses; rely on server booking check
         setIsEnrolled(false);
       })
       .catch((err) => {
@@ -187,95 +195,49 @@ const CourseDetailPage = () => {
     };
   }, [courseId]);
 
+  // Check enrollment
   useEffect(() => {
     let mounted = true;
-    if (!course) return;
+    if (!course || !isLoggedIn) return;
 
     const checkEnrollment = async () => {
-      const q = `${API_BASE}/api/booking/check?courseId=${encodeURIComponent(
-        course._id ?? course.id ?? courseId
-      )}`;
-
-      const headers = { "Content-Type": "application/json" };
-      let opts = { method: "GET", credentials: "include", headers };
-
-      if (typeof getToken === "function") {
-        try {
-          const token = await Promise.race([
-            getToken().catch(() => null),
-            new Promise((r) => setTimeout(() => r(null), 1500)),
-          ]);
-          if (token) {
-            headers.Authorization = `Bearer ${token}`;
-            opts = { method: "GET", headers };
-          }
-        } catch (e) {
-          console.debug("getToken failed, falling back to cookie auth:", e);
-          opts = { method: "GET", credentials: "include", headers };
-        }
-      }
+      const token = localStorage.getItem("token");
+      if (!token) return;
 
       try {
-        const res = await fetch(q, opts);
-
-        if (res.status === 404) {
-          console.debug("booking.check 404; no booking route present");
-          setBookingInfo(null);
-          setIsEnrolled(false);
-          return;
-        }
-
-        const data = await res.json().catch(() => null);
-        if (!data) {
-          setBookingInfo(null);
-          setIsEnrolled(false);
-          return;
-        }
-
-        const booking = data.booking || null;
-        const serverSaysEnrolled = !!(
-          data.enrolled ||
-          data.userEnrolled ||
-          data.bookingExists ||
-          data.alreadyBooked
+        const res = await fetch(
+          `${API_BASE}/api/booking/check?courseId=${encodeURIComponent(course.id || courseId)}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          }
         );
 
-        const bookingPaidOrConfirmed =
-          booking &&
-          (serverSaysEnrolled ||
-            booking.paymentStatus === "Paid" ||
-            booking.paymentStatus === "paid" ||
-            booking.orderStatus === "Confirmed" ||
-            booking.orderStatus === "confirmed" ||
-            !!booking.paidAt);
-
-        if (!mounted) return;
-
-        if (bookingPaidOrConfirmed) {
-          setBookingInfo(booking || null);
-          setIsEnrolled(true);
-          return;
-        }
-
-        if (booking) {
-          // booking exists but not paid/confirmed
-          setBookingInfo(booking);
+        if (!res.ok) {
           setIsEnrolled(false);
           return;
         }
 
-        // no booking
-        setBookingInfo(null);
-        setIsEnrolled(false);
+        const data = await res.json();
+        
+        if (!mounted) return;
+
+        const enrolled = data.enrolled || false;
+        const booking = data.booking || null;
+
+        setBookingInfo(booking);
+        setIsEnrolled(enrolled);
       } catch (err) {
         console.debug("booking.check failed:", err);
-        // network error: leave as not enrolled
+        setIsEnrolled(false);
       }
     };
 
     checkEnrollment();
     return () => (mounted = false);
-  }, [course, getToken, courseId, isLoggedIn]);
+  }, [course, courseId, isLoggedIn]);
 
   useEffect(() => {
     setIsTeacherAnimating(true);
@@ -294,10 +256,8 @@ const CourseDetailPage = () => {
   const selectedLecture = useMemo(() => {
     if (!selectedContent.lectureId || !course) return null;
     return (
-      (course.lectures || []).find(
-        (l) =>
-          String(l.id) === String(selectedContent.lectureId) ||
-          String(l._id) === String(selectedContent.lectureId)
+      (course.Lectures || []).find(
+        (l) => String(l.id) === String(selectedContent.lectureId)
       ) || null
     );
   }, [course, selectedContent.lectureId]);
@@ -305,10 +265,8 @@ const CourseDetailPage = () => {
   const selectedChapter = useMemo(() => {
     if (!selectedContent.chapterId || !selectedLecture) return null;
     return (
-      (selectedLecture.chapters || []).find(
-        (ch) =>
-          String(ch.id) === String(selectedContent.chapterId) ||
-          String(ch._id) === String(selectedContent.chapterId)
+      (selectedLecture.Chapters || []).find(
+        (ch) => String(ch.id) === String(selectedContent.chapterId)
       ) || null
     );
   }, [selectedLecture, selectedContent.chapterId]);
@@ -323,49 +281,24 @@ const CourseDetailPage = () => {
 
   const totalMinutes = useMemo(
     () =>
-      (course?.lectures || []).reduce(
+      (course?.Lectures || []).reduce(
         (sum, l) => sum + (l.durationMin || l.totalMinutes || 0),
         0
       ),
     [course]
   );
 
-  const priceObj = course?.price;
-  const hasPriceObj = !!(
-    priceObj &&
-    (priceObj.sale != null || priceObj.original != null)
-  );
-  const salePrice =
-    hasPriceObj && priceObj.sale != null ? Number(priceObj.sale) : null;
-  const originalPrice =
-    hasPriceObj && priceObj.original != null ? Number(priceObj.original) : null;
+  const courseIsFree = course?.pricingType === "free" || course?.priceOriginal === 0;
+  const salePrice = course?.priceSale || null;
+  const originalPrice = course?.priceOriginal || null;
   const formatCurrency = (n) => (n == null || Number.isNaN(n) ? "" : `₹${n}`);
-  const courseIsFree = course
-    ? !!course.isFree ||
-      !course.price ||
-      (!course.price.sale && !course.price.original) ||
-      course.pricingType === "free"
-    : true;
   const hasDiscount =
     originalPrice != null && salePrice != null && originalPrice > salePrice;
 
   const bookingPendingPayment =
     bookingInfo &&
-    ((bookingInfo.paymentStatus &&
-      /unpaid/i.test(String(bookingInfo.paymentStatus))) ||
-      (bookingInfo.orderStatus &&
-        /pending/i.test(String(bookingInfo.orderStatus)))) &&
-    (salePrice || originalPrice || bookingInfo.price);
-
-  // handlers
-  const toggleLecture = (lectureId) => {
-    setExpandedLectures((prev) => {
-      const next = new Set(prev);
-      if (next.has(lectureId)) next.delete(lectureId);
-      else next.add(lectureId);
-      return next;
-    });
-  };
+    bookingInfo.paymentStatus === "Unpaid" &&
+    !courseIsFree;
 
   const onLectureHeaderClick = (lectureId) => {
     if (!isLoggedIn) {
@@ -375,6 +308,7 @@ const CourseDetailPage = () => {
       });
       return;
     }
+    
     const isOpen = expandedLectures.has(lectureId);
     if (isOpen) {
       setExpandedLectures((prev) => {
@@ -392,7 +326,6 @@ const CourseDetailPage = () => {
       return;
     }
 
-    // Now require server-enrollment even for free courses
     if (!isEnrolled) {
       if (bookingPendingPayment) {
         setToast({
@@ -474,6 +407,7 @@ const CourseDetailPage = () => {
         message: "Please login to enroll in the course",
         type: "error",
       });
+      navigate("/login");
       return;
     }
     if (!course) {
@@ -481,120 +415,47 @@ const CourseDetailPage = () => {
       return;
     }
 
-    // prevent duplicate enroll attempts
     if (isEnrolling) return;
 
     setIsEnrolling(true);
     try {
-      const numericPrice =
-        salePrice != null
-          ? salePrice
-          : originalPrice != null
-          ? originalPrice
-          : 0;
+      const numericPrice = salePrice != null ? salePrice : originalPrice != null ? originalPrice : 0;
       const payload = {
-        courseId: course._id ?? course.id ?? courseId,
+        courseId: course.id || courseId,
         courseName: course.name,
         teacherName: course.teacher || "",
         price: numericPrice,
-        studentName: studentNameFromUser || "",
-        email: studentEmailFromUser || "",
       };
 
-      const headers = { "Content-Type": "application/json" };
-      let opts = {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/api/booking/create`, {
         method: "POST",
-        headers,
-        credentials: "include",
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify(payload),
-      };
-      if (typeof getToken === "function") {
-        try {
-          const token = await getToken().catch(() => null);
-          if (token) {
-            headers.Authorization = `Bearer ${token}`;
-            opts = { method: "POST", headers, body: JSON.stringify(payload) };
-          }
-        } catch (e) {}
-      }
+      });
 
-      const res = await fetch(`${API_BASE}/api/booking/create`, opts);
-      const data = await res
-        .json()
-        .catch(() => ({ success: false, message: "Invalid response" }));
+      const data = await res.json();
 
       if (!res.ok || !data.success) {
-        const msg =
-          (data && (data.message || data.error)) ||
-          `Failed to create booking (${res.status})`;
-        const alreadyBooked =
-          /already booked|already enrolled|booking exists/i.test(msg) ||
-          data.alreadyBooked ||
-          data.bookingExists;
-        if (alreadyBooked) {
-          setToast({
-            message:
-              "You already have a booking — please check My Courses to view status.",
-            type: "info",
-          });
-          return;
-        }
-        throw new Error(msg);
+        throw new Error(data.message || "Failed to create booking");
       }
 
-      // If Stripe checkout URL returned, redirect
+      // If checkout URL (for paid courses), redirect
       if (data.checkoutUrl) {
-        if (data.booking) setBookingInfo(data.booking);
         window.location.href = data.checkoutUrl;
         return;
       }
 
-      // For free course or server-confirmed booking
+      // For free courses or confirmed bookings
       if (data.booking) {
         setBookingInfo(data.booking);
-        const b = data.booking;
-        const paid =
-          b.paymentStatus === "Paid" ||
-          b.paymentStatus === "paid" ||
-          b.orderStatus === "Confirmed" ||
-          b.orderStatus === "confirmed" ||
-          !!b.paidAt;
-
-        if (paid) {
+        if (numericPrice === 0 || data.booking.paymentStatus === "Paid") {
           setIsEnrolled(true);
           setToast({
-            message:
-              numericPrice === 0
-                ? "Enrolled successfully (free course)."
-                : "Enrollment succeeded.",
-            type: "info",
-          });
-          if (numericPrice > 0) navigate("/my-courses");
-          return;
-        }
-
-        if (numericPrice > 0 && !paid) {
-          setIsEnrolled(false);
-          setToast({
-            message: "Booking created — complete payment to access the course.",
-            type: "info",
-          });
-          return;
-        }
-
-        setIsEnrolled(true);
-        setToast({ message: "Enrolled.", type: "info" });
-        return;
-      }
-
-      // fallback
-      if (data.success) {
-        if (numericPrice === 0) {
-          setIsEnrolled(true);
-          setToast({ message: "Enrolled (free course).", type: "info" });
-        } else {
-          setToast({
-            message: "Enrollment initiated, complete payment.",
+            message: "Enrolled successfully!",
             type: "info",
           });
         }
@@ -606,8 +467,6 @@ const CourseDetailPage = () => {
       setIsEnrolling(false);
     }
   };
-
-  const handleBackToHome = () => navigate("/");
 
   if (loading) return <div className="p-6 text-center">Loading course...</div>;
   if (error) return <div className="p-6 text-center text-red-500">{error}</div>;
@@ -655,29 +514,44 @@ const CourseDetailPage = () => {
           <button
             onClick={() => navigate("/courses")}
             className={courseDetailStyles.backButton}
+            style={{ borderColor: PRIMARY_COLOR, color: PRIMARY_COLOR }}
           >
             <ArrowLeft className={courseDetailStyles.backIcon} />
-            <span className={courseDetailStyles.backText}>Back to Home</span>
+            <span className={courseDetailStyles.backText}>Back to Courses</span>
           </button>
-
-          <div>{/* Refresh booking status removed per request */}</div>
         </div>
 
-        <div className={courseDetailStyles.header}>
-          <div className={courseDetailStyles.badge}>
-            <BookOpen className={courseDetailStyles.badgeIcon} />
+          <div className={courseDetailStyles.header}>
+          <div
+              className={courseDetailStyles.badge}
+              style={{ borderColor: PRIMARY_COLOR, backgroundColor: "#ffffffb3" }}
+            >
+            <BookOpen
+              className={courseDetailStyles.badgeIcon}
+              style={{ color: PRIMARY_COLOR }}
+            />
             <span className={courseDetailStyles.badgeText}>
               {courseIsFree ? "Free Course" : "Premium Course"}
             </span>
           </div>
 
-          <h1 className={courseDetailStyles.title}>{course.name}</h1>
+          <h1
+              className={courseDetailStyles.title}
+              style={{
+                backgroundImage: `linear-gradient(90deg, ${PRIMARY_COLOR}, #6b21a8)`,
+              }}
+            >
+              {course.name}
+            </h1>
 
           {course.overview && (
             <div className={courseDetailStyles.overviewContainer}>
               <div className={courseDetailStyles.overview}>
-                <div className={courseDetailStyles.overviewHeader}>
-                  <Target className={courseDetailStyles.overviewIcon} />
+              <div className={courseDetailStyles.overviewHeader}>
+                <Target
+                  className={courseDetailStyles.overviewIcon}
+                  style={{ color: PRIMARY_COLOR }}
+                />
                   <h3 className={courseDetailStyles.overviewTitle}>
                     Course Overview
                   </h3>
@@ -693,15 +567,21 @@ const CourseDetailPage = () => {
             className={`${courseDetailStyles.statsContainer} animation-delay-300`}
           >
             <div className={courseDetailStyles.statItem}>
-              <Clock className={courseDetailStyles.statIcon} />
+              <Clock
+                className={courseDetailStyles.statIcon}
+                style={{ color: PRIMARY_COLOR }}
+              />
               <span className={courseDetailStyles.statText}>
                 {fmtMinutes(totalMinutes)}
               </span>
             </div>
             <div className={courseDetailStyles.statItem}>
-              <BookOpen className={courseDetailStyles.statIcon} />
+              <BookOpen
+                className={courseDetailStyles.statIcon}
+                style={{ color: PRIMARY_COLOR }}
+              />
               <span className={courseDetailStyles.statText}>
-                {(course.lectures || []).length} lectures
+                {(course.Lectures || []).length} lectures
               </span>
             </div>
 
@@ -710,7 +590,10 @@ const CourseDetailPage = () => {
                 isTeacherAnimating ? courseDetailStyles.teacherAnimating : ""
               }`}
             >
-              <User className={courseDetailStyles.statIcon} />
+              <User
+                className={courseDetailStyles.statIcon}
+                style={{ color: PRIMARY_COLOR }}
+              />
               <span className={courseDetailStyles.statText}>
                 {course.teacher}
               </span>
@@ -718,7 +601,8 @@ const CourseDetailPage = () => {
           </div>
         </div>
 
-        <div className={courseDetailStyles.mainGrid}>
+        {/* Video Player Section - I'll continue in next message due to length */}
+      <div className={courseDetailStyles.mainGrid}>
           <div className={courseDetailStyles.videoSection}>
             <div className={courseDetailStyles.videoContainer}>
               {currentEmbedUrl ? (
@@ -787,7 +671,7 @@ const CourseDetailPage = () => {
                     <p className={courseDetailStyles.videoDescription}>
                       {selectedContent.type === "chapter"
                         ? `Part of: ${selectedLecture?.title}`
-                        : currentVideoContent?.description}
+                        : currentVideoContent?.description || ""}
                     </p>
                     {currentVideoContent?.durationMin && (
                       <div className={courseDetailStyles.videoMeta}>
@@ -861,27 +745,25 @@ const CourseDetailPage = () => {
               </div>
 
               <div className={courseDetailStyles.contentList}>
-                {(course.lectures || []).map((lecture, index) => (
+                {(course.Lectures || []).map((lecture, index) => (
                   <div
-                    key={lecture.id ?? lecture._id ?? index}
+                    key={lecture.id ?? index}
                     className={courseDetailStyles.lectureItem}
                     style={{ animationDelay: `${index * 100}ms` }}
                   >
                     <div
                       className={`${courseDetailStyles.lectureHeader} ${
-                        expandedLectures.has(lecture.id ?? lecture._id)
+                        expandedLectures.has(lecture.id)
                           ? courseDetailStyles.lectureHeaderExpanded
                           : courseDetailStyles.lectureHeaderCollapsed
                       }`}
-                      onClick={() =>
-                        onLectureHeaderClick(lecture.id ?? lecture._id)
-                      }
+                      onClick={() => onLectureHeaderClick(lecture.id)}
                     >
                       <div className={courseDetailStyles.lectureHeaderContent}>
                         <div className={courseDetailStyles.lectureLeftSection}>
                           <div
                             className={`${courseDetailStyles.lectureChevron} ${
-                              expandedLectures.has(lecture.id ?? lecture._id)
+                              expandedLectures.has(lecture.id)
                                 ? courseDetailStyles.lectureChevronExpanded
                                 : courseDetailStyles.lectureChevronCollapsed
                             }`}
@@ -904,7 +786,7 @@ const CourseDetailPage = () => {
                                   courseDetailStyles.lectureChapterCount
                                 }
                               >
-                                {lecture.chapters?.length || 0} chapters
+                                {lecture.Chapters?.length || 0} chapters
                               </span>
                             </div>
                           </div>
@@ -912,15 +794,14 @@ const CourseDetailPage = () => {
                       </div>
                     </div>
 
-                    {expandedLectures.has(lecture.id ?? lecture._id) && (
+                    {expandedLectures.has(lecture.id) && (
                       <div className={courseDetailStyles.chapterList}>
-                        {(lecture.chapters || []).map((chapter) => {
-                          const chapId = chapter.id ?? chapter._id;
+                        {(lecture.Chapters || []).map((chapter) => {
+                          const chapId = chapter.id;
                           const isCompleted = completedChapters.has(chapId);
                           const isSelected =
                             selectedContent.chapterId === chapId &&
-                            selectedContent.lectureId ===
-                              (lecture.id ?? lecture._id);
+                            selectedContent.lectureId === lecture.id;
                           return (
                             <div
                               key={chapId}
@@ -934,10 +815,7 @@ const CourseDetailPage = () => {
                                   : ""
                               }`}
                               onClick={() =>
-                                handleContentSelect(
-                                  lecture.id ?? lecture._id,
-                                  chapId
-                                )
+                                handleContentSelect(lecture.id, chapId)
                               }
                             >
                               <div
@@ -1056,11 +934,10 @@ const CourseDetailPage = () => {
               <p className={courseDetailStyles.pricingDescription}>
                 {courseIsFree
                   ? "Free access · Learn anytime"
-                  : "One-time payment · Lifetime access "}
+                  : "One-time payment · Lifetime access"}
               </p>
 
               <div className="mt-6">
-                {/* NEW: show Enroll button for both free and paid courses until server confirms booking */}
                 {!isEnrolled ? (
                   bookingPendingPayment ? (
                     <div className="flex flex-col gap-2">
@@ -1079,22 +956,18 @@ const CourseDetailPage = () => {
                         ) : (
                           <>
                             <Play className={courseDetailStyles.enrollIcon} />
-                            {courseIsFree
-                              ? "Enroll (Free)"
-                              : "Complete Payment"}
-                            <span>
-                              <ArrowRight
-                                className={courseDetailStyles.enrollArrow}
-                              />
-                            </span>
+                            Complete Payment
+                            <ArrowRight
+                              className={courseDetailStyles.enrollArrow}
+                            />
                           </>
                         )}
                       </button>
                       <button
-                        onClick={() => navigate("/my-courses")}
-                        className="text-sm underline"
+                        onClick={() => navigate("/mycourses")}
+                        className="text-sm underline text-gray-600 hover:text-gray-800"
                       >
-                        View booking (My Courses)
+                        View booking status
                       </button>
                     </div>
                   ) : (
@@ -1114,11 +987,9 @@ const CourseDetailPage = () => {
                         <>
                           <Play className={courseDetailStyles.enrollIcon} />
                           {courseIsFree ? "Enroll (Free)" : "Enroll Now"}
-                          <span>
-                            <ArrowRight
-                              className={courseDetailStyles.enrollArrow}
-                            />
-                          </span>
+                          <ArrowRight
+                            className={courseDetailStyles.enrollArrow}
+                          />
                         </>
                       )}
                     </button>
@@ -1151,7 +1022,7 @@ const CourseDetailPage = () => {
                     <span className="font-semibold text-indigo-600">
                       {Math.round(
                         (completedChapters.size /
-                          (course.lectures?.flatMap((l) => l.chapters || [])
+                          (course.Lectures?.flatMap((l) => l.Chapters || [])
                             .length || 1)) *
                           100
                       )}
@@ -1164,7 +1035,7 @@ const CourseDetailPage = () => {
                       style={{
                         width: `${
                           (completedChapters.size /
-                            (course.lectures?.flatMap((l) => l.chapters || [])
+                            (course.Lectures?.flatMap((l) => l.Chapters || [])
                               .length || 1)) *
                           100
                         }%`,
@@ -1196,7 +1067,11 @@ const CourseDetailPage = () => {
         </div>
       </div>
 
-      <style jsx>{courseDetailStyles.animations}</style>
+      {typeof courseDetailStyles.animations === 'string' ? (
+        <style dangerouslySetInnerHTML={{ __html: courseDetailStyles.animations }} />
+      ) : (
+        <style>{courseDetailStyles.animations}</style>
+      )}
     </div>
   );
 };

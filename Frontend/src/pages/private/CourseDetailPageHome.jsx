@@ -3,9 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Play, Clock, BookOpen, ChevronDown, CheckCircle, Circle, X, ArrowLeft,  User, Award, Target,  ArrowRight, Sparkles, } from "lucide-react";
 import { courseDetailStylesH, toastStyles, animationDelaysH, courseDetailCustomStyles, } from "../../assets/dummyStyles";
 
-// import { useUser, useAuth } from "@clerk/clerk-react";
-
-const API_BASE = "http://localhost:4000";
+const API_BASE = "http://localhost:3000"; 
 
 const fmtMinutes = (mins) => {
   const h = Math.floor((mins || 0) / 60);
@@ -98,9 +96,8 @@ const CourseDetailPageHome = () => {
   const navigate = useNavigate();
   const courseId = id;
 
-  const { user } = useUser();
-  const { getToken } = useAuth();
-  const isLoggedIn = Boolean(user);
+  const [user, setUser] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -116,24 +113,29 @@ const CourseDetailPageHome = () => {
   const [isTeacherAnimating, setIsTeacherAnimating] = useState(false);
   const [isPageLoaded, setIsPageLoaded] = useState(false);
 
+  // Get user from localStorage
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userData = localStorage.getItem("user");
+    
+    if (token && userData) {
+      try {
+        setUser(JSON.parse(userData));
+        setIsLoggedIn(true);
+      } catch (error) {
+        console.error("Error parsing user data:", error);
+      }
+    }
+  }, []);
+
   const studentNameFromUser = useMemo(() => {
     if (!user) return "";
-    const fullName =
-      user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim();
-    const email =
-      user.primaryEmailAddress?.emailAddress ||
-      (user.emailAddresses && user.emailAddresses[0]?.emailAddress) ||
-      "";
-    return fullName || email || "";
+    return user.username || user.email || "";
   }, [user]);
 
   const studentEmailFromUser = useMemo(() => {
     if (!user) return "";
-    return (
-      user.primaryEmailAddress?.emailAddress ||
-      (user.emailAddresses && user.emailAddresses[0]?.emailAddress) ||
-      ""
-    );
+    return user.email || "";
   }, [user]);
 
   useEffect(() => {
@@ -170,34 +172,20 @@ const CourseDetailPageHome = () => {
 
   useEffect(() => {
     let mounted = true;
-    if (!course) return;
+    if (!course || !isLoggedIn) return;
 
     const checkEnrollment = async () => {
       try {
-        let headers = { "Content-Type": "application/json" };
-        let opts = { method: "GET" };
-        if (getToken) {
-          try {
-            const token = await getToken({ template: "standard" }).catch(() =>
-              getToken()
-            );
-            if (token) {
-              headers.Authorization = `Bearer ${token}`;
-              opts = { method: "GET", headers };
-            } else {
-              opts = { method: "GET", credentials: "include", headers };
-            }
-          } catch (e) {
-            opts = { method: "GET", credentials: "include", headers };
-          }
-        } else {
-          opts = { method: "GET", credentials: "include", headers };
-        }
+        const token = localStorage.getItem("token");
+        const headers = { 
+          "Content-Type": "application/json",
+          ...(token && { Authorization: `Bearer ${token}` })
+        };
 
         const q = `${API_BASE}/api/booking/check?courseId=${encodeURIComponent(
           course._id ?? course.id ?? courseId
         )}`;
-        const res = await fetch(q, opts);
+        const res = await fetch(q, { method: "GET", headers });
         const data = await res.json().catch(() => ({}));
 
         let serverBooking =
@@ -238,13 +226,12 @@ const CourseDetailPageHome = () => {
         }
       } catch (err) {
         console.debug("booking.check failed:", err);
-        // keep previous state (do not flip)
       }
     };
 
     checkEnrollment();
     return () => (mounted = false);
-  }, [course, isLoggedIn, getToken, courseId]);
+  }, [course, isLoggedIn, courseId]);
 
   useEffect(() => {
     setIsTeacherAnimating(true);
@@ -308,7 +295,7 @@ const CourseDetailPageHome = () => {
     hasPriceObj && priceObj.sale != null ? Number(priceObj.sale) : null;
   const originalPrice =
     hasPriceObj && priceObj.original != null ? Number(priceObj.original) : null;
-  const formatCurrency = (n) => (n == null || Number.isNaN(n) ? "" : `₹${n}`);
+  const formatCurrency = (n) => (n == null || Number.isNaN(n) ? "" : `Rs. ${n}`);
   const hasDiscount =
     originalPrice != null && salePrice != null && originalPrice > salePrice;
   const courseIsFree = course
@@ -347,7 +334,6 @@ const CourseDetailPageHome = () => {
       return;
     }
     if (!isEnrolled && bookingInfo && bookingInfo.price > 0) {
-      // booking exists but unpaid
       setToast({
         message:
           "You have a pending payment for this course. Complete payment to access content.",
@@ -418,13 +404,13 @@ const CourseDetailPageHome = () => {
     });
   };
 
-  // create or complete booking (enroll)
   const handleEnroll = async () => {
     if (!isLoggedIn) {
       setToast({
         message: "Please login to enroll in the course",
         type: "error",
       });
+      setTimeout(() => navigate("/login"), 2000);
       return;
     }
     if (!course) {
@@ -460,31 +446,18 @@ const CourseDetailPageHome = () => {
         email,
       };
 
-      let headers = { "Content-Type": "application/json" };
-      let opts = {
+      const token = localStorage.getItem("token");
+      const headers = { 
+        "Content-Type": "application/json",
+        ...(token && { Authorization: `Bearer ${token}` })
+      };
+
+      const res = await fetch(`${API_BASE}/api/booking/create`, {
         method: "POST",
         headers,
         body: JSON.stringify(payload),
-        credentials: "include",
-      };
+      });
 
-      if (getToken) {
-        try {
-          const token = await getToken().catch(() => null);
-          if (token) {
-            headers.Authorization = `Bearer ${token}`;
-            opts = {
-              method: "POST",
-              headers,
-              body: JSON.stringify(payload),
-            };
-          }
-        } catch (e) {
-          // keep credentials include fallback
-        }
-      }
-
-      const res = await fetch(`${API_BASE}/api/booking/create`, opts);
       const data = await res.json().catch(() => ({ success: false }));
 
       if (!res.ok || !data.success) {
@@ -496,7 +469,6 @@ const CourseDetailPageHome = () => {
           data.alreadyBooked ||
           data.bookingExists;
         if (alreadyBooked) {
-          // Re-run server-side check to get booking state
           setToast({
             message:
               "You already have a booking for this course. Checking status...",
@@ -506,14 +478,9 @@ const CourseDetailPageHome = () => {
             const q = `${API_BASE}/api/booking/check?courseId=${encodeURIComponent(
               payload.courseId
             )}`;
-            const checkOpts =
-              opts.method === "POST"
-                ? { method: "GET", headers: opts.headers }
-                : { method: "GET", credentials: "include" };
-            const chkRes = await fetch(q, checkOpts);
+            const chkRes = await fetch(q, { method: "GET", headers });
             const chkData = await chkRes.json().catch(() => ({}));
             if (chkData.booking) setBookingInfo(chkData.booking);
-            // if server claims enrolled -> set
             if (
               chkData.enrolled ||
               chkData.userEnrolled ||
@@ -523,7 +490,6 @@ const CourseDetailPageHome = () => {
               setIsEnrolled(true);
               setToast({ message: "You're enrolled.", type: "info" });
             } else {
-              // if booking exists but unpaid
               if (chkData.booking)
                 setToast({
                   message: "Booking found — payment pending.",
@@ -538,18 +504,14 @@ const CourseDetailPageHome = () => {
         throw new Error(msg);
       }
 
-      // If checkout is required (Stripe) — redirect the user
       if (data.checkoutUrl) {
-        // Keep bookingInfo if server returned booking
         if (data.booking) setBookingInfo(data.booking);
         window.location.href = data.checkoutUrl;
         return;
       }
 
-      // If server returned booking (free course or immediate confirmed)
       if (data.booking) {
         setBookingInfo(data.booking);
-        // determine paid/confirmed
         const b = data.booking;
         const paid =
           b.paymentStatus === "Paid" ||
@@ -567,14 +529,12 @@ const CourseDetailPageHome = () => {
                 : "Enrollment succeeded.",
             type: "info",
           });
-          // for a paid course that was marked paid by server, navigate to My Courses
           if (numericPrice > 0) {
-            navigate("/my-courses");
+            navigate("/mycourses");
           }
           return;
         }
 
-        // booking exists but unpaid (pending payment)
         if (numericPrice > 0 && !paid) {
           setIsEnrolled(false);
           setToast({
@@ -584,13 +544,11 @@ const CourseDetailPageHome = () => {
           return;
         }
 
-        // fallback: mark enrolled
         setIsEnrolled(true);
         setToast({ message: "Enrolled.", type: "info" });
         return;
       }
 
-      // if no booking returned but success true — assume enrolled for free courses
       if (data.success) {
         if (numericPrice === 0) {
           setIsEnrolled(true);
@@ -639,6 +597,7 @@ const CourseDetailPageHome = () => {
           <button
             onClick={() => navigate("/courses")}
             className={courseDetailStylesH.notFoundButton}
+            style={{ backgroundColor: '#1c398e' }}
           >
             Back to courses
           </button>
@@ -647,7 +606,6 @@ const CourseDetailPageHome = () => {
     );
   }
 
-  // derive UI state for pricing button:
   const bookingPendingPayment =
     bookingInfo &&
     (bookingInfo.paymentStatus === "Unpaid" ||
@@ -680,12 +638,11 @@ const CourseDetailPageHome = () => {
             </span>
           </button>
 
-          {/* refresh booking button intentionally removed */}
           <div />
         </div>
 
         <div className={courseDetailStylesH.headerContainer}>
-          <div className={courseDetailStylesH.courseBadge}>
+          <div className={courseDetailStylesH.courseBadge} style={{ backgroundColor: '#1c398e' }}>
             <BookOpen className={courseDetailStylesH.badgeIcon} />
             <span className={courseDetailStylesH.badgeText}>
               {courseIsFree ? "Free Course" : "Premium Course"}
@@ -698,7 +655,7 @@ const CourseDetailPageHome = () => {
             <div className={courseDetailStylesH.overviewContainer}>
               <div className={courseDetailStylesH.overviewCard}>
                 <div className={courseDetailStylesH.overviewHeader}>
-                  <Target className={courseDetailStylesH.overviewIcon} />
+                  <Target className={courseDetailStylesH.overviewIcon} style={{ color: '#1c398e' }} />
                   <h3 className={courseDetailStylesH.overviewTitle}>
                     Course Overview
                   </h3>
@@ -714,13 +671,13 @@ const CourseDetailPageHome = () => {
             className={`${courseDetailStylesH.statsContainer} ${animationDelaysH.delay300}`}
           >
             <div className={courseDetailStylesH.statItem}>
-              <Clock className={courseDetailStylesH.statIcon} />
+              <Clock className={courseDetailStylesH.statIcon} style={{ color: '#1c398e' }} />
               <span className={courseDetailStylesH.statText}>
                 {fmtMinutes(totalMinutes)}
               </span>
             </div>
             <div className={courseDetailStylesH.statItem}>
-              <BookOpen className={courseDetailStylesH.statIcon} />
+              <BookOpen className={courseDetailStylesH.statIcon} style={{ color: '#1c398e' }} />
               <span className={courseDetailStylesH.statText}>
                 {(course.lectures || []).length} lectures
               </span>
@@ -731,7 +688,7 @@ const CourseDetailPageHome = () => {
                 isTeacherAnimating ? "scale-110 bg-indigo-100/50" : ""
               }`}
             >
-              <User className={courseDetailStylesH.teacherIcon} />
+              <User className={courseDetailStylesH.teacherIcon} style={{ color: '#1c398e' }} />
               <span className={courseDetailStylesH.teacherText}>
                 {course.teacher}
               </span>
@@ -776,6 +733,7 @@ const CourseDetailPageHome = () => {
                           className={
                             courseDetailStylesH.videoPlaceholderPlayIcon
                           }
+                          style={{ color: '#1c398e' }}
                         />
                       </div>
                       <p className={courseDetailStylesH.videoPlaceholderText}>
@@ -814,7 +772,7 @@ const CourseDetailPageHome = () => {
                     </p>
                     {currentVideoContent?.durationMin && (
                       <div className={courseDetailStylesH.videoMeta}>
-                        <div className={courseDetailStylesH.durationBadge}>
+                        <div className={courseDetailStylesH.durationBadge} style={{ backgroundColor: '#1c398e' }}>
                           <Clock className={courseDetailStylesH.durationIcon} />
                           <span>
                             {fmtMinutes(currentVideoContent.durationMin)}
@@ -841,6 +799,7 @@ const CourseDetailPageHome = () => {
                           ? courseDetailStylesH.completionButtonCompleted
                           : courseDetailStylesH.completionButtonIncomplete
                       }`}
+                      style={completedChapters.has(selectedContent.chapterId) ? { backgroundColor: '#1c398e' } : {}}
                     >
                       {completedChapters.has(selectedContent.chapterId) ? (
                         <>
@@ -878,7 +837,7 @@ const CourseDetailPageHome = () => {
                   Course Content
                 </h4>
                 {courseIsFree && (
-                  <div className={courseDetailStylesH.freeAccessBadge}>
+                  <div className={courseDetailStylesH.freeAccessBadge} style={{ backgroundColor: '#1c398e' }}>
                     <Sparkles className={courseDetailStylesH.freeAccessIcon} />
                     Free Access
                   </div>
@@ -902,6 +861,10 @@ const CourseDetailPageHome = () => {
                         onLectureHeaderClick(lecture.id ?? lecture._id)
                       }
                     >
+                  onClick={() =>
+                        onLectureHeaderClick(lecture.id ?? lecture._id)
+                      }
+                    >
                       <div className={courseDetailStylesH.lectureContent}>
                         <div className={courseDetailStylesH.lectureLeft}>
                           <div
@@ -911,7 +874,7 @@ const CourseDetailPageHome = () => {
                                 : courseDetailStylesH.lectureChevronNormal
                             }`}
                           >
-                            <ChevronDown className="w-5 h-5" />
+                            <ChevronDown className="w-5 h-5" style={{ color: '#1c398e' }} />
                           </div>
                           <div className={courseDetailStylesH.lectureInfo}>
                             <div className={courseDetailStylesH.lectureTitle}>
@@ -965,6 +928,7 @@ const CourseDetailPageHome = () => {
                                   chapId
                                 )
                               }
+                              style={isSelected ? { borderLeftColor: '#1c398e' } : {}}
                             >
                               <div
                                 className={courseDetailStylesH.chapterContent}
@@ -984,6 +948,7 @@ const CourseDetailPageHome = () => {
                                         ? courseDetailStylesH.chapterCompletionCompleted
                                         : courseDetailStylesH.chapterCompletionNormal
                                     }`}
+                                    style={isCompleted ? { color: '#1c398e' } : {}}
                                   >
                                     {isCompleted ? (
                                       <CheckCircle className="w-5 h-5" />
@@ -1041,7 +1006,7 @@ const CourseDetailPageHome = () => {
                 <h5 className={courseDetailStylesH.pricingTitle}>Pricing</h5>
               </div>
               <div className={courseDetailStylesH.pricingAmount}>
-                <div className={courseDetailStylesH.pricingCurrent}>
+                <div className={courseDetailStylesH.pricingCurrent} style={{ color: '#1c398e' }}>
                   {salePrice != null
                     ? formatCurrency(salePrice)
                     : originalPrice != null
@@ -1054,7 +1019,7 @@ const CourseDetailPageHome = () => {
                   </div>
                 )}
                 {hasDiscount && (
-                  <div className={courseDetailStylesH.pricingDiscount}>
+                  <div className={courseDetailStylesH.pricingDiscount} style={{ backgroundColor: '#1c398e' }}>
                     {Math.round(
                       ((originalPrice - salePrice) / originalPrice) * 100
                     )}
@@ -1069,16 +1034,15 @@ const CourseDetailPageHome = () => {
               </p>
 
               <div className="mt-6">
-                {/* If booking exists and unpaid -> show a "Complete payment" / "View payment" CTA */}
                 {bookingPendingPayment ? (
                   <div className="flex flex-col gap-2">
                     <button
                       onClick={() => {
-                        // attempt to create/refresh checkout by calling handleEnroll again
                         handleEnroll();
                       }}
                       className={courseDetailStylesH.enrollButton}
                       disabled={isEnrolling}
+                      style={{ backgroundColor: '#1c398e' }}
                     >
                       {isEnrolling ? (
                         <>
@@ -1098,8 +1062,9 @@ const CourseDetailPageHome = () => {
                       )}
                     </button>
                     <button
-                      onClick={() => navigate("/my-courses")}
+                      onClick={() => navigate("/mycourses")}
                       className="text-sm underline"
+                      style={{ color: '#1c398e' }}
                     >
                       View booking (My Courses)
                     </button>
@@ -1109,6 +1074,7 @@ const CourseDetailPageHome = () => {
                     onClick={handleEnroll}
                     disabled={isEnrolling}
                     className={courseDetailStylesH.enrollButton}
+                    style={{ backgroundColor: '#1c398e' }}
                   >
                     {isEnrolling ? (
                       <>
@@ -1131,6 +1097,7 @@ const CourseDetailPageHome = () => {
                   <button
                     disabled
                     className={courseDetailStylesH.enrollButtonEnrolled}
+                    style={{ backgroundColor: '#1c398e' }}
                   >
                     <CheckCircle
                       className={courseDetailStylesH.enrollButtonIcon}
@@ -1145,7 +1112,7 @@ const CourseDetailPageHome = () => {
               className={`${courseDetailStylesH.sidebarCard} ${animationDelaysH.delay400}`}
             >
               <div className={courseDetailStylesH.progressHeader}>
-                <Award className={courseDetailStylesH.progressIcon} />
+                <Award className={courseDetailStylesH.progressIcon} style={{ color: '#1c398e' }} />
                 <h5 className={courseDetailStylesH.progressTitle}>
                   Your Progress
                 </h5>
@@ -1154,7 +1121,7 @@ const CourseDetailPageHome = () => {
                 <div>
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-gray-600">Course Completion</span>
-                    <span className="font-semibold text-indigo-600">
+                    <span className="font-semibold" style={{ color: '#1c398e' }}>
                       {Math.round(
                         (completedChapters.size /
                           (course.lectures?.flatMap((l) => l.chapters || [])
@@ -1174,13 +1141,14 @@ const CourseDetailPageHome = () => {
                               .length || 1)) *
                           100
                         }%`,
+                        backgroundColor: '#1c398e'
                       }}
                     />
                   </div>
                 </div>
                 <div className={courseDetailStylesH.progressStats}>
                   <div className={courseDetailStylesH.progressStat}>
-                    <div className={courseDetailStylesH.progressStatValue}>
+                    <div className={courseDetailStylesH.progressStatValue} style={{ color: '#1c398e' }}>
                       {fmtMinutes(totalMinutes)}
                     </div>
                     <div className={courseDetailStylesH.progressStatLabel}>
@@ -1188,7 +1156,7 @@ const CourseDetailPageHome = () => {
                     </div>
                   </div>
                   <div className={courseDetailStylesH.progressStat}>
-                    <div className={courseDetailStylesH.progressStatValue}>
+                    <div className={courseDetailStylesH.progressStatValue} style={{ color: '#1c398e' }}>
                       {completedChapters.size}
                     </div>
                     <div className={courseDetailStylesH.progressStatLabel}>
