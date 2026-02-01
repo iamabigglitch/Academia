@@ -1,6 +1,7 @@
 import { Booking } from "../models/bookingModel.js";
 import { User } from "../models/userModel.js";
 import Course from "../models/courseModel.js";
+import { sequelize } from "../database/db.js";
 import { Op } from "sequelize";
 
 // Helper function to generate booking ID

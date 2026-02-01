@@ -52,6 +52,7 @@ const calculateCourseDuration = async (courseId) => {
     },
     { where: { id: courseId } }
   );
+
 };
 
 export const getPublicCourses = async (req, res) => {
@@ -130,43 +131,54 @@ export const getCourseById = async (req, res) => {
 
 // POST /courses
 export const createCourse = async (req, res) => {
+  console.log("create course api hitting");
+
   try {
     const body = req.body;
+    console.log("RAW BODY:", body);
 
-    // Handle image upload
+    // Parse JSON fields (IMPORTANT)
+    const price = body.price ? JSON.parse(body.price) : null;
+    const totalDuration = JSON.parse(body.totalDuration);
+    // Image
     const image = req.file ? `/uploads/${req.file.filename}` : "";
 
-    // Parse price data
+    const pricingType = body.pricingType || "free";
+
     let priceOriginal = 0;
     let priceSale = 0;
-    let pricingType = body.pricingType || "free";
 
-    if (pricingType === "paid") {
-      priceOriginal = parseFloat(body.priceOriginal) || 0;
-      priceSale = parseFloat(body.priceSale) || 0;
+    if (pricingType === "paid" && price) {
+      priceOriginal = Number(price.original) || 0;
+      priceSale = Number(price.sale) || 0;
     }
 
-    // Create course
     const course = await Course.create({
       name: body.name,
       teacher: body.teacher,
-      image,
       pricingType,
       priceOriginal,
       priceSale,
       overview: body.overview || "",
-      courseType: body.courseType || "regular"
+      courseType: body.courseType || "regular",
+      totalDurationHours: totalDuration.hours || 0,
+      totalDurationMinutes: totalDuration.minutes || 0,
+      totalLectures: Number(body.totalLectures) || 0,
+      image,
     });
 
-    // Calculate course duration
     await calculateCourseDuration(course.id);
 
     res.status(201).json({ success: true, course });
   } catch (err) {
     console.error("createCourse error:", err);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
+
 
 // DELETE /courses/:id
 export const deleteCourse = async (req, res) => {
