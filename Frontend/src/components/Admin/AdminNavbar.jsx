@@ -9,7 +9,7 @@ const PRIMARY_LIGHT = "#2d4db5";
 const PRIMARY_DARK = "#0f2764";
 
 const adminNav = [
-  { name: "Dashboard", icon: LayoutDashboard, href: "/admin" },
+  { name: "Dashboard", icon: LayoutDashboard, href: "/admin/dashboard" },
   { name: "Add Course", icon: PlusCircle, href: "/admin/addcourse" },
   { name: "List Courses", icon: ListChecks, href: "/admin/listcourse" },
   { name: "Bookings", icon: ShoppingBag, href: "/admin/booking" },

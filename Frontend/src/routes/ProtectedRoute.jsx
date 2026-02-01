@@ -38,7 +38,7 @@ export const GuestOnlyRoute = ({ children }) => {
   if (token) {
   
     if (user.role === "admin") {
-      return <Navigate to="/admin" replace />;
+      return <Navigate to="/admin/dashboard" replace />;
     }
     return <Navigate to="/home" replace />;
   }

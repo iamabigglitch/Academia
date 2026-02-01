@@ -31,6 +31,7 @@ const Login = () => {
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       toast.success(res.data.message || "Login successful!");
+      console.log(res.data.user.role)
       if (res.data.user.role === 'admin') {
         navigate('/admin/dashboard');
       } else {

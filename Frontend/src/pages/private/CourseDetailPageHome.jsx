@@ -39,18 +39,33 @@ const toEmbedUrl = (url) => {
   if (!url) return "";
   try {
     const trimmed = String(url).trim();
-    if (/\/embed\//.test(trimmed)) return trimmed;
+    
+    // Already an embed URL
+    if (/\/embed\//.test(trimmed)) {
+      return trimmed;
+    }
+    
+    // YouTube watch URL (e.g., https://www.youtube.com/watch?v=VIDEO_ID)
     const watchMatch = trimmed.match(/[?&]v=([^&#]+)/);
-    if (watchMatch && watchMatch[1])
+    if (watchMatch && watchMatch[1]) {
       return `https://www.youtube.com/embed/${watchMatch[1]}`;
+    }
+    
+    // YouTube short URL (e.g., https://youtu.be/VIDEO_ID)
     const shortMatch = trimmed.match(/youtu\.be\/([^?&#/]+)/);
-    if (shortMatch && shortMatch[1])
+    if (shortMatch && shortMatch[1]) {
       return `https://www.youtube.com/embed/${shortMatch[1]}`;
+    }
+    
+    // Try to extract video ID from the last segment
     const lastSeg = trimmed.split("/").filter(Boolean).pop();
-    if (lastSeg && lastSeg.length === 11)
+    if (lastSeg && lastSeg.length === 11 && /^[a-zA-Z0-9_-]+$/.test(lastSeg)) {
       return `https://www.youtube.com/embed/${lastSeg}`;
+    }
+    
     return trimmed;
   } catch (e) {
+    console.error("Error converting to embed URL:", e);
     return url;
   }
 };
@@ -58,9 +73,9 @@ const toEmbedUrl = (url) => {
 const appendAutoplay = (embedUrl, autoplay = true) => {
   if (!embedUrl) return "";
   if (!autoplay) return embedUrl;
-  return embedUrl.includes("?")
-    ? `${embedUrl}&autoplay=1`
-    : `${embedUrl}?autoplay=1`;
+  
+  const separator = embedUrl.includes("?") ? "&" : "?";
+  return `${embedUrl}${separator}autoplay=1&mute=0`;
 };
 
 const normalizeCourse = (c) => {
@@ -702,6 +717,7 @@ const CourseDetailPageHome = () => {
               <div className={courseDetailStylesH.videoWrapper}>
                 {currentVideoContent?.videoUrl ? (
                   <iframe
+                    key={`${selectedContent.lectureId}-${selectedContent.chapterId || 'main'}`}
                     title={
                       currentVideoContent.title || currentVideoContent.name
                     }
@@ -858,10 +874,6 @@ const CourseDetailPageHome = () => {
                           : courseDetailStylesH.lectureHeaderNormal
                       }`}
                       onClick={() =>
-                        onLectureHeaderClick(lecture.id ?? lecture._id)
-                      }
-                    >
-                  onClick={() =>
                         onLectureHeaderClick(lecture.id ?? lecture._id)
                       }
                     >

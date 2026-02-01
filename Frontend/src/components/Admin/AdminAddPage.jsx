@@ -24,7 +24,6 @@ const formatDuration = (a, b) => {
   return `${mins}m`;
 };
 
-// Helper function to normalize lecture/chapter totals
 const computeCourseTotals = (lectures = []) => {
   const cloned = (Array.isArray(lectures) ? lectures : []).map((lecture) => {
     const lec = {
@@ -90,6 +89,7 @@ const computeCourseTotals = (lectures = []) => {
 
 const AddPage = () => {
   const navigate = useNavigate();
+ 
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -283,6 +283,7 @@ const AddPage = () => {
 
   // Add lecture
   const addLecture = () => {
+
     if (!currentLecture.title?.trim()) {
       toast.error("Please enter lecture title");
       return;
@@ -450,9 +451,11 @@ const AddPage = () => {
 
   // Submit
   const submitToBackend = async () => {
+    console.log("submut to backend function called sucesslyy")
     if (!validateForm()) return;
 
     setLoading(true);
+     console.log(formData)
     try {
       const computed = computeCourseTotals(formData.lectures);
       const fd = new FormData();
@@ -481,7 +484,7 @@ const AddPage = () => {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: fd,
       });
-
+// console.log("message from backedn" ,res.data.sucesss)
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {

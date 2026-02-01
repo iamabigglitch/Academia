@@ -68,14 +68,6 @@ const toEmbedUrl = (url) => {
   }
 };
 
-const appendAutoplay = (embedUrl, autoplay = true) => {
-  if (!embedUrl) return "";
-  if (!autoplay) return embedUrl;
-  return embedUrl.includes("?")
-    ? `${embedUrl}&autoplay=1`
-    : `${embedUrl}?autoplay=1`;
-};
-
 const isDirectVideoFile = (url) => {
   if (!url) return false;
   return /\.(mp4|webm|ogg)(\?.*)?$/i.test(url);
@@ -601,28 +593,27 @@ const CourseDetailPage = () => {
           </div>
         </div>
 
-        {/* Video Player Section - I'll continue in next message due to length */}
+        {/* Video Player Section */}
       <div className={courseDetailStyles.mainGrid}>
           <div className={courseDetailStyles.videoSection}>
             <div className={courseDetailStyles.videoContainer}>
               {currentEmbedUrl ? (
                 currentIsDirectVideo ? (
                   <video
+                    key={currentEmbedUrl}
                     controls
                     src={currentEmbedUrl}
                     className={courseDetailStyles.video}
                   />
                 ) : (
                   <iframe
+                    key={currentEmbedUrl}
                     title={
                       currentVideoContent?.title ||
                       currentVideoContent?.name ||
                       "video-player"
                     }
-                    src={appendAutoplay(
-                      currentEmbedUrl,
-                      isLoggedIn && isEnrolled
-                    )}
+                    src={currentEmbedUrl}
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
                     className={courseDetailStyles.iframe}
