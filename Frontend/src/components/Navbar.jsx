@@ -240,7 +240,7 @@ const NavBar = () => {
                     onClick={() => setIsOpen(false)}
                     className="block text-center px-4 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-sky-600 to-cyan-600 hover:from-sky-700 hover:to-cyan-700 transition-all"
                   >
-                    Register
+                    Signup
                   </NavLink>
                 </>
               ) : (

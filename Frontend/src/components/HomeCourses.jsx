@@ -238,16 +238,16 @@ const HomeCourses = () => {
     <div className={homeCoursesStyles.container}>
       <div className={homeCoursesStyles.mainContainer}>
         <div className={homeCoursesStyles.header}>
-          <h2 className={`${title} ${homeCoursesStyles.title}`}>
-            <Star className={homeCoursesStyles.titleIcon} />
+          <h2 className={`${title} ${homeCoursesStyles.title} text-blue-900`}>
+            <Star className="text-blue-600" />
             Explore Top Courses
-            <Star className={homeCoursesStyles.titleIcon} />
+            <Star className="text-blue-600" />
           </h2>
         </div>
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16">
-            <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4" />
+            <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4" />
             <p className="text-gray-600 font-medium">Loading courses...</p>
           </div>
         ) : error ? (
@@ -256,7 +256,7 @@ const HomeCourses = () => {
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className="px-6 py-2.5 bg-indigo-600 text-white font-semibold rounded-xl hover:bg-indigo-700 transition-colors"
+              className="px-6 py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-colors"
             >
               Try again
             </button>
@@ -339,7 +339,7 @@ const HomeCourses = () => {
             <button
               type="button"
               onClick={handleBrowseClick}
-              className="relative z-10 inline-flex items-center gap-3 px-8 py-4 text-lg font-bold rounded-2xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-xl hover:from-indigo-700 hover:to-purple-700 hover:shadow-2xl transition-all duration-300 cursor-pointer active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-indigo-300/50"
+              className="relative z-10 inline-flex items-center gap-3 px-8 py-4 text-lg font-bold rounded-2xl bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-xl hover:from-blue-700 hover:to-blue-900 hover:shadow-2xl transition-all duration-300 cursor-pointer active:scale-[0.98] focus:outline-none focus:ring-4 focus:ring-blue-300/50"
             >
               <span>Discover Courses</span>
               <ArrowRight className="w-5 h-5" />
