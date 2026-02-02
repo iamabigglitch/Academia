@@ -3,9 +3,9 @@ import path from "path";
 import Course from "../models/courseModel.js";
 import Lecture from "../models/lectureModel.js";
 import Chapter from "../models/chapterModel.js";
+import Rating from "../models/ratingModel.js";
 
 import { makeImageAbsolute } from "../uploads/academiauploads.js";
-import { ratingModel } from "../models/ratingModel.js";
 
 const calculateCourseDuration = async (courseId) => {
   const lectures = await Lecture.findAll({
@@ -236,13 +236,49 @@ export const rateCourse = async (req, res) => {
       });
     }
 
-    // For now, just return success (ratings will be implemented later)
+    // Check if user already rated this course
+    const existingRating = await Rating.findOne({
+      where: { userId, courseId }
+    });
+
+    let userRating;
+
+    if (existingRating) {
+      // Update existing rating
+      existingRating.rating = rating;
+      existingRating.comment = comment;
+      await existingRating.save();
+      userRating = existingRating;
+    } else {
+      // Create new rating
+      userRating = await Rating.create({
+        userId,
+        courseId,
+        rating,
+        comment
+      });
+    }
+
+    // Calculate and update course rating statistics
+    const ratings = await Rating.findAll({
+      where: { courseId },
+      attributes: ["rating"],
+    });
+
+    const sum = ratings.reduce((acc, r) => acc + r.rating, 0);
+    const avgRating = parseFloat((sum / ratings.length).toFixed(2));
+
+    await Course.update(
+      { avgRating, totalRatings: ratings.length },
+      { where: { id: courseId } }
+    );
+
     res.json({ 
       success: true, 
-      avgRating: 4.5, 
-      totalRatings: 10, 
+      avgRating, 
+      totalRatings: ratings.length, 
       myRating: { userId, rating },
-      message: "Rating feature coming soon!"
+      message: existingRating ? "Rating updated successfully" : "Rating added successfully"
     });
   } catch (err) {
     console.error("rateCourse error:", err);
@@ -261,11 +297,29 @@ export const getMyRating = async (req, res) => {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    // For now, return null (ratings will be implemented later)
-    res.json({ success: true, myRating: null });
+    const courseId = req.params.courseId;
+
+    // Find user's rating for this course
+    const myRating = await Rating.findOne({
+      where: { userId, courseId }
+    });
+
+    if (!myRating) {
+      return res.json({ success: true, myRating: null });
+    }
+
+    res.json({ 
+      success: true, 
+      myRating: {
+        id: myRating.id,
+        rating: myRating.rating,
+        comment: myRating.comment,
+        createdAt: myRating.createdAt,
+        updatedAt: myRating.updatedAt
+      }
+    });
   } catch (err) {
     console.error("getMyRating error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };
-

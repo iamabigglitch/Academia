@@ -9,6 +9,7 @@ const Signup = () => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const [signupData, setSignupData] = useState({
     username: "",
@@ -17,8 +18,47 @@ const Signup = () => {
     number: "",
   });
 
+  // Validate form
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!signupData.username.trim()) {
+      newErrors.username = 'Username is required';
+    } else if (signupData.username.length > 50) {
+      newErrors.username = 'Username too long';
+    }
+    
+    if (!signupData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(signupData.email)) {
+      newErrors.email = 'Invalid email address';
+    }
+    
+    if (!signupData.number.trim()) {
+      newErrors.number = 'Phone number is required';
+    } else if (signupData.number.length < 10) {
+      newErrors.number = 'Number must be at least 10 digits';
+    } else if (!/^\d+$/.test(signupData.number)) {
+      newErrors.number = 'Number must contain only digits';
+    }
+    
+    if (!signupData.password) {
+      newErrors.password = 'Password is required';
+    } else if (signupData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSignup = async (e) => {
     e?.preventDefault?.();
+    
+    if (!validateForm()) {
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await api.post("/auth/signup", signupData);
@@ -36,7 +76,7 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-950 flex items-center justify-center p-4 sm:p-6 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-950 flex items-center justify-center p-4 relative overflow-hidden">
       <Toaster position="top-center" toastOptions={{ duration: 4000 }} />
 
       {/* Background Decorative Elements */}
@@ -49,86 +89,120 @@ const Signup = () => {
 
       {/* Left Side - Sign Up Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center relative z-10">
-        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 w-full max-w-md p-8 lg:p-10 animate-slideIn">
-          <div className="lg:hidden flex justify-center mb-6">
+        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 w-full max-w-md p-5 sm:p-6 animate-slideIn">
+          <div className="lg:hidden flex justify-center mb-3">
             <div className="bg-gradient-to-br from-indigo-600 to-purple-600 p-3 rounded-2xl shadow-lg">
               <BookOpen className="w-8 h-8 text-white" />
             </div>
           </div>
 
-          <div className="text-center mb-8">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Join Academia</h2>
-            <p className="text-gray-600 text-sm sm:text-base">Start your learning journey today</p>
+          <div className="text-center mb-5">
+            <h2 className="text-2xl font-bold text-gray-800 mb-1">Join Academia</h2>
+            <p className="text-gray-600 text-sm">Start your learning journey today</p>
           </div>
 
-          <form onSubmit={handleSignup} className="space-y-4">
-            <div className="relative group">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
-              <input
-                type="text"
-                placeholder="Username"
-                value={signupData.username}
-                onChange={(e) => setSignupData({ ...signupData, username: e.target.value })}
-                className="w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all text-gray-900 placeholder-gray-400"
-              />
+          <form onSubmit={handleSignup} className="space-y-3">
+            <div>
+              <div className="relative group">
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
+                <input
+                  type="text"
+                  placeholder="Username"
+                  value={signupData.username}
+                  onChange={(e) => {
+                    setSignupData({ ...signupData, username: e.target.value });
+                    if (errors.username) setErrors({ ...errors, username: '' });
+                  }}
+                  className={`w-full pl-12 pr-4 py-2.5 border-2 ${
+                    errors.username ? 'border-red-500' : 'border-gray-200'
+                  } rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all text-gray-900 placeholder-gray-400`}
+                />
+              </div>
+              {errors.username && (
+                <p className="text-red-500 text-xs mt-1 ml-1">{errors.username}</p>
+              )}
             </div>
 
-            <div className="relative group">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
-              <input
-                type="email"
-                placeholder="Email Address"
-                value={signupData.email}
-                onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
-                className="w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all text-gray-900 placeholder-gray-400"
-              />
+            <div>
+              <div className="relative group">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
+                <input
+                  type="email"
+                  placeholder="Email Address"
+                  value={signupData.email}
+                  onChange={(e) => {
+                    setSignupData({ ...signupData, email: e.target.value });
+                    if (errors.email) setErrors({ ...errors, email: '' });
+                  }}
+                  className={`w-full pl-12 pr-4 py-2.5 border-2 ${
+                    errors.email ? 'border-red-500' : 'border-gray-200'
+                  } rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all text-gray-900 placeholder-gray-400`}
+                />
+              </div>
+              {errors.email && (
+                <p className="text-red-500 text-xs mt-1 ml-1">{errors.email}</p>
+              )}
             </div>
 
-            <div className="relative group">
-              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
-              <input
-                type="tel"
-                placeholder="Phone Number"
-                value={signupData.number}
-                onChange={(e) => setSignupData({ ...signupData, number: e.target.value })}
-                className="w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all text-gray-900 placeholder-gray-400"
-              />
+            <div>
+              <div className="relative group">
+                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
+                <input
+                  type="tel"
+                  placeholder="Phone Number"
+                  value={signupData.number}
+                  onChange={(e) => {
+                    setSignupData({ ...signupData, number: e.target.value });
+                    if (errors.number) setErrors({ ...errors, number: '' });
+                  }}
+                  className={`w-full pl-12 pr-4 py-2.5 border-2 ${
+                    errors.number ? 'border-red-500' : 'border-gray-200'
+                  } rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all text-gray-900 placeholder-gray-400`}
+                />
+              </div>
+              {errors.number && (
+                <p className="text-red-500 text-xs mt-1 ml-1">{errors.number}</p>
+              )}
             </div>
 
-            <div className="relative group">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
-              <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Password"
-                value={signupData.password}
-                onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
-                className="w-full pl-12 pr-12 py-3.5 border-2 border-gray-200 rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all text-gray-900 placeholder-gray-400"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-600 transition-colors"
-              >
-                {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
-              </button>
-            </div>
-
-            <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3">
-              <p className="text-xs text-indigo-800">
-                <strong>Password must contain:</strong> At least 6 characters, one number
-              </p>
+            <div>
+              <div className="relative group">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-indigo-600 transition-colors" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  value={signupData.password}
+                  onChange={(e) => {
+                    setSignupData({ ...signupData, password: e.target.value });
+                    if (errors.password) setErrors({ ...errors, password: '' });
+                  }}
+                  className={`w-full pl-12 pr-12 py-2.5 border-2 ${
+                    errors.password ? 'border-red-500' : 'border-gray-200'
+                  } rounded-xl focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none transition-all text-gray-900 placeholder-gray-400`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-indigo-600 transition-colors"
+                >
+                  {showPassword ? <Eye className="w-5 h-5" /> : <EyeOff className="w-5 h-5" />}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-red-500 text-xs mt-1 ml-1">{errors.password}</p>
+              )}
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3.5 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-2.5 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed mt-2"
             >
               {loading ? "Creating Account..." : "Create Account"}
             </button>
           </form>
 
-          <div className="relative my-6">
+          <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-200"></div>
             </div>
@@ -149,42 +223,42 @@ const Signup = () => {
       </div>
 
       {/* Right Side - Benefits */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-center items-center text-white relative z-10 px-12">
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-center items-center text-white relative z-10 px-8">
         <div className="max-w-md">
-          <div className="flex items-center gap-3 mb-8">
+          <div className="flex items-center gap-3 mb-6">
             <div className="bg-white/10 backdrop-blur-sm p-3 rounded-2xl border border-white/20 shadow-xl">
-              <BookOpen className="w-10 h-10 text-white" />
+              <BookOpen className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-4xl xl:text-5xl font-bold tracking-tight">Academia</h1>
+            <h1 className="text-3xl xl:text-4xl font-bold tracking-tight">Academia</h1>
           </div>
-          <h3 className="text-xl xl:text-2xl font-semibold mb-8 text-blue-100/90">
+          <h3 className="text-lg xl:text-xl font-semibold mb-6 text-blue-100/90">
             Why join Academia?
           </h3>
-          <div className="space-y-6">
-            <div className="flex items-start gap-4 group">
-              <div className="bg-indigo-500/80 p-3 rounded-xl shrink-0 group-hover:scale-105 transition-transform">
-                <Sparkles className="w-6 h-6" />
+          <div className="space-y-5">
+            <div className="flex items-start gap-3 group">
+              <div className="bg-indigo-500/80 p-2.5 rounded-xl shrink-0 group-hover:scale-105 transition-transform">
+                <Sparkles className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="font-semibold text-lg">Unlimited Access</h4>
+                <h4 className="font-semibold text-base">Unlimited Access</h4>
                 <p className="text-blue-200/90 text-sm">Access thousands of courses anytime</p>
               </div>
             </div>
-            <div className="flex items-start gap-4 group">
-              <div className="bg-indigo-500/80 p-3 rounded-xl shrink-0 group-hover:scale-105 transition-transform">
-                <Globe className="w-6 h-6" />
+            <div className="flex items-start gap-3 group">
+              <div className="bg-indigo-500/80 p-2.5 rounded-xl shrink-0 group-hover:scale-105 transition-transform">
+                <Globe className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="font-semibold text-lg">Learn Anywhere</h4>
+                <h4 className="font-semibold text-base">Learn Anywhere</h4>
                 <p className="text-blue-200/90 text-sm">Study on any device, at your own pace</p>
               </div>
             </div>
-            <div className="flex items-start gap-4 group">
-              <div className="bg-indigo-500/80 p-3 rounded-xl shrink-0 group-hover:scale-105 transition-transform">
-                <Clock className="w-6 h-6" />
+            <div className="flex items-start gap-3 group">
+              <div className="bg-indigo-500/80 p-2.5 rounded-xl shrink-0 group-hover:scale-105 transition-transform">
+                <Clock className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="font-semibold text-lg">Flexible Schedule</h4>
+                <h4 className="font-semibold text-base">Flexible Schedule</h4>
                 <p className="text-blue-200/90 text-sm">Learn at times that work for you</p>
               </div>
             </div>
@@ -210,15 +284,10 @@ const Signup = () => {
           0%,100% { opacity: 0.1; transform: scale(1); }
           50% { opacity: 0.2; transform: scale(1.1); }
         }
-        @keyframes bounceSlow {
-          0%,100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
-        }
         .animate-slideIn { animation: slideIn 0.6s ease-out; }
         .animate-float { animation: float 7s ease-in-out infinite; }
         .animate-pulse-slow { animation: pulse-slow 4s ease-in-out infinite; }
         .animate-pulse-slower { animation: pulse-slower 6s ease-in-out infinite; }
-        .animate-bounce-slow { animation: bounceSlow 2s ease-in-out infinite; }
         .bg-dots-pattern {
           background-image: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
           background-size: 30px 30px;

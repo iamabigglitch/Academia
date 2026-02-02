@@ -22,7 +22,7 @@ courseRoute.get('/', getCourses);
 courseRoute.get('/:id', getCourseById);
 
 courseRoute.post('/:courseId/rate', protect, rateCourse);
-courseRoute.get('/:courseId/rating', protect, getMyRating);
+courseRoute.get('/:courseId/my-rating', protect, getMyRating);
 
 courseRoute.post('/', protect, upload.single('image'), createCourse);
 courseRoute.delete('/:id', protect, deleteCourse);
