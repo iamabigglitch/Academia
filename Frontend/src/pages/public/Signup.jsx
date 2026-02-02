@@ -37,7 +37,7 @@ const Signup = () => {
     if (!signupData.number.trim()) {
       newErrors.number = 'Phone number is required';
     } else if (signupData.number.length < 10) {
-      newErrors.number = 'Number must be at least 10 digits';
+      newErrors.number = 'Number must be 10 digits';
     } else if (!/^\d+$/.test(signupData.number)) {
       newErrors.number = 'Number must contain only digits';
     }
@@ -76,7 +76,7 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-950 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-purple-950 flex items-center justify-center p-4 pt-16 sm:pt-18 relative overflow-hidden">
       <Toaster position="top-center" toastOptions={{ duration: 4000 }} />
 
       {/* Background Decorative Elements */}
