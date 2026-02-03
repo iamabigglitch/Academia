@@ -17,11 +17,22 @@ const AdminDashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const buildStats = (backendStats) => {
-    const totalBookings = backendStats?.totalBookings ?? 0;
-    const totalRevenue = backendStats?.totalRevenue ?? 0;
-    const bookingsLast7Days = backendStats?.bookingsLast7Days ?? 0;
-    const topCourses = backendStats?.topCourses ?? [];
+  const buildStats = (courses) => {
+    // Aggregate stats directly from the courses array since each course has bookingStats
+    let totalBookings = 0;
+    let totalRevenue = 0;
+
+    (courses || []).forEach((c) => {
+      if (c.bookingStats) {
+        totalBookings += c.bookingStats.totalBookings || 0;
+        totalRevenue += c.bookingStats.totalRevenue || 0;
+      }
+    });
+
+    // Count courses that have at least one booking as "top courses"
+    const topCourseCount = (courses || []).filter(
+      (c) => c.bookingStats && c.bookingStats.totalBookings > 0
+    ).length;
 
     return [
       {
@@ -43,8 +54,13 @@ const AdminDashboardPage = () => {
         borderColor: "border-emerald-200",
       },
       {
-        title: "Recent Bookings",
-        value: bookingsLast7Days,
+        title: "Total Profit",
+        value: fmtCurrency(
+          (courses || []).reduce(
+            (sum, c) => sum + (c.bookingStats?.totalProfit || 0),
+            0
+          )
+        ),
         icon: TrendingUp,
         bgColor: "bg-orange-500",
         lightBg: "bg-orange-50",
@@ -53,7 +69,7 @@ const AdminDashboardPage = () => {
       },
       {
         title: "Top Courses",
-        value: (topCourses && topCourses.length) || 0,
+        value: topCourseCount,
         icon: BookMarked,
         bgColor: "bg-purple-500",
         lightBg: "bg-purple-50",
@@ -68,32 +84,15 @@ const AdminDashboardPage = () => {
     setLoading(true);
     setError(null);
 
-    // Get token from localStorage
     const token = localStorage.getItem('authToken') || localStorage.getItem('token');
     
     const headers = {
       "Content-Type": "application/json"
     };
     
-    // Add authorization header if token exists
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
-
-    const fetchStats = () =>
-      fetch(`${API_BASE}/api/booking/stats`, { headers })
-        .then((r) => {
-          if (!r.ok) {
-            if (r.status === 401) {
-              throw new Error("Authentication required. Please log in to view dashboard.");
-            }
-            throw new Error(`Failed to fetch stats: ${r.status}`);
-          }
-          return r.json();
-        })
-        .then((j) =>
-          j.success ? j.stats : Promise.reject(j.message || "Stats error")
-        );
 
     const fetchCourses = () =>
       fetch(`${API_BASE}/api/course`, { headers })
@@ -110,36 +109,26 @@ const AdminDashboardPage = () => {
           j.success ? j.courses : Promise.reject(j.message || "Course error")
         );
 
-    Promise.all([fetchStats(), fetchCourses()])
-      .then(([stats, courses]) => {
+    fetchCourses()
+      .then((courses) => {
         if (!mounted) return;
 
-        const topLookup = {};
-        Array.isArray(stats?.topCourses) &&
-          stats.topCourses.forEach((t) => {
-            if (!t) return;
-            const name = t.courseName || "";
-            topLookup[name] = {
-              purchases: Number(t.count || 0),
-              revenue: Number(t.revenue || 0),
-            };
-          });
-
         const mapped = (courses || []).map((c) => {
-          const id = c._id ?? c.id ?? c.courseId ?? "";
-          const name = c.name ?? c.title ?? "Untitled Course";
+          const id = c.id ?? "";
+          const name = c.name ?? "Untitled Course";
           const image = c.image ?? "https://via.placeholder.com/150?text=No+Image";
-          const instructor = c.teacher ?? c.instructor ?? "Unknown";
-          const metrics = topLookup[name] || { purchases: 0, revenue: 0 };
-          const students = metrics.purchases || (c.students ?? 0);
-          const purchases = metrics.purchases || (c.purchases ?? 0);
-          const earnings = metrics.revenue ?? c.earnings ?? 0;
+          const instructor = c.teacher ?? "Unknown";
+
+          // Read bookings/revenue/profit from the nested bookingStats object
+          const purchases = c.bookingStats?.totalBookings || 0;
+          const earnings = c.bookingStats?.totalRevenue || 0;
+          // students = same as totalBookings from bookingStats (each booking = a student)
+          const students = purchases;
 
           let priceDisplay = "Free";
-          if (c.price && (c.price.sale || c.price.original)) {
-            const sale = c.price.sale != null ? Number(c.price.sale) : null;
-            const orig =
-              c.price.original != null ? Number(c.price.original) : null;
+          if (c.priceSale != null || c.priceOriginal != null) {
+            const sale = c.priceSale != null ? Number(c.priceSale) : null;
+            const orig = c.priceOriginal != null ? Number(c.priceOriginal) : null;
             priceDisplay =
               sale != null
                 ? fmtCurrency(sale)
@@ -162,7 +151,7 @@ const AdminDashboardPage = () => {
           };
         });
 
-        setStatsData(buildStats(stats));
+        setStatsData(buildStats(courses));
         setCoursesData(mapped);
       })
       .catch((err) => {
@@ -179,7 +168,7 @@ const AdminDashboardPage = () => {
   const stats = statsData || [
     { title: "Total Bookings", value: 0, icon: Users, bgColor: "bg-blue-500", lightBg: "bg-blue-50", textColor: "text-blue-600", borderColor: "border-blue-200" },
     { title: "Total Revenue", value: "Rs. 0", icon: DollarSign, bgColor: "bg-emerald-500", lightBg: "bg-emerald-50", textColor: "text-emerald-600", borderColor: "border-emerald-200" },
-    { title: "Recent Bookings", value: 0, icon: TrendingUp, bgColor: "bg-orange-500", lightBg: "bg-orange-50", textColor: "text-orange-600", borderColor: "border-orange-200" },
+    { title: "Total Profit", value: "Rs. 0", icon: TrendingUp, bgColor: "bg-orange-500", lightBg: "bg-orange-50", textColor: "text-orange-600", borderColor: "border-orange-200" },
     { title: "Top Courses", value: 0, icon: BookMarked, bgColor: "bg-purple-500", lightBg: "bg-purple-50", textColor: "text-purple-600", borderColor: "border-purple-200" },
   ];
 
@@ -189,7 +178,6 @@ const AdminDashboardPage = () => {
       (course.instructor || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Top courses for analytics chart (by purchases)
   const topCoursesForChart = [...coursesData]
     .sort((a, b) => (b.purchases || 0) - (a.purchases || 0))
     .slice(0, 6);
@@ -200,10 +188,10 @@ const AdminDashboardPage = () => {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-10">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-2 text-gray-900 tracking-tight">
+          <h1 className="text-3xl text-base text-center text-[#1c398e] sm:text-4xl lg:text-5xl font-bold mb-2  tracking-tight">
             Dashboard Overview
           </h1>
-          <p className="text-base sm:text-lg text-gray-600 font-medium">
+          <p className="text-base text-base text-center sm:text-lg text-gray-600 font-medium">
             Welcome back! Here's what's happening with your courses today.
           </p>
         </div>

@@ -12,12 +12,9 @@ const UserRoutes = () => (
       path="/mycourses" 
       element={<ProtectedRoute><MyCoursesPage /></ProtectedRoute>} 
     />
+
     <Route 
       path="/course/:id" 
-      element={<ProtectedRoute><CourseDetailPageHome /></ProtectedRoute>} 
-    />
-    <Route 
-      path="/courses/:id" 
       element={<ProtectedRoute><CourseDetailPage /></ProtectedRoute>} 
     />
   </>

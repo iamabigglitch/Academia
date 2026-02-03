@@ -1,155 +1,112 @@
 import { Booking } from "../models/bookingModel.js";
 import { User } from "../models/userModel.js";
 import Course from "../models/courseModel.js";
-import { sequelize } from "../database/db.js";
 import { Op } from "sequelize";
-
-// Helper function to generate booking ID
-const genBookingId = () => {
-  const timestamp = Date.now().toString(36);
-  const random = Math.random().toString(36).substring(2, 7);
-  return `BK-${timestamp}-${random}`.toUpperCase();
-};
-
-// Get all bookings (Admin only)
-export const getBookings = async (req, res) => {
+import { sequelize } from "../database/db.js";
+// GET /api/booking - Get all bookings (for admin)
+export const getAllBookings = async (req, res) => {
   try {
-    const { search = "", status, limit = 50, page = 1 } = req.query;
+    const { search, limit = 200, page = 1 } = req.query;
     
-    const limitNum = Math.min(200, Math.max(1, parseInt(limit, 10)));
-    const pageNum = Math.max(1, parseInt(page, 10));
-    const offset = (pageNum - 1) * limitNum;
-
     const where = {};
-
-    // Filter by status
-    if (status) {
-      where.orderStatus = status;
-    }
-
-    // Search filter
+    
+    // Search functionality
     if (search) {
       where[Op.or] = [
-        { bookingId: { [Op.iLike]: `%${search}%` } },
+        { studentName: { [Op.iLike]: `%${search}%` } },
         { courseName: { [Op.iLike]: `%${search}%` } },
-        { studentName: { [Op.iLike]: `%${search}%` } }
+        { teacherName: { [Op.iLike]: `%${search}%` } },
+        { bookingId: { [Op.iLike]: `%${search}%` } }
       ];
     }
 
+    const offset = (Number(page) - 1) * Number(limit);
+
     const bookings = await Booking.findAll({
       where,
-      limit: limitNum,
-      offset,
-      order: [['createdAt', 'DESC']],
       include: [
         {
           model: User,
           as: 'user',
-          attributes: ['id', 'username', 'email']
+          attributes: ['id', 'username', 'email'],
+          required: false
+        },
+        {
+          model: Course,
+          as: 'course',
+          attributes: ['id', 'name', 'teacher', 'image'],
+          required: false
         }
-      ]
+      ],
+      order: [['createdAt', 'DESC']],
+      limit: Number(limit),
+      offset
     });
 
-    const total = await Booking.count({ where });
-
-    return res.json({
-      success: true,
+    res.json({ 
+      success: true, 
       bookings,
-      meta: {
-        page: pageNum,
-        limit: limitNum,
-        total,
-        totalPages: Math.ceil(total / limitNum)
-      }
+      page: Number(page),
+      limit: Number(limit)
     });
-  } catch (error) {
-    console.error('getBookings error:', error);
-    return res.status(500).json({
-      success: false,
-      message: "Server Error"
-    });
+  } catch (err) {
+    console.error("getAllBookings error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
-// Check if user is enrolled in a course
-export const checkBooking = async (req, res) => {
-  try {
-    const userId = req.user?.id; // From JWT middleware
-    
-    if (!userId) {
-      return res.status(200).json({
-        success: true,
-        enrolled: false,
-        booking: null
-      });
-    }
 
-    const { courseId } = req.query;
-    
+export const checkEnrollment = async (req, res) => {
+  console.log("api hit for checking enrollment")
+  try {
+    const userId = req.user?.id;
+    console.log(userId)
+    // if (!userId) {
+    //   return res.status(401).json({ success: false, message: "Unauthorized" });
+    // }
+
+    const { id:courseId} = req.params;
+console.log(courseId)
     if (!courseId) {
-      return res.status(400).json({
-        success: false,
-        message: "courseId is required"
+      return res.status(400).json({ 
+        success: false, 
+        message: "courseId is required" 
       });
     }
 
     const booking = await Booking.findOne({
-      where: {
-        userId,
-        courseId
-      },
-      order: [['createdAt', 'DESC']]
+      where: { 
+        userId, 
+        courseId,
+        orderStatus: "Completed",
+        paymentStatus: "Paid"
+      }
     });
 
-    if (!booking) {
-      return res.status(200).json({
-        success: true,
-        enrolled: false,
-        booking: null
-      });
-    }
+    const enrolled = !!booking;
 
-    // Check if booking is paid/confirmed
-    const enrolled = 
-      booking.paymentStatus === 'Paid' || 
-      booking.orderStatus === 'Confirmed' ||
-      booking.paidAt !== null;
-
-    return res.status(200).json({
-      success: true,
+    res.json({ 
+      success: true, 
       enrolled,
-      booking
+      booking: booking || null
     });
-  } catch (error) {
-    console.error("checkBooking error:", error);
-    return res.status(500).json({ 
-      success: false, 
-      message: "Server error" 
-    });
+  } catch (err) {
+    console.error("checkEnrollment error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
-// Create a booking (enrollment)
 export const createBooking = async (req, res) => {
+  console.log("creta booking api hit")
   try {
-    const userId = req.user?.id; // From JWT middleware
-    
+    const userId = req.user?.id;
+    console.log(userId)
     if (!userId) {
-      return res.status(401).json({ 
-        success: false, 
-        message: "Authentication required" 
-      });
+      return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const {
-      courseId,
-      courseName,
-      teacherName = "",
-      price,
-      notes = ""
-    } = req.body;
+    const { courseId, courseName, teacherName, price } = req.body;
 
-    // Validation
     if (!courseId || !courseName) {
       return res.status(400).json({ 
         success: false, 
@@ -157,110 +114,113 @@ export const createBooking = async (req, res) => {
       });
     }
 
-    const numericPrice = parseFloat(price) || 0;
-    
-    if (numericPrice < 0) {
-      return res.status(400).json({ 
+    // Get user info
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(404).json({ 
         success: false, 
-        message: "Price must be a positive number" 
+        message: "User not found" 
       });
     }
 
-    // Check if user already enrolled
+    // Check if user already has a booking for this course
     const existingBooking = await Booking.findOne({
-      where: {
-        userId,
-        courseId,
-        paymentStatus: 'Paid'
-      }
+      where: { userId, courseId }
     });
 
     if (existingBooking) {
-      return res.status(400).json({
-        success: false,
-        message: "You are already enrolled in this course"
-      });
+      // If booking exists and is completed, user is already enrolled
+      if (existingBooking.orderStatus === "Completed" && existingBooking.paymentStatus === "Paid") {
+        return res.status(400).json({ 
+          success: false, 
+          message: "You are already enrolled in this course" 
+        });
+      }
+      
+      // If booking exists but is pending, return the existing booking
+      if (existingBooking.orderStatus === "Pending") {
+        return res.json({ 
+          success: true, 
+          message: "You already have a pending booking for this course",
+          booking: existingBooking
+        });
+      }
     }
 
-    // Get user info
-    const user = await User.findByPk(userId);
-    const studentName = user.username;
+    // Generate unique booking ID
+    const bookingId = `BK-${Date.now()}-${userId}`;
 
-    // Generate booking ID
-    const bookingId = genBookingId();
+    // Determine payment method and status based on price
+    const numericPrice = Number(price) || 0;
+    const isFree = numericPrice === 0;
 
     // Create booking
     const booking = await Booking.create({
       bookingId,
       userId,
-      studentName,
+      studentName: user.name || "Unknown",
       courseId,
       courseName,
-      teacherName,
+      teacherName: teacherName || "",
       price: numericPrice,
-      paymentMethod: "Online",
-      paymentStatus: numericPrice === 0 ? "Paid" : "Unpaid",
-      notes,
-      orderStatus: numericPrice === 0 ? "Confirmed" : "Pending",
-      paidAt: numericPrice === 0 ? new Date() : null
+      paymentMethod: isFree ? "Cash" : "Online",
+      paymentStatus: isFree ? "Paid" : "Unpaid",
+      orderStatus: "Pending", // Always set to Pending initially
+      notes: "",
+      paidAt: isFree ? new Date() : null
     });
 
-    // For free courses, mark as paid immediately
-    if (numericPrice === 0) {
-      return res.status(201).json({ 
-        success: true, 
-        booking,
-        message: "Successfully enrolled in free course!",
-        checkoutUrl: null
-      });
-    }
-
-    // For paid courses, return fake payment URL
-    const fakeCheckoutUrl = `http://localhost:5173/payment/${booking.id}`;
-
-    return res.status(201).json({ 
+    res.status(201).json({ 
       success: true, 
-      booking,
-      checkoutUrl: fakeCheckoutUrl,
-      message: "Booking created. Proceed to payment."
+      message: isFree ? "Enrolled successfully! Waiting for admin approval." : "Booking created! Waiting for admin approval.",
+      booking
     });
-
-  } catch (error) {
-    console.error("createBooking error:", error);
-    return res.status(500).json({ 
+  } catch (err) {
+    console.error("createBooking error:", err);
+    res.status(500).json({ 
       success: false, 
-      message: "Server error: " + error.message 
+      message: err.message || "Server error" 
     });
   }
 };
 
-// Confirm payment (fake payment simulation)
-export const confirmPayment = async (req, res) => {
+// GET /api/booking/my-bookings - Get user's bookings
+export const getMyBookings = async (req, res) => {
   try {
     const userId = req.user?.id;
-    
     if (!userId) {
-      return res.status(401).json({ 
-        success: false, 
-        message: "Authentication required" 
-      });
+      return res.status(401).json({ success: false, message: "Unauthorized" });
     }
 
-    const { bookingId } = req.body;
+    const bookings = await Booking.findAll({
+      where: { userId },
+      include: [
+        {
+          model: Course,
+          as: 'course',
+          attributes: ['id', 'name', 'teacher', 'image']
+        }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+
+    res.json({ 
+      success: true, 
+      bookings
+    });
+  } catch (err) {
+    console.error("getMyBookings error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+// PUT /api/booking/:bookingId/approve - Admin approves booking
+export const approveBooking = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
     
-    if (!bookingId) {
-      return res.status(400).json({ 
-        success: false, 
-        message: "bookingId is required" 
-      });
-    }
-
-    // Find booking
     const booking = await Booking.findOne({
-      where: {
-        id: bookingId,
-        userId
-      }
+      where: { bookingId }
     });
 
     if (!booking) {
@@ -270,52 +230,110 @@ export const confirmPayment = async (req, res) => {
       });
     }
 
-    if (booking.paymentStatus === 'Paid') {
-      return res.status(400).json({
-        success: false,
-        message: "Payment already confirmed"
-      });
-    }
+    // Update booking status
+    booking.orderStatus = "Completed";
+    booking.paymentStatus = "Paid";
+    booking.paidAt = new Date();
+    
+    await booking.save();
 
-    // Update booking to paid
-    await booking.update({
-      paymentStatus: "Paid",
-      orderStatus: "Confirmed",
-      paidAt: new Date(),
-      paymentIntentId: `fake_payment_${Date.now()}`
-    });
-
-    return res.json({ 
+    res.json({ 
       success: true, 
-      booking,
-      message: "Payment confirmed successfully!"
+      message: "Booking approved successfully",
+      booking 
     });
-
-  } catch (error) {
-    console.error("confirmPayment error:", error);
-    return res.status(500).json({ 
+  } catch (err) {
+    console.error("approveBooking error:", err);
+    res.status(500).json({ 
       success: false, 
-      message: "Server error" 
+      message: err.message || "Server error" 
     });
   }
 };
 
-// Get user's bookings
-export const getUserBookings = async (req, res) => {
+// PUT /api/booking/:bookingId/reject - Admin rejects booking
+export const rejectBooking = async (req, res) => {
   try {
-    const userId = req.user?.id;
+    const { bookingId } = req.params;
+    const { reason } = req.body;
     
-    if (!userId) {
-      return res.status(401).json({
-        success: false,
-        message: 'Authentication required'
+    const booking = await Booking.findOne({
+      where: { bookingId }
+    });
+
+    if (!booking) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Booking not found" 
       });
     }
 
-    const bookings = await Booking.findAll({
-      where: { userId },
-      order: [['createdAt', 'DESC']],
+    // Update booking status
+    booking.orderStatus = "Cancelled";
+    if (reason) {
+      booking.notes = reason;
+    }
+    
+    await booking.save();
+
+    res.json({ 
+      success: true, 
+      message: "Booking rejected successfully",
+      booking 
+    });
+  } catch (err) {
+    console.error("rejectBooking error:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: err.message || "Server error" 
+    });
+  }
+};
+
+// DELETE /api/booking/:bookingId - Delete a booking
+export const deleteBooking = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    
+    const booking = await Booking.findOne({
+      where: { bookingId }
+    });
+
+    if (!booking) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Booking not found" 
+      });
+    }
+
+    await booking.destroy();
+
+    res.json({ 
+      success: true, 
+      message: "Booking deleted successfully" 
+    });
+  } catch (err) {
+    console.error("deleteBooking error:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: err.message || "Server error" 
+    });
+  }
+};
+
+// GET /api/booking/:bookingId - Get single booking details
+export const getBookingById = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    
+    const booking = await Booking.findOne({
+      where: { bookingId },
       include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'name', 'email']
+        },
         {
           model: Course,
           as: 'course',
@@ -324,39 +342,65 @@ export const getUserBookings = async (req, res) => {
       ]
     });
 
-    return res.json({
-      success: true,
-      bookings
-    });
+    if (!booking) {
+      return res.status(404).json({ 
+        success: false, 
+        message: "Booking not found" 
+      });
+    }
 
-  } catch (error) {
-    console.error("getUserBookings error:", error);
-    return res.status(500).json({ 
+    res.json({ 
+      success: true, 
+      booking 
+    });
+  } catch (err) {
+    console.error("getBookingById error:", err);
+    res.status(500).json({ 
       success: false, 
-      message: "Server error" 
+      message: err.message || "Server error" 
     });
   }
 };
 
-// Get booking statistics (Admin only)
+// GET /api/booking/stats - Get booking statistics (for admin dashboard)
 export const getStats = async (req, res) => {
   try {
-    // Total bookings
+    // Total bookings count
     const totalBookings = await Booking.count();
 
-    // Total revenue (only paid bookings)
+    // Bookings by status
+    const pendingBookings = await Booking.count({
+      where: { orderStatus: "Pending" }
+    });
+
+    const completedBookings = await Booking.count({
+      where: { orderStatus: "Completed" }
+    });
+
+    const cancelledBookings = await Booking.count({
+      where: { orderStatus: "Cancelled" }
+    });
+
+    // Total revenue (only from completed/paid bookings)
     const revenueResult = await Booking.sum('price', {
-      where: {
-        paymentStatus: 'Paid'
+      where: { 
+        orderStatus: "Completed",
+        paymentStatus: "Paid"
       }
     });
     const totalRevenue = revenueResult || 0;
 
-    // Bookings in last 7 days
+    // Pending revenue (bookings waiting for approval)
+    const pendingRevenueResult = await Booking.sum('price', {
+      where: { orderStatus: "Pending" }
+    });
+    const pendingRevenue = pendingRevenueResult || 0;
+
+    // Get recent bookings (last 7 days)
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    
-    const bookingsLast7Days = await Booking.count({
+
+    const recentBookings = await Booking.count({
       where: {
         createdAt: {
           [Op.gte]: sevenDaysAgo
@@ -364,34 +408,97 @@ export const getStats = async (req, res) => {
       }
     });
 
-    // Top courses by bookings
-    const topCourses = await Booking.findAll({
-      attributes: [
-        'courseName',
-        [sequelize.fn('COUNT', sequelize.col('id')), 'count'],
-        [sequelize.fn('SUM', sequelize.col('price')), 'revenue']
-      ],
-      group: ['courseName'],
-      order: [[sequelize.fn('COUNT', sequelize.col('id')), 'DESC']],
-      limit: 6,
-      raw: true
-    });
+    // Get today's bookings
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    return res.json({
-      success: true,
-      stats: {
-        totalBookings,
-        totalRevenue: parseFloat(totalRevenue.toFixed(2)),
-        bookingsLast7Days,
-        topCourses
+    const todayBookings = await Booking.count({
+      where: {
+        createdAt: {
+          [Op.gte]: today
+        }
       }
     });
 
-  } catch (error) {
-    console.error("getStats error:", error);
-    return res.status(500).json({ 
+    // Get most popular courses (by booking count)
+    const popularCourses = await Booking.findAll({
+      attributes: [
+        'courseId',
+        'courseName',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'bookingCount']
+      ],
+      where: {
+        orderStatus: "Completed"
+      },
+      group: ['courseId', 'courseName'],
+      order: [[sequelize.literal('"bookingCount"'), 'DESC']],
+      limit: 5,
+      raw: true
+    });
+
+    // Get revenue by course
+    const revenueByProduct = await Booking.findAll({
+      attributes: [
+        'courseId',
+        'courseName',
+        [sequelize.fn('SUM', sequelize.col('price')), 'totalRevenue'],
+        [sequelize.fn('COUNT', sequelize.col('id')), 'bookingCount']
+      ],
+      where: {
+        orderStatus: "Completed",
+        paymentStatus: "Paid"
+      },
+      group: ['courseId', 'courseName'],
+      order: [[sequelize.literal('"totalRevenue"'), 'DESC']],
+      limit: 5,
+      raw: true
+    });
+
+    // Calculate average booking value
+    const avgBookingValue = completedBookings > 0 
+      ? (totalRevenue / completedBookings).toFixed(2)
+      : 0;
+
+    res.json({
+      success: true,
+      stats: {
+        overview: {
+          totalBookings,
+          pendingBookings,
+          completedBookings,
+          cancelledBookings,
+          recentBookings, // Last 7 days
+          todayBookings
+        },
+        revenue: {
+          totalRevenue: parseFloat(totalRevenue.toFixed(2)),
+          pendingRevenue: parseFloat(pendingRevenue.toFixed(2)),
+          avgBookingValue: parseFloat(avgBookingValue)
+        },
+        topCourses: {
+          byBookings: popularCourses,
+          byRevenue: revenueByProduct
+        }
+      }
+    });
+  } catch (err) {
+    console.error("getStats error:", err);
+    res.status(500).json({ 
       success: false, 
-      message: "Server error" 
+      message: err.message || "Server error" 
     });
   }
+};
+
+export default {
+  getAllBookings,
+  checkEnrollment,
+  createBooking,
+  getMyBookings,
+  approveBooking,
+  rejectBooking,
+  deleteBooking,
+  getBookingById,
+  getStats
+
 };

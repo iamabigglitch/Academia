@@ -216,7 +216,7 @@ const MyCourses = () => {
               <GraduationCap className="w-7 h-7 text-indigo-600" />
             </div>
             <div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
+              <h1 className="text-3xl sm:text-4xl font-bold text-[#1c398e] tracking-tight">
                 My Courses
               </h1>
               <p className="text-gray-600 mt-0.5">

@@ -88,5 +88,5 @@ export const Booking = sequelize.define("Booking", {
 Booking.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 User.hasMany(Booking, { foreignKey: 'userId' });
 
-Booking.belongsTo(Course, { foreignKey: 'courseId', as: 'course' });
-Course.hasMany(Booking, { foreignKey: 'courseId' });
+Booking.belongsTo(Course, { foreignKey: 'courseId', as: 'course' , onDelete: 'CASCADE',});
+Course.hasMany(Booking, { foreignKey: 'courseId' ,  onDelete: 'CASCADE',});

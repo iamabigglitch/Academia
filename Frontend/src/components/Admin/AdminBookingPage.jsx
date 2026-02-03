@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Search, User, BookOpen, BadgeDollarSign, GraduationCap, AlertCircle } from 'lucide-react';
+import { Search, User, BookOpen, BadgeDollarSign, GraduationCap, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 
 const API_BASE = "http://localhost:3000";
 
@@ -10,6 +10,7 @@ const BookingPage = () => {
   const [error, setError] = useState(null);
   const [page] = useState(1);
   const limit = 200;
+  const [processingBookingId, setProcessingBookingId] = useState(null);
 
   const debounceRef = useRef(null);
   const abortRef = useRef(null);
@@ -47,7 +48,6 @@ const BookingPage = () => {
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         
-        // Handle specific authorization error
         if (res.status === 401) {
           throw new Error("Authentication required. Please log in to view bookings.");
         }
@@ -58,13 +58,17 @@ const BookingPage = () => {
       }
 
       const data = await res.json();
+      console.log(data)
       if (data && data.success) {
         const normalized = (data.bookings || []).map((b, idx) => ({
           id: b._id || b.bookingId || String(idx),
-          studentName: b.studentName || b.userName || "Unknown student",
+          bookingId: b.bookingId,
+          studentName: b.user.username || b.userName || "Unknown student",
           courseName: b.courseName || "Untitled course",
           price: b.price ?? 0,
           teacherName: b.teacherName || "Unknown teacher",
+          orderStatus: b.orderStatus || "Pending",
+          paymentStatus: b.paymentStatus || "Unpaid",
           purchaseDate: b.createdAt
             ? new Date(b.createdAt).toLocaleDateString('en-US', { 
                 year: 'numeric', 
@@ -92,6 +96,102 @@ const BookingPage = () => {
     }
   };
 
+  const handleApproveBooking = async (bookingId) => {
+    setProcessingBookingId(bookingId);
+    try {
+      const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+      
+      const res = await fetch(`${API_BASE}/api/booking/${bookingId}/approve`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to approve booking");
+      }
+
+      await fetchBookings(searchTerm.trim());
+      
+      alert("Booking approved successfully!");
+    } catch (err) {
+      console.error("Approve booking error:", err);
+      alert(err.message || "Failed to approve booking");
+    } finally {
+      setProcessingBookingId(null);
+    }
+  };
+
+  const handleRejectBooking = async (bookingId) => {
+    if (!window.confirm("Are you sure you want to reject this booking?")) {
+      return;
+    }
+    
+    setProcessingBookingId(bookingId);
+    try {
+      const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+      
+      const res = await fetch(`${API_BASE}/api/booking/${bookingId}/reject`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
+      });
+
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to reject booking");
+      }
+
+      await fetchBookings(searchTerm.trim());
+      
+      alert("Booking rejected successfully!");
+    } catch (err) {
+      console.error("Reject booking error:", err);
+      alert(err.message || "Failed to reject booking");
+    } finally {
+      setProcessingBookingId(null);
+    }
+  };
+
+  const getStatusBadge = (status) => {
+    switch(status) {
+      case "Completed":
+        return (
+          <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm bg-green-50 text-[#22C55E]">
+            <CheckCircle className="w-4 h-4 mr-1" />
+            Completed
+          </span>
+        );
+      case "Pending":
+        return (
+          <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm bg-yellow-50 text-yellow-600">
+            <AlertCircle className="w-4 h-4 mr-1" />
+            Pending Approval
+          </span>
+        );
+      case "Cancelled":
+        return (
+          <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm bg-red-50 text-red-600">
+            <XCircle className="w-4 h-4 mr-1" />
+            Cancelled
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm bg-gray-50 text-gray-600">
+            {status}
+          </span>
+        );
+    }
+  };
+
   useEffect(() => {
     fetchBookings("");
     return () => {
@@ -113,17 +213,15 @@ const BookingPage = () => {
   return (
     <div className="min-h-screen bg-[#F1F5F9] pt-24 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2" style={{ fontFamily: "'Inter', sans-serif" }}>
+          <h1 className="text-3xl text-base text-center text-[#1c398e] sm:text-4xl font-bold mb-2" style={{ fontFamily: "'Inter', sans-serif" }}>
             Course Bookings
           </h1>
-          <p className="text-base text-gray-600" style={{ fontFamily: "'Inter', sans-serif" }}>
+          <p className="text-base text-center text-gray-600" style={{ fontFamily: "'Inter', sans-serif" }}>
             Manage and track all course enrollments
           </p>
         </div>
 
-        {/* Search Bar */}
         <div className="mb-8">
           <div className="relative max-w-xl">
             <Search 
@@ -139,7 +237,6 @@ const BookingPage = () => {
           </div>
         </div>
 
-        {/* Loading State */}
         {loading && (
           <div className="text-center py-16">
             <div 
@@ -152,7 +249,6 @@ const BookingPage = () => {
           </div>
         )}
 
-        {/* Error State */}
         {!loading && error && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-6 mb-8 shadow-sm">
             <div className="flex items-start">
@@ -173,7 +269,6 @@ const BookingPage = () => {
           </div>
         )}
 
-        {/* Bookings Grid */}
         {!loading && !error && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {bookings.map((booking) => (
@@ -181,7 +276,6 @@ const BookingPage = () => {
                 key={booking.id} 
                 className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group"
               >
-                {/* Student Header */}
                 <div className="flex items-center mb-5 pb-4 border-b border-gray-100">
                   <div 
                     className="p-3 rounded-xl shadow-sm bg-indigo-50 group-hover:shadow-md transition-shadow"
@@ -199,7 +293,6 @@ const BookingPage = () => {
                   </div>
                 </div>
 
-                {/* Course Details */}
                 <div className="space-y-3.5 mb-5">
                   <div className="flex items-start">
                     <BookOpen className="h-5 w-5 mr-2.5 flex-shrink-0 mt-0.5 text-indigo-600" />
@@ -238,20 +331,47 @@ const BookingPage = () => {
                   </div>
                 </div>
 
-                {/* Status Badge */}
-                <div className="pt-4 border-t border-gray-100">
-                  <span 
-                    className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm bg-green-50 text-[#22C55E]"
-                  >
-                    ✓ Completed
-                  </span>
+                <div className="pt-4 border-t border-gray-100 mb-4">
+                  {getStatusBadge(booking.orderStatus)}
                 </div>
+
+                {booking.orderStatus === "Pending" && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleApproveBooking(booking.bookingId)}
+                      disabled={processingBookingId === booking.bookingId}
+                      className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-sm"
+                    >
+                      {processingBookingId === booking.bookingId ? (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-4 h-4 mr-1" />
+                          Approve
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => handleRejectBooking(booking.bookingId)}
+                      disabled={processingBookingId === booking.bookingId}
+                      className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-sm"
+                    >
+                      {processingBookingId === booking.bookingId ? (
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <>
+                          <XCircle className="w-4 h-4 mr-1" />
+                          Reject
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         )}
 
-        {/* No Results */}
         {!loading && bookings.length === 0 && !error && (
           <div className="text-center py-16">
             <div className="bg-white rounded-2xl p-12 max-w-md mx-auto shadow-lg border border-gray-200 hover:shadow-xl transition-shadow">

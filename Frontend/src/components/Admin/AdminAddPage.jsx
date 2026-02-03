@@ -496,7 +496,7 @@ const AddPage = () => {
       }
 
       toast.success("Course created successfully!");
-      navigate("/listcourse");
+      navigate("/admin/listcourse");
     } catch (err) {
       console.error("submitToBackend error:", err);
       toast.error("Server error while creating course");
@@ -510,24 +510,7 @@ const AddPage = () => {
     await submitToBackend();
   };
 
-  const StarRating = ({ rating, onRatingChange }) => (
-    <div className="flex items-center gap-1">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <button
-          key={star}
-          type="button"
-          onClick={() => onRatingChange(star)}
-          className="transition-all duration-200 hover:scale-110 focus:outline-none"
-        >
-          {star <= rating ? (
-            <Star className="fill-yellow-400 text-yellow-400" size={24} />
-          ) : (
-            <Star className="text-gray-300 hover:text-yellow-300" size={24} />
-          )}
-        </button>
-      ))}
-    </div>
-  );
+
 
   const PRIMARY_COLOR = "#4F46E5";
   const SUCCESS_COLOR = "#22C55E";
@@ -542,10 +525,10 @@ const AddPage = () => {
       <div className="max-w-5xl mx-auto">
        
         <div className="mb-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2" style={{ fontFamily: "'Inter', sans-serif" }}>
+          <h1 className="text-center text-3xl text-[#1c398e] sm:text-4xl font-bold mb-2" style={{ fontFamily: "'Inter', sans-serif" }}>
             Create New Course
           </h1>
-          <p className="text-base text-gray-600" style={{ fontFamily: "'Inter', sans-serif" }}>
+          <p className="text-base text-center text-gray-600" style={{ fontFamily: "'Inter', sans-serif" }}>
             Build an exceptional learning experience for your students
           </p>
         </div>
@@ -662,21 +645,6 @@ const AddPage = () => {
                   required
                 />
               </div>
-
-              {/* Course Rating */}
-              <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                  <Star size={16} className="text-indigo-600" />
-                  Course Rating
-                </label>
-                <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                  <StarRating
-                    rating={formData.rating}
-                    onRatingChange={handleRatingChange}
-                  />
-                </div>
-              </div>
-
               {/* Total Duration */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">

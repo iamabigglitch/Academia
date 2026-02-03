@@ -6,6 +6,7 @@ import Chapter from "../models/chapterModel.js";
 import Rating from "../models/ratingModel.js";
 
 import { makeImageAbsolute } from "../uploads/academiauploads.js";
+import { Booking } from "../models/bookingModel.js";
 
 const calculateCourseDuration = async (courseId) => {
   const lectures = await Lecture.findAll({
@@ -56,6 +57,7 @@ const calculateCourseDuration = async (courseId) => {
 };
 
 export const getPublicCourses = async (req, res) => {
+    console.log("api for public courses hit")
   try {
     const { home, type = "all", limit } = req.query;
 
@@ -77,7 +79,7 @@ export const getPublicCourses = async (req, res) => {
       ...c.toJSON(),
       image: makeImageAbsolute(c.image, req)
     }));
-
+console.log(items)
     res.json({ success: true, items });
   } catch (err) {
     console.error("getPublicCourses error:", err);
@@ -87,18 +89,65 @@ export const getPublicCourses = async (req, res) => {
 
 // GET /courses
 export const getCourses = async (req, res) => {
+  console.log("api for get courses hit")
   try {
-    // Fetch all courses
+    // Fetch all courses with bookings
     const courses = await Course.findAll({ 
-      order: [["createdAt", "DESC"]] 
+      order: [["createdAt", "DESC"]],
+    include: [
+  {
+    model: Booking,
+    attributes: ["price", "paymentStatus", "orderStatus"],
+    required: false,
+  },
+  {
+    model: Lecture,
+    required: false,
+    include: [
+      {
+        model: Chapter,
+        required: false,
+      },
+    ],
+  },
+]
+
     });
 
-    // Map courses with absolute image URLs
-    const coursesWithImages = courses.map(c => ({
-      ...c.toJSON(),
-      image: makeImageAbsolute(c.image, req)
-    }));
+    // Map courses with images and booking statistics
+    const coursesWithImages = courses.map(c => {
+      const courseJson = c.toJSON();
+      
+      // Calculate booking statistics
+      const bookings = courseJson.Bookings || [];
+      
+      // Filter paid and completed bookings
+      const paidBookings = bookings.filter(
+        b => b.paymentStatus === 'Paid' && b.orderStatus === 'Completed'
+      );
+      
+      // Calculate totals
+      const totalBookings = paidBookings.length;
+      const totalRevenue = paidBookings.reduce((sum, b) => sum + (b.price || 0), 0);
+      
+      // Calculate profit (assuming 70% profit margin, adjust as needed)
+      const profitMargin = 0.70; // 70%
+      const totalProfit = totalRevenue * profitMargin;
 
+      // Remove the bookings array from response and add statistics
+      delete courseJson.Bookings;
+      
+      return {
+        ...courseJson,
+        image: makeImageAbsolute(courseJson.image, req),
+        bookingStats: {
+          totalBookings,
+          totalRevenue: parseFloat(totalRevenue.toFixed(2)),
+          totalProfit: parseFloat(totalProfit.toFixed(2))
+        }
+      };
+    });
+console.log(coursesWithImages)
     res.json({ success: true, courses: coursesWithImages });
   } catch (err) {
     console.error("getCourses error:", err);
@@ -130,6 +179,7 @@ export const getCourseById = async (req, res) => {
 };
 
 // POST /courses
+// POST /courses
 export const createCourse = async (req, res) => {
   console.log("create course api hitting");
 
@@ -140,6 +190,8 @@ export const createCourse = async (req, res) => {
     // Parse JSON fields (IMPORTANT)
     const price = body.price ? JSON.parse(body.price) : null;
     const totalDuration = JSON.parse(body.totalDuration);
+    const lectures = body.lectures ? JSON.parse(body.lectures) : [];
+    
     // Image
     const image = req.file ? `/uploads/${req.file.filename}` : "";
 
@@ -153,6 +205,7 @@ export const createCourse = async (req, res) => {
       priceSale = Number(price.sale) || 0;
     }
 
+    // Create course
     const course = await Course.create({
       name: body.name,
       teacher: body.teacher,
@@ -167,9 +220,44 @@ export const createCourse = async (req, res) => {
       image,
     });
 
+    // Insert lectures and chapters
+    if (lectures && lectures.length > 0) {
+      for (const lectureData of lectures) {
+        // Create lecture
+        const lecture = await Lecture.create({
+          courseId: course.id,
+          title: lectureData.title,
+          durationHours: lectureData.duration?.hours || 0,
+          durationMinutes: lectureData.duration?.minutes || 0,
+          totalMinutes: lectureData.totalMinutes || 0,
+        });
+
+        // Create chapters for this lecture
+        if (lectureData.chapters && lectureData.chapters.length > 0) {
+          for (const chapterData of lectureData.chapters) {
+            await Chapter.create({
+              lectureId: lecture.id,
+              name: chapterData.name,
+              topic: chapterData.topic,
+              durationHours: chapterData.duration?.hours || 0,
+              durationMinutes: chapterData.duration?.minutes || 0,
+              totalMinutes: chapterData.totalMinutes || 0,
+              videoUrl: chapterData.videoUrl,
+            });
+          }
+        }
+      }
+    }
+
+    // Recalculate course duration based on inserted lectures/chapters
     await calculateCourseDuration(course.id);
 
-    res.status(201).json({ success: true, course });
+    // Fetch the complete course with lectures and chapters
+    const completeCourse = await Course.findByPk(course.id, {
+      include: [{ model: Lecture, include: [Chapter] }]
+    });
+
+    res.status(201).json({ success: true, course: completeCourse });
   } catch (err) {
     console.error("createCourse error:", err);
     res.status(500).json({
@@ -182,6 +270,7 @@ export const createCourse = async (req, res) => {
 
 // DELETE /courses/:id
 export const deleteCourse = async (req, res) => {
+  console.log("Delete api hitting")
   try {
     // Find course
     const course = await Course.findByPk(req.params.id);
@@ -203,6 +292,7 @@ export const deleteCourse = async (req, res) => {
 
     res.json({ success: true, message: "Course deleted" });
   } catch (err) {
+    console.log(err.message)
     console.error("deleteCourse error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }

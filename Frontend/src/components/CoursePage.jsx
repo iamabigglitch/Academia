@@ -129,37 +129,33 @@ const CoursePage = () => {
       .then((json) => {
         if (!mounted) return;
         const raw = json.items || json.courses || [];
-        const regular = raw.filter((c) =>
-          c.courseType ? c.courseType !== "top" : true
-        );
 
-        const mapped = regular.map((c) => ({
-          id: String(c._id || c.id || ""),
-          name: c.name,
-          teacher: c.teacher || c.instructor || "",
-          category: c.category || "",
-          image: c.image || "",
-          isFree:
-            c.pricingType === "free" ||
-            !c.price ||
-            (!c.price.sale && !c.price.original),
-          price:
-            c.price ||
-            (c.originalPrice
-              ? { original: c.originalPrice, sale: c.price }
-              : {}),
-          avgRating:
-            typeof c.avgRating === "number"
-              ? c.avgRating
-              : typeof c.rating === "number"
-              ? c.rating
-              : parseFloat(c.rating) || 0,
-          totalRatings:
-            typeof c.totalRatings === "number"
-              ? c.totalRatings
-              : c.ratingCount ?? 0,
-          raw: c,
-        }));
+        const mapped = raw.map((c) => {
+          // API returns priceSale / priceOriginal / pricingType at the top level
+          const sale = c.priceSale != null ? Number(c.priceSale) : null;
+          const original = c.priceOriginal != null ? Number(c.priceOriginal) : null;
+          const isFree = c.pricingType === "free" || (sale == null && original == null);
+
+          return {
+            id: String(c.id || c._id || ""),
+            name: c.name,
+            teacher: c.teacher || c.instructor || "",
+            category: c.category || "",
+            image: c.image || "",
+            isFree,
+            // Normalise into { sale, original } so getPriceDisplay works cleanly
+            price: { sale, original },
+            avgRating:
+              typeof c.avgRating === "number"
+                ? c.avgRating
+                : parseFloat(c.rating) || 0,
+            totalRatings:
+              typeof c.totalRatings === "number"
+                ? c.totalRatings
+                : c.ratingCount ?? 0,
+            raw: c,
+          };
+        });
 
         setCourses(mapped);
       })
@@ -279,35 +275,24 @@ const CoursePage = () => {
       showLoginToast();
       return;
     }
-    navigate(`/courses/${courseId}`);
+    navigate(`/course/${courseId}`);
   };
 
-  const isCourseFree = (course) => {
-    return course.isFree || !course.price;
-  };
-
+  // Returns "Free" | { current: "Rs: X", original: "Rs: Y" | null }
   const getPriceDisplay = (course) => {
-    if (isCourseFree(course)) {
-      return "Free";
-    }
+    if (course.isFree) return "Free";
 
-    const price = course.price || {};
+    const { sale, original } = course.price || {};
 
-    if (price.sale != null && price.sale !== 0) {
+    if (sale != null && sale !== 0) {
       return {
-        current: `Rs: ${price.sale}`,
-        original:
-          price.original && price.original > price.sale
-            ? `Rs: ${price.original}`
-            : null,
+        current: `Rs: ${sale}`,
+        original: original != null && original > sale ? `Rs: ${original}` : null,
       };
     }
 
-    if (price.original != null) {
-      return {
-        current: `Rs: ${price.original}`,
-        original: null,
-      };
+    if (original != null) {
+      return { current: `Rs: ${original}`, original: null };
     }
 
     return "Free";
@@ -427,7 +412,6 @@ if (error)
           }}>
             {visibleCourses.map((course, index) => {
               const userRating = ratings[course.id] || 0;
-              const isFree = isCourseFree(course);
               const priceDisplay = getPriceDisplay(course);
 
               return (
@@ -480,7 +464,7 @@ if (error)
 
                         <div className={coursePageStyles.priceContainer}>
                           <div className="flex items-center space-x-2">
-                            {isFree ? (
+                            {course.isFree ? (
                               <span className={coursePageStyles.priceFree} style={{ fontSize: '1.125rem' }}>
                                 Free
                               </span>
@@ -510,6 +494,18 @@ if (error)
           </div>
         )}
       </div>
+
+      {/* Show More button */}
+      {!showAll && filteredCourses.length > VISIBLE_COUNT && (
+        <div className="text-center mt-8 mb-4">
+          <button
+            onClick={() => setShowAll(true)}
+            className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg"
+          >
+            Show More Courses ({filteredCourses.length - VISIBLE_COUNT} more)
+          </button>
+        </div>
+      )}
 
       <ToastContainer
         position="top-right"

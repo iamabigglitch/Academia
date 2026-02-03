@@ -77,7 +77,6 @@ const normalizeCourse = (c) => {
   if (!c) return c;
   const course = { ...c };
 
-  // Support both `Lectures`/`Chapters` (capitalized) and `lectures`/`chapters` (lowercase)
   const rawLectures = Array.isArray(course.Lectures)
     ? course.Lectures
     : Array.isArray(course.lectures)
@@ -86,7 +85,6 @@ const normalizeCourse = (c) => {
 
   course.Lectures = rawLectures.map((l) => {
     const lecture = { ...l };
-    // Normalize id so later UI can always rely on `lecture.id`
     lecture.id = lecture.id ?? lecture._id ?? lecture.lectureId ?? lecture.LectureId;
 
     lecture.durationMin =
@@ -102,7 +100,6 @@ const normalizeCourse = (c) => {
 
     lecture.Chapters = rawChapters.map((ch) => {
       const chapter = { ...ch };
-      // Normalize chapter id to `chapter.id`
       chapter.id =
         chapter.id ?? chapter._id ?? chapter.chapterId ?? chapter.ChapterId;
 
@@ -146,6 +143,7 @@ const CourseDetailPage = () => {
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [bookingInfo, setBookingInfo] = useState(null);
   const [isEnrolling, setIsEnrolling] = useState(false);
+  const [enrollmentChecking, setEnrollmentChecking] = useState(false);
 
   const [toast, setToast] = useState(null);
   const [expandedLectures, setExpandedLectures] = useState(new Set());
@@ -174,7 +172,6 @@ const CourseDetailPage = () => {
         }
         const normalized = normalizeCourse(json.course);
         setCourse(normalized);
-        setIsEnrolled(false);
       })
       .catch((err) => {
         console.error("Failed to load course:", err);
@@ -187,49 +184,99 @@ const CourseDetailPage = () => {
     };
   }, [courseId]);
 
-  // Check enrollment
-  useEffect(() => {
-    let mounted = true;
-    if (!course || !isLoggedIn) return;
+  // Check enrollment - IMPROVED VERSION
+  const checkEnrollmentStatus = async () => {
+    if (!course || !isLoggedIn) {
+      setIsEnrolled(false);
+      setBookingInfo(null);
+      return;
+    }
 
-    const checkEnrollment = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) return;
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setIsEnrolled(false);
+      setBookingInfo(null);
+      return;
+    }
 
-      try {
-        const res = await fetch(
-          `${API_BASE}/api/booking/check?courseId=${encodeURIComponent(course.id || courseId)}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
+    setEnrollmentChecking(true);
+    try {
+       const token = localStorage.getItem("token");
+       console.log(token)
+      const res = await fetch(
+        `${API_BASE}/api/booking/check/${courseId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
-        );
-
-        if (!res.ok) {
-          setIsEnrolled(false);
-          return;
         }
+      );
 
-        const data = await res.json();
-        
-        if (!mounted) return;
+      if (!res.ok) {
+        setIsEnrolled(false);
+        setBookingInfo(null);
+        return;
+      }
 
-        const enrolled = data.enrolled || false;
-        const booking = data.booking || null;
+      const data = await res.json();
 
-        setBookingInfo(booking);
-        setIsEnrolled(enrolled);
-      } catch (err) {
-        console.debug("booking.check failed:", err);
+      if (!data.success) {
+        setIsEnrolled(false);
+        setBookingInfo(null);
+        return;
+      }
+
+      const booking = data.booking || null;
+      setBookingInfo(booking);
+
+      // Check if truly enrolled
+      const isFree = course.pricingType === "free" || course.priceOriginal === 0;
+      
+      if (data.enrolled === true) {
+        // Backend explicitly says enrolled
+        setIsEnrolled(true);
+      } else if (booking && isFree) {
+        // For free courses, if booking exists, consider enrolled
+        setIsEnrolled(true);
+      } else if (booking && booking.paymentStatus === "Paid" && booking.orderStatus === "Completed") {
+        // Double-check if booking has correct status
+        setIsEnrolled(true);
+      } else {
         setIsEnrolled(false);
       }
-    };
 
-    checkEnrollment();
+      console.log("Enrollment Status:", {
+        enrolled: data.enrolled,
+        hasBooking: !!booking,
+        paymentStatus: booking?.paymentStatus,
+        orderStatus: booking?.orderStatus,
+        isFree,
+        finalEnrolled: isEnrolled
+      });
+
+    } catch (err) {
+      console.error("Enrollment check failed:", err);
+      setIsEnrolled(false);
+      setBookingInfo(null);
+    } finally {
+      setEnrollmentChecking(false);
+    }
+  };
+
+  useEffect(() => {
+    let mounted = true;
+    
+    if (!course || !isLoggedIn) {
+      setIsEnrolled(false);
+      setBookingInfo(null);
+      return;
+    }
+
+    checkEnrollmentStatus();
+    
     return () => (mounted = false);
-  }, [course, courseId, isLoggedIn]);
+  }, [course, isLoggedIn, courseId]);
 
   useEffect(() => {
     setIsTeacherAnimating(true);
@@ -289,7 +336,7 @@ const CourseDetailPage = () => {
 
   const bookingPendingPayment =
     bookingInfo &&
-    bookingInfo.paymentStatus === "Unpaid" &&
+    !isEnrolled &&
     !courseIsFree;
 
   const onLectureHeaderClick = (lectureId) => {
@@ -444,10 +491,23 @@ const CourseDetailPage = () => {
       // For free courses or confirmed bookings
       if (data.booking) {
         setBookingInfo(data.booking);
-        if (numericPrice === 0 || data.booking.paymentStatus === "Paid") {
-          setIsEnrolled(true);
+        
+        // Re-check enrollment status after creating booking
+        await checkEnrollmentStatus();
+        
+        if (numericPrice === 0) {
           setToast({
             message: "Enrolled successfully!",
+            type: "info",
+          });
+        } else if (data.booking.paymentStatus === "Paid" && data.booking.orderStatus === "Completed") {
+          setToast({
+            message: "Enrolled successfully!",
+            type: "info",
+          });
+        } else {
+          setToast({
+            message: "Booking created - please complete payment",
             type: "info",
           });
         }
@@ -467,12 +527,10 @@ const CourseDetailPage = () => {
       <div className={courseDetailStyles.notFoundContainer}>
         <div className={courseDetailStyles.notFoundContent}>
           <h2 className={courseDetailStyles.notFoundTitle}>Course not found</h2>
-          <p className={courseDetailStyles.notFoundText}>
-            Go back to courses list
-          </p>
           <button
             onClick={() => navigate("/courses")}
             className={courseDetailStyles.notFoundButton}
+            
           >
             Back to courses
           </button>

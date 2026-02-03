@@ -71,105 +71,156 @@ export const dashboardStyles = {
   loadingSpinner: "w-12 h-12 border-4 border-[#1c398e]/20 border-t-[#1c398e] rounded-full animate-spin",
 };
 
+
 export const listStyles = {
-  // Layout styles
-  pageContainer: "min-h-screen bg-gradient-to-br from-white via-blue-50/20 to-indigo-50/30 py-6 sm:py-8 lg:py-10 px-3 sm:px-4 lg:px-6",
-  contentContainer: "max-w-6xl pt-20 sm:pt-24 lg:pt-25 font-serif mx-auto",
+  courseList: "flex flex-col gap-4",
 
-  // Header styles
-  headerContainer: "text-center mb-6 sm:mb-8",
-  headerTitle: "text-3xl sm:text-4xl lg:text-5xl font-extrabold bg-gradient-to-r from-[#1c398e] to-[#2d4db5] bg-clip-text text-transparent mb-1",
-  headerSubtitle: "text-gray-600 text-sm sm:text-base",
+  courseCard:
+    "bg-white rounded-xl border border-gray-200 shadow-sm " +
+    "hover:shadow-md transition-shadow duration-300 overflow-hidden",
+  courseCardContent: "w-full",
 
-  // Search styles
-  searchContainer: "mb-6 sm:mb-8",
-  searchInputContainer: "relative max-w-md mx-auto",
-  searchIcon: "w-4 h-4 sm:w-5 sm:h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2",
-  searchInput: "w-full pl-9 sm:pl-10 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-[#1c398e]/50 focus:border-[#1c398e] bg-white shadow-sm text-sm sm:text-base transition-all",
+  courseHeader:
+    "flex flex-col sm:flex-row",
 
-  // Course list styles
-  courseList: "space-y-3 sm:space-y-4",
-  courseCard: "bg-white rounded-xl sm:rounded-2xl shadow-md border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-xl hover:border-[#1c398e]/20",
-  courseCardContent: "p-4 sm:p-6",
+  courseImageContainer:
+    "flex flex-col sm:flex-row flex-1 min-w-0",
+  courseImage:
+    "w-full sm:w-90 h-44 sm:h-auto sm:min-h-[160px] object-cover flex-shrink-0 " +
+    "border-r-0 sm:border-r border-b sm:border-b-0 border-gray-100",
 
-  // Course header styles
-  courseHeader: "flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 sm:gap-4",
-  courseImageContainer: "flex items-start gap-3 sm:gap-4 flex-1",
-  courseImage: "w-16 h-12 sm:w-20 sm:h-16 lg:w-24 lg:h-16 rounded-lg sm:rounded-xl object-cover shadow-sm flex-shrink-0 border border-gray-200",
-  courseInfo: "flex-1 min-w-0",
-  courseTitleRow: "flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-2",
-  courseTitle: "text-lg sm:text-xl font-semibold text-[#1c398e] mb-1 break-words hover:text-[#0f2764] transition-colors",
-  courseInstructor: "text-gray-500 text-sm sm:text-base mb-2",
-  
-  // Course badge styles
-  courseBadge: (courseType) => 
-    `px-2 py-0.5 mb-4 text-xs font-semibold rounded-full select-none self-start lg:mt-8 xl:mt-8 sm:self-auto shadow-sm ${
-      courseType === 'top' 
-        ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white' 
-        : 'bg-gradient-to-r from-[#1c398e] to-[#2d4db5] text-white'
-    }`,
+  courseInfo:
+    "flex-1 min-w-0 flex flex-col justify-between p-4 sm:p-5",
+  courseTitleRow:
+    "flex items-start justify-between gap-3",
+  courseTitle:
+    "text-base sm:text-lg font-semibold text-gray-900 leading-snug truncate",
+  courseInstructor:
+    "text-sm text-gray-500 mt-0.5 font-medium",
 
-  // Course meta styles
-  courseMeta: "flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm text-gray-500",
-  metaItem: "flex items-center gap-1",
-  metaIcon: "w-3 h-3 sm:w-4 sm:h-4 text-[#1c398e]",
+  courseMeta:
+    "flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-3",
+  metaItem:
+    "flex items-center gap-1.5 text-sm text-gray-500",
+  metaIcon:
+    "w-4 h-4 text-gray-400",
 
-  // Course actions styles
-  courseActions: "flex items-center justify-between lg:justify-end gap-3 sm:gap-4 mt-2 sm:mt-0",
-  priceContainer: "text-right",
-  priceFree: "text-xl sm:text-2xl font-bold text-emerald-600",
-  priceRegular: "text-xl sm:text-2xl font-bold text-[#1c398e]",
-  originalPrice: "text-xs sm:text-sm text-gray-400 line-through",
-  actionButtons: "flex items-center gap-1 sm:gap-2",
-  toggleButton: "p-1.5 sm:p-2 text-[#1c398e] hover:text-white hover:bg-[#1c398e] rounded-lg cursor-pointer transition-all duration-200 flex items-center shadow-sm hover:shadow-md",
-  deleteButton: "p-1.5 sm:p-2 text-gray-600 hover:text-white hover:bg-red-600 rounded-lg transition-all duration-200 shadow-sm",
-  actionIcon: "w-4 h-4 sm:w-5 sm:h-5",
+  courseActions:
+    "flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-between " +
+    "gap-3 px-4 py-3 sm:px-5 sm:py-4 " +
+    "border-t sm:border-t-0 sm:border-l border-gray-100 bg-gray-50/50 sm:bg-transparent sm:bg-opacity-0",
 
-  // Expanded course details
-  expandedCourse: "border-t border-gray-100 bg-gradient-to-br from-[#1c398e]/5 to-blue-50/30 p-4 sm:p-6 animate-fade-in",
-  descriptionSection: "mb-4 sm:mb-6",
-  descriptionTitle: "text-base sm:text-lg font-semibold text-[#1c398e] mb-2 sm:mb-3",
-  descriptionText: "text-gray-600 leading-relaxed text-sm sm:text-base",
-  contentSection: "space-y-2 sm:space-y-3",
+  priceContainer: "flex items-center",
+  priceFree:
+    "inline-block bg-emerald-50 text-emerald-700 text-xs font-bold px-2.5 py-0.5 rounded-full border border-emerald-200",
+  priceRegular:
+    "text-sm font-bold text-gray-900",
+  originalPrice:
+    "text-xs text-gray-400 line-through ml-1.5",
 
-  // Lecture styles
-  lectureCard: "bg-white rounded-lg border border-gray-100 overflow-hidden hover:border-[#1c398e]/30 transition-all",
-  lectureHeader: "p-3 sm:p-4",
-  lectureToggleButton: "flex items-center justify-between w-full text-left gap-2 sm:gap-3 hover:bg-[#1c398e]/5 rounded-lg p-2 -m-2 transition-colors",
-  lectureInfo: "flex items-center gap-2 sm:gap-3 flex-1 min-w-0",
-  lectureTitle: "font-semibold text-gray-800 text-sm sm:text-base break-words",
-  lectureMeta: "flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-gray-500 mt-1",
-  lectureToggleIcon: (isExpanded) => 
-    `w-4 h-4 sm:w-5 sm:h-5 text-[#1c398e] cursor-pointer transition-transform duration-200 flex-shrink-0 ${
-      isExpanded ? 'rotate-180' : ''
-    }`,
+  actionButtons:
+    "flex items-center gap-2",
+  toggleButton:
+    "w-8 h-8 rounded-lg border border-gray-200 bg-white " +
+    "flex items-center justify-center text-gray-500 " +
+    "hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50 " +
+    "transition-colors duration-200",
+  deleteButton:
+    "w-8 h-8 rounded-lg border border-gray-200 bg-white " +
+    "flex items-center justify-center text-gray-400 " +
+    "hover:border-red-300 hover:text-red-600 hover:bg-red-50 " +
+    "transition-colors duration-200",
+  actionIcon:
+    "w-4 h-4",
 
-  // Chapter styles
-  expandedLecture: "border-t border-gray-100 bg-gradient-to-br from-[#1c398e]/5 to-transparent p-3 sm:p-4",
-  chapterList: "space-y-2 sm:space-y-3",
-  chapterCard: "flex items-center justify-between p-2 sm:p-3 bg-white rounded-lg border border-[#1c398e]/10 hover:border-[#1c398e]/30 hover:shadow-md transition-all",
-  chapterContent: "flex-1 min-w-0",
-  chapterHeader: "flex items-start gap-2 sm:gap-3",
-  chapterIcon: "p-1.5 sm:p-2 bg-[#1c398e]/10 rounded-full shadow-xs flex-shrink-0 mt-0.5",
-  chapterIconSvg: "w-3 h-3 sm:w-4 sm:h-4 text-[#1c398e]",
-  chapterDetails: "flex-1 min-w-0",
-  chapterTitle: "font-medium text-gray-800 text-sm sm:text-base break-words hover:text-[#1c398e] hover:underline block transition-colors",
-  chapterTopic: "text-xs sm:text-sm text-gray-600 mt-1 break-words",
-  chapterMeta: "flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mt-2 text-xs text-gray-500",
-  chapterDuration: "flex items-center gap-1 text-[#1c398e] font-medium",
-  chapterVideoLink: "text-[#2d4db5] break-all hover:underline",
+  starRating: "flex items-center gap-0.5",
+  starFull:   "w-4 h-4 text-amber-400",
+  starEmpty:  "w-4 h-4 text-gray-300",
 
-  // Empty state styles
-  emptyState: "text-center py-8 sm:py-12",
-  emptyIcon: "w-12 h-12 sm:w-16 sm:h-16 text-gray-300 mx-auto mb-3 sm:mb-4",
-  emptyText: "text-gray-500 text-base sm:text-lg mb-2",
-  clearButton: "px-6 py-2 bg-gradient-to-r from-[#1c398e] to-[#2d4db5] text-white rounded-lg hover:shadow-lg transition-all font-medium text-sm sm:text-base",
+  courseBadge: (type) =>
+    type === "top"
+      ? "inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full " +
+        "bg-amber-50 text-amber-700 border border-amber-200"
+      : "inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full " +
+        "bg-slate-100 text-slate-600 border border-slate-200",
 
-  // Star rating styles
-  starRating: "flex items-center gap-1",
-  starFull: "w-3 h-3 sm:w-4 sm:h-4 text-yellow-400",
-  starHalf: "w-3 h-3 sm:w-4 sm:h-4 text-yellow-400",
-  starEmpty: "w-3 h-3 sm:w-4 sm:h-4 text-gray-300"
+  expandedCourse:
+    "border-t border-gray-100 bg-gray-50/40 px-4 sm:px-5 py-4 " +
+    "flex flex-col gap-5",
+
+  descriptionSection: "flex flex-col gap-1.5",
+  descriptionTitle:
+    "text-xs font-bold uppercase tracking-wider text-gray-400 select-none",
+  descriptionText:
+    "text-sm text-gray-600 leading-relaxed",
+
+ 
+  contentSection:
+    "flex flex-col gap-2",
+
+  lectureCard:
+    "bg-white rounded-lg border border-gray-200 overflow-hidden " +
+    "transition-shadow duration-200 hover:shadow-sm",
+  lectureHeader: "w-full",
+  lectureToggleButton:
+    "w-full flex items-center justify-between px-3.5 py-3 text-left " +
+    "hover:bg-gray-50 transition-colors duration-150",
+  lectureInfo:
+    "flex items-start gap-3 flex-1 min-w-0",
+  lectureTitle:
+    "text-sm font-semibold text-gray-800 leading-snug truncate",
+  lectureMeta:
+    "flex flex-wrap items-center gap-x-3 gap-y-1 mt-1",
+
+  lectureToggleIcon: (isExpanded) =>
+    "w-4 h-4 text-gray-400 flex-shrink-0 transition-transform duration-300 " +
+    (isExpanded ? "rotate-180" : "rotate-0"),
+
+  expandedLecture:
+    "border-t border-gray-100",
+  chapterList:
+    "flex flex-col divide-y divide-gray-100",
+
+  // single chapter row
+  chapterCard:
+    "hover:bg-indigo-50/40 transition-colors duration-150",
+  chapterContent: "w-full",
+  chapterHeader:
+    "flex items-start gap-3 px-4 py-2.5",
+
+  // play-icon circle
+  chapterIcon:
+    "flex-shrink-0 w-7 h-7 mt-0.5 rounded-full bg-indigo-100 " +
+    "flex items-center justify-center",
+  chapterIconSvg:
+    "w-3.5 h-3.5 text-indigo-600",
+
+  // text block next to icon
+  chapterDetails:
+    "flex-1 min-w-0 flex flex-col gap-0.5",
+  chapterTitle:
+    "text-sm font-semibold text-indigo-700 hover:text-indigo-900 " +
+    "hover:underline transition-colors duration-150 truncate",
+  chapterTopic:
+    "text-xs text-gray-500 truncate",
+  chapterMeta:
+    "flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5",
+  chapterDuration:
+    "flex items-center gap-1 text-xs text-gray-400",
+  chapterVideoLink:
+    "text-xs text-indigo-400 hover:text-indigo-600 truncate " +
+    "transition-colors duration-150",
+
+  emptyState:
+    "flex flex-col items-center justify-center py-16 px-4 " +
+    "bg-white rounded-xl border border-gray-200 shadow-sm",
+  emptyIcon:
+    "w-10 h-10 text-gray-300 mb-3",
+  emptyText:
+    "text-sm text-gray-500 font-medium text-center",
+  clearButton:
+    "mt-4 px-5 py-2 rounded-lg border border-gray-200 bg-white text-sm font-semibold text-gray-700 " +
+    "hover:bg-gray-50 hover:border-gray-300 transition-colors duration-200 shadow-sm",
 };
 
 export const addPageStyles = {

@@ -484,71 +484,93 @@ export const bannerStyles = {
     footerText: "text-gray-700 text-sm sm:text-base"
   };
   
-  // Add these to your existing assets/dummyStyles.js
-  
   export const coursePageStyles = {
-    // Layout and container styles
-    pageContainer: "min-h-screen pt-24 md:pt-24 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-8 px-4 relative overflow-hidden",
-    headerContainer: "text-center mb-12 md:mb-16 relative z-10",
-    headerTransform: "transform perspective-1000 mb-6",
-    headerTitle: "text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-black mb-4 md:mb-6 text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 tracking-tight font-[pacifico]",
-    headerSubtitle: "text-base sm:text-lg md:text-2xl text-gray-700 font-light mb-6 md:mb-8 tracking-wide",
-    
-    // Search bar
+
+  pageContainer:
+    "min-h-screen pt-24 md:pt-24 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-8 px-4 relative overflow-hidden",
+  headerContainer: "text-center mb-12 md:mb-16 relative z-10",
+  headerTransform: "transform perspective-1000 mb-6",
+
+  headerTitle:
+    "text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-black mb-4 md:mb-6 " +
+    "text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 " +
+    "tracking-tight font-[pacifico] drop-shadow-lg",
+  headerSubtitle:
+    "text-base sm:text-lg md:text-xl text-gray-600 font-light mb-6 md:mb-8 tracking-wide max-w-2xl mx-auto",
+
     searchContainer: "max-w-2xl mx-auto mb-8 md:mb-12 relative group px-2 sm:px-0",
-    searchGradient: "absolute -inset-1 bg-gradient-to-r from-purple-500 via-blue-500 to-indigo-500 rounded-3xl blur-lg opacity-20 group-hover:opacity-60 transition-opacity duration-700 animate-gradient-x",
-    searchInputContainer: "relative bg-white/80 backdrop-blur-lg border border-transparent group-hover:border-blue-400 rounded-3xl shadow-xl transition-all duration-500",
-    searchIconContainer: "absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none",
-    searchIcon: "w-5 h-5 text-blue-500 group-hover:text-indigo-600 transition-colors duration-500",
-    searchInput: "w-full pl-12 pr-10 py-3 rounded-3xl bg-transparent text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-0 font-medium text-sm sm:text-base",
-    clearButton: "absolute inset-y-0 right-0 pr-3 sm:pr-4 flex items-center text-gray-400 hover:text-red-500 transition-colors duration-300",
-    
-    // Results count
-    resultsCount: "text-gray-600 text-sm sm:text-base",
-    
-    // No courses found
-    noCoursesContainer: "text-center py-12",
-    noCoursesIcon: "w-16 h-16 mx-auto text-gray-400",
-    noCoursesTitle: "text-xl font-semibold text-gray-600 mb-2",
-    noCoursesButton: "mt-4 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors w-full sm:w-auto",
-    
-    // Courses grid
-    coursesGrid: "max-w-7xl font-[pacifico] mx-auto relative z-10",
-    coursesGridContainer: "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8 lg:gap-10",
-    
-    // Course card
-    courseCard: "group perspective-1000 transform-style-3d transition-all duration-500 ease-out cursor-pointer",
-    courseCardInner: "relative transform-style-3d group-hover:rotate-y-5 group-hover:rotate-x-5 transition-transform duration-500 ease-out h-full",
-    courseCardContent: "backdrop-blur-lg rounded-3xl shadow-2xl border border-white/40 transform translate-z-0 h-full flex flex-col bg-white/60 overflow-hidden",
-    
-    // Course image
-    courseImageContainer: "relative overflow-hidden rounded-t-3xl h-48 pb-6 sm:h-44 md:h-48",
-    courseImage: "w-full h-full object-cover object-center transform transition-transform duration-700",
-    
-    // Course info
-    courseInfo: "p-4 sm:p-6 flex-1 flex flex-col",
-    courseName: "text-base sm:text-lg font-bold text-gray-900 leading-tight line-clamp-2 mb-2",
-    teacherContainer: "flex items-center space-x-2 mb-3 text-sm sm:text-sm",
-    teacherIcon: "w-4 h-4 text-blue-500",
-    teacherName: "text-gray-600 font-medium truncate",
-    
-    // Rating
-    ratingContainer: "mb-3",
-    ratingStars: "flex items-center space-x-2 mb-2",
-    ratingStarsInner: "flex space-x-1",
-    ratingStarButton: "p-2 sm:p-0.5 rounded-full focus:outline-none",
-    
-    // Price
-    priceContainer: "mt-auto flex items-center justify-between",
-    priceFree: "text-2xl font-bold text-green-600",
-    priceCurrent: "text-2xl font-bold text-green-600",
-    priceOriginal: "text-lg text-gray-500 line-through",
-    
-    // Show more button
-    showMoreContainer: "mt-8 flex justify-center px-2 sm:px-0",
-    showMoreButton: "px-5 py-3 rounded-full cursor-pointer bg-white/80 backdrop-blur-sm border border-gray-200 shadow hover:shadow-md transition-all duration-300 flex items-center space-x-3 w-full sm:w-auto justify-center",
-    showMoreText: "text-sm font-medium text-gray-800"
-  };
+
+  searchGradient:
+    "absolute inset-0 rounded-xl cp-search-glow-layer " +
+    "opacity-0 group-hover:opacity-100 transition-opacity duration-500",
+  searchInputContainer:
+    "relative bg-white border border-gray-200 " +
+    "group-hover:border-indigo-300 rounded-xl shadow-md " +
+    "transition-all duration-400 z-10",
+  searchIconContainer:
+    "absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none",
+  searchIcon: "w-5 h-5 text-indigo-400 group-hover:text-indigo-600 transition-colors duration-500",
+  searchInput:
+    "w-full pl-12 pr-10 py-3.5 rounded-xl bg-transparent text-gray-800 " +
+    "placeholder-gray-400 focus:outline-none focus:ring-0 font-medium text-sm sm:text-base",
+  clearButton:
+    "absolute inset-y-0 right-0 pr-3 sm:pr-4 flex items-center " +
+    "text-gray-400 hover:text-red-500 transition-colors duration-300",
+
+  resultsCount: "text-gray-500 text-sm sm:text-base mt-3 font-medium",
+
+  noCoursesContainer: "text-center py-16",
+  noCoursesIcon: "w-20 h-20 mx-auto text-indigo-300 mb-4",
+  noCoursesTitle: "text-xl font-semibold text-gray-600 mb-3",
+  noCoursesButton:
+    "mt-2 px-7 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white " +
+    "rounded-full font-semibold shadow-md hover:shadow-lg hover:from-blue-600 hover:to-indigo-600 " +
+    "transition-all duration-300 w-full sm:w-auto",
+
+  coursesGrid: "max-w-7xl mx-auto relative z-10 px-1 sm:px-0",
+  coursesGridContainer:
+    "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6 lg:gap-7",
+
+  courseCard:
+    "group perspective-1000 transform-style-3d transition-all duration-500 ease-out cursor-pointer",
+  courseCardInner:
+    "relative transform-style-3d group-hover:[transform:rotateY(3deg)_rotateX(2deg)] " +
+    "transition-transform duration-500 ease-out h-full",
+  courseCardContent:
+    "backdrop-blur-lg rounded-2xl shadow-lg border border-white/40 " +
+    "transform translate-z-0 h-full flex flex-col bg-white/60 overflow-hidden " +
+    "group-hover:shadow-xl group-hover:border-indigo-300 transition-all duration-500",
+
+  courseImageContainer: "relative overflow-hidden rounded-t-2xl h-48 sm:h-52",
+  courseImage:
+    "w-full h-full object-cover object-center transform transition-transform duration-700 " +
+    "group-hover:scale-105",
+
+  courseInfo: "p-4 sm:p-5 flex-1 flex flex-col gap-2.5",
+  courseName:
+    "text-base sm:text-lg font-bold text-gray-900 leading-tight line-clamp-2",
+
+  teacherContainer: "flex items-center space-x-2",
+  teacherIcon: "w-4 h-4 text-indigo-500",
+  teacherName: "text-gray-500 font-medium text-sm truncate",
+
+  ratingContainer: "",
+
+  priceContainer:
+    "mt-auto pt-3 border-t border-white/60 flex items-center justify-between",
+  priceFree:
+    "inline-block bg-green-50 text-green-600 text-sm font-bold px-3 py-1 rounded-full",
+  priceCurrent: "text-lg font-bold text-indigo-600",
+  priceOriginal: "text-sm text-gray-400 line-through ml-2",
+
+  // ── show more (kept for reference; CoursePage renders its own button) ──
+  showMoreContainer: "mt-10 flex justify-center px-2 sm:px-0",
+  showMoreButton:
+    "px-6 py-3 rounded-full cursor-pointer bg-white/80 backdrop-blur-sm border border-gray-200 " +
+    "shadow-md hover:shadow-lg hover:border-indigo-300 transition-all duration-300 " +
+    "flex items-center space-x-3 w-full sm:w-auto justify-center",
+  showMoreText: "text-sm font-semibold text-gray-700",
+};
   
   // Add these to your existing assets/dummyStyles.js
   
@@ -558,7 +580,7 @@ export const bannerStyles = {
     mainContainer: "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
     
     // Header
-    header: "text-4xl font-bold text-gray-800 mb-12 text-center",
+    header: "text-4xl font-bold text-gray-800 mb-12 text-center ",
     emptyHeader: "text-4xl font-bold text-gray-800 mb-6",
     emptyText: "text-gray-600 text-lg",
     
@@ -675,8 +697,8 @@ export const bannerStyles = {
     
     // Rating Section (fixed for row layout)
   ratingContainer: "mb-4 flex justify-center",
-  starRating: "flex flex-row items-center space-x-2", // changed to row
-  starsContainer: "flex flex-row items-center space-x-1", // row layout for stars
+  starRating: "flex flex-row items-center space-x-2", 
+  starsContainer: "flex flex-row items-center space-x-1", 
   starButton: "transition-all duration-200 transform hover:scale-125 p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-200",
   starButtonActive: "text-yellow-400 fill-current",
   starButtonInactive: "text-gray-300",
@@ -840,7 +862,7 @@ export const bannerStyles = {
     
     // Header Section
     header: "flex flex-col items-center gap-6",
-    title: "text-3xl sm:text-4xl md:text-4xl mb-0 text-center bg-gradient-to-r from-indigo-600 via-pink-500 to-purple-500 text-transparent bg-clip-text drop-shadow-lg flex items-center justify-center gap-3",
+    title: "text-3xl sm:text-4xl md:text-4xl mb-0 text-center bg-[#283e7a] text-transparent bg-clip-text drop-shadow-lg flex items-center justify-center gap-3",
     titleIcon: "w-7 h-7 md:w-8 md:h-8 animate-spin-slow text-indigo-400",
     
     // Courses Grid
@@ -1032,7 +1054,7 @@ export const bannerStyles = {
   
   export const courseDetailStyles = {
     // Layout & Container
-    container: "min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 py-8 px-4 relative overflow-hidden",
+    container: "min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 py-20 px-4 relative overflow-hidden",
     mainContainer: "max-w-7xl mx-auto space-y-8 relative z-10 transition-all duration-1000",
     containerVisible: "opacity-100 translate-y-0",
     containerHidden: "opacity-0 translate-y-8",

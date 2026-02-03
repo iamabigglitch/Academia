@@ -30,6 +30,15 @@ const Lecture = sequelize.define(
       type: DataTypes.INTEGER,
       defaultValue: 0,
     },
+     courseId: {
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: {
+        model: "Courses", // table name (important)
+        key: "id",
+      },
+      onDelete: "CASCADE",
+    },
   },
   {
     timestamps: false,

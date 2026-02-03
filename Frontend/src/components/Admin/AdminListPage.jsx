@@ -95,7 +95,8 @@ const AdminListPage = () => {
   const fetchCourses = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API_BASE}/api/course/public`);
+      const res = await axios.get(`${API_BASE}/api/course`);
+      console.log(res.data)
       let raw = res.data;
       if (raw && raw.data) raw = raw.data;
 
@@ -113,67 +114,41 @@ const AdminListPage = () => {
 
       if (!Array.isArray(arr)) arr = [];
 
-      const mapped = arr.map((c) => {
-        const id = c._id || c.id;
-        const imageUrl = c.image || c.img || c.thumbnail || "";
-        const finalImage = getImageUrl(imageUrl);
+  const mapped = arr.map((c) => {
+  const lecturesArr = c.Lectures || [];
 
-        const lecturesArr = c.courseLectures || c.lectures || c.contents || [];
+  const normalizedLectures = lecturesArr.map((lec) => ({
+    ...lec,
+    _parsedDurationMinutes:
+      lec.totalMinutes ?? parseDuration(lec.duration) ?? 0,
+    chapters: Array.isArray(lec.Chapters)
+      ? lec.Chapters.map((ch) => ({
+          ...ch,
+          _parsedDurationMinutes:
+            ch.totalMinutes ?? parseDuration(ch.duration) ?? 0,
+        }))
+      : [],
+  }));
 
-        const isPriceObject = typeof c.price === "object" && c.price !== null;
-        const salePrice = isPriceObject ? c.price.sale : c.price;
-        const originalPrice = isPriceObject
-          ? c.price.original
-          : c.originalPrice;
+  return {
+    ...c,
+    id: c.id,
+    name: c.name,
+    instructor: c.teacher,
+    image: getImageUrl(c.image),
+    rating: c.avgRating ?? 0,
+    lectures: lecturesArr.length,
+    courseLectures: normalizedLectures,
+    totalDurationMinutes: c.totalDurationMinutes ?? 0,
+    description: c.overview ?? "No description provided.",
+    courseType: c.courseType ?? "regular",
+    price: c.priceSale ?? 0,
+    originalPrice: c.priceOriginal ?? 0,
+    isFree: c.pricingType === "free",
+    bookingStats: c.bookingStats || { totalBookings: 0, totalRevenue: 0, totalProfit: 0 },
+  };
+});
 
-        const totalDurationRaw =
-          c.totalDuration || c.duration || c.totalDurationObj || null;
-        const totalDurationMinutes = parseDuration(totalDurationRaw);
-
-        const normalizedLectures = Array.isArray(lecturesArr)
-          ? lecturesArr.map((lec) => ({
-              ...lec,
-              _parsedDurationMinutes:
-                lec.durationMin ??
-                lec.totalMinutes ??
-                parseDuration(lec.duration) ??
-                0,
-              chapters: Array.isArray(lec.chapters)
-                ? lec.chapters.map((ch) => ({
-                    ...ch,
-                    _parsedDurationMinutes:
-                      ch.durationMin ??
-                      ch.totalMinutes ??
-                      parseDuration(ch.duration) ??
-                      0,
-                  }))
-                : [],
-            }))
-          : [];
-
-        return {
-          ...c,
-          id,
-          name: c.name || c.title || "Untitled Course",
-          instructor: c.teacher || c.instructor || "Unknown Instructor",
-          image: finalImage,
-          rating: typeof c.rating !== "undefined" ? c.rating : 0,
-          lectures: Array.isArray(lecturesArr) ? lecturesArr.length : 0,
-          courseLectures: normalizedLectures,
-          description:
-            c.description || c.desc || c.overview || "No description provided.",
-          courseType: c.courseType || c.type || "regular",
-          price: salePrice ?? 0,
-          originalPrice: originalPrice ?? salePrice ?? 0,
-          isFree:
-            !!c.isFree ||
-            salePrice === 0 ||
-            salePrice === "0" ||
-            (typeof salePrice === "string" &&
-              salePrice.toLowerCase() === "free"),
-          totalDurationMinutes,
-        };
-      });
 
       setCourses(mapped);
     } catch (err) {
@@ -221,6 +196,7 @@ const AdminListPage = () => {
 
   // DELETE course
   const handleRemoveCourse = async (courseId, courseName) => {
+    const token = localStorage.getItem("token")
     if (
       !window.confirm(`Delete course "${courseName}"? This cannot be undone.`)
     )
@@ -230,7 +206,14 @@ const AdminListPage = () => {
     setCourses((c) => c.filter((x) => x.id !== courseId));
 
     try {
-      await axios.delete(`${API_BASE}/api/course/${courseId}`);
+await axios.delete(
+  `http://localhost:3000/api/course/${courseId}`,
+  {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  }
+);
       toast.success(`"${courseName}" has been removed successfully!`, {
         duration: 3000,
         style: { background: "#ef4444", color: "white" },
@@ -282,37 +265,29 @@ const AdminListPage = () => {
       <Toaster position='top-right' />
       <div className="max-w-6xl pt-24 pb-10 font-serif mx-auto px-3 sm:px-4">
         <div className="text-center mb-6 sm:mb-8">
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold bg-clip-text text-transparent mb-2" style={{ backgroundImage: `linear-gradient(to right, ${PRIMARY_COLOR}, ${PRIMARY_LIGHT})` }}>
+          <h1 className="text-3xl text-[#1c398e] sm:text-4xl lg:text-5xl bg-clip-text  mb-2 font-bold" style={{ fontFamily: "'Inter', sans-serif" }}>
             Course Catalog
           </h1>
-          <p className="text-gray-600 text-sm sm:text-base max-w-xl mx-auto">
+          <p className="text-gray-600 text-sm sm:text-base max-w-xl mx-auto" style={{ fontFamily: "'Inter', sans-serif" }}>
             Manage and browse your courses — clean, light and elegant
           </p>
         </div>
 
-        <div className="mb-6 sm:mb-8">
-          <div className="relative max-w-md mx-auto">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5" style={{ color: PRIMARY_COLOR }} />
-            <input
-              type="text"
+        <div className="mb-8">
+          <div className="relative max-w-xl">
+            <Search 
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" 
+            />
+            <input 
+              type="text" 
               placeholder="Search courses, instructors, or categories...."
-              value={searchTerm}
+              value={searchTerm} 
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 sm:pl-10 pr-4 py-2.5 sm:py-3 border rounded-full focus:outline-none focus:ring-2 bg-white/90 backdrop-blur-sm shadow-sm text-sm sm:text-base transition-all"
-              style={{
-                borderColor: `${PRIMARY_COLOR}30`
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = PRIMARY_COLOR;
-                e.target.style.boxShadow = `0 0 0 3px ${PRIMARY_COLOR}20`;
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = `${PRIMARY_COLOR}30`;
-                e.target.style.boxShadow = 'none';
-              }}
+              className="w-full pl-12 pr-4 py-3.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm transition-all text-gray-900 placeholder-gray-400 font-medium"
             />
           </div>
         </div>
+    
 
         <div className={listStyles.courseList}>
           {loading && (
@@ -448,148 +423,85 @@ const AdminListPage = () => {
                         Course Content
                       </h4>
                       <div className={listStyles.contentSection}>
-                        {(course.courseLectures || []).map((lecture) => (
-                          <div
-                            key={lecture.id || lecture._id}
-                            className={listStyles.lectureCard}
-                          >
-                            <div className={listStyles.lectureHeader}>
-                              <button
-                                onClick={() =>
-                                  toggleLectureDetails(
-                                    course.id,
-                                    lecture.id || lecture._id
-                                  )
-                                }
-                                className={listStyles.lectureToggleButton}
-                              >
-                                <div className={listStyles.lectureInfo}>
-                                  <div className="flex-1 min-w-0">
-                                    <h5 className={listStyles.lectureTitle}>
-                                      {lecture.title}
-                                    </h5>
-                                    <div className={listStyles.lectureMeta}>
-                                      <div className={listStyles.metaItem}>
-                                        <Video
-                                          className={listStyles.metaIcon}
-                                        />
-                                        <span>
-                                          {(lecture.chapters || []).length}{" "}
-                                          chapters
-                                        </span>
-                                      </div>
-                                      <div className={listStyles.metaItem}>
-                                        <Clock
-                                          className={listStyles.metaIcon}
-                                        />
-                                        <span>
-                                          {formatMinutes(
-                                            lecture._parsedDurationMinutes ??
-                                              parseDuration(lecture.duration)
-                                          )}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
+{(course.courseLectures || []).map((lecture) => (
+  <div key={lecture.id} className={listStyles.lectureCard}>
+    <div className={listStyles.lectureHeader}>
+      <button
+        onClick={() => toggleLectureDetails(course.id, lecture.id)}
+        className={listStyles.lectureToggleButton}
+      >
+        <div className={listStyles.lectureInfo}>
+          <div className="flex-1 min-w-0">
+            <h5 className={listStyles.lectureTitle}>
+              {lecture.title}
+            </h5>
+            <div className={listStyles.lectureMeta}>
+              <div className={listStyles.metaItem}>
+                <Video className={listStyles.metaIcon} />
+                <span>{(lecture.chapters || []).length} chapters</span>
+              </div>
+              <div className={listStyles.metaItem}>
+                <Clock className={listStyles.metaIcon} />
+                <span>
+                  {formatMinutes(lecture._parsedDurationMinutes)}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <EyeOff className={listStyles.lectureToggleIcon(
+          expandedLectures[`${course.id}-${lecture.id}`]
+        )} />
+      </button>
+    </div>
 
-                                <EyeOff
-                                  className={listStyles.lectureToggleIcon(
-                                    expandedLectures[
-                                      `${course.id}-${
-                                        lecture.id || lecture._id
-                                      }`
-                                    ]
-                                  )}
-                                />
-                              </button>
-                            </div>
+    {expandedLectures[`${course.id}-${lecture.id}`] && (
+      <div className={listStyles.expandedLecture}>
+        <div className={listStyles.chapterList}>
+          {(lecture.chapters || []).map((chapter) => (
+            <div key={chapter.id} className={listStyles.chapterCard}>
+              <div className={listStyles.chapterContent}>
+                <div className={listStyles.chapterHeader}>
+                  <div className={listStyles.chapterIcon}>
+                    <Eye className={listStyles.chapterIconSvg} />
+                  </div>
+                  <div className={listStyles.chapterDetails}>
+                    <a
+                      href={chapter.videoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={listStyles.chapterTitle}
+                    >
+                      <h6>{chapter.name}</h6>
+                    </a>
+                    <p className={listStyles.chapterTopic}>{chapter.topic}</p>
 
-                            {expandedLectures[
-                              `${course.id}-${lecture.id || lecture._id}`
-                            ] && (
-                              <div className={listStyles.expandedLecture}>
-                                <div className={listStyles.chapterList}>
-                                  {(lecture.chapters || []).map((chapter) => (
-                                    <div
-                                      key={chapter.id || chapter._id}
-                                      className={listStyles.chapterCard}
-                                    >
-                                      <div
-                                        className={listStyles.chapterContent}
-                                      >
-                                        <div
-                                          className={listStyles.chapterHeader}
-                                        >
-                                          <div
-                                            className={listStyles.chapterIcon}
-                                          >
-                                            <Eye
-                                              className={
-                                                listStyles.chapterIconSvg
-                                              }
-                                            />
-                                          </div>
-                                          <div
-                                            className={
-                                              listStyles.chapterDetails
-                                            }
-                                          >
-                                            <a
-                                              href={chapter.videoUrl}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className={
-                                                listStyles.chapterTitle
-                                              }
-                                            >
-                                              <h6>{chapter.name}</h6>
-                                            </a>
-                                            <p
-                                              className={
-                                                listStyles.chapterTopic
-                                              }
-                                            >
-                                              {chapter.topic}
-                                            </p>
+                    <div className={listStyles.chapterMeta}>
+                      <span className={listStyles.chapterDuration}>
+                        <Clock className="w-3 h-3" />
+                        {formatMinutes(chapter._parsedDurationMinutes)}
+                      </span>
+                      <a
+                        href={chapter.videoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={listStyles.chapterVideoLink}
+                      >
+                        {chapter.videoUrl}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+))}
 
-                                            <div
-                                              className={listStyles.chapterMeta}
-                                            >
-                                              <span
-                                                className={
-                                                  listStyles.chapterDuration
-                                                }
-                                              >
-                                                <Clock className="w-3 h-3" />
-                                                {formatMinutes(
-                                                  chapter._parsedDurationMinutes ??
-                                                    parseDuration(
-                                                      chapter.duration
-                                                    )
-                                                )}
-                                              </span>
-                                              <a
-                                                href={chapter.videoUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className={
-                                                  listStyles.chapterVideoLink
-                                                }
-                                              >
-                                                {chapter.videoUrl}
-                                              </a>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        ))}
+
                       </div>
                     </div>
                   </div>

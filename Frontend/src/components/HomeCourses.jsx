@@ -238,10 +238,10 @@ const HomeCourses = () => {
     <div className={homeCoursesStyles.container}>
       <div className={homeCoursesStyles.mainContainer}>
         <div className={homeCoursesStyles.header}>
-          <h2 className={`${title} ${homeCoursesStyles.title} text-blue-900`}>
-            <Star className="text-blue-600" />
+          <h2 className={`${title} ${homeCoursesStyles.title} `}>
+            <Star className="text-[#1c398e]" />
             Explore Top Courses
-            <Star className="text-blue-600" />
+            <Star className="text-[#1c398e]" />
           </h2>
         </div>
 
