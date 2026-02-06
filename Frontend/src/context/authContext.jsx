@@ -12,7 +12,19 @@ export const AuthProvider = ({ children }) => {
 
   const login = (token) => {
     localStorage.setItem("token", token);
-    setUser(jwtDecode(token));
+    const decodedUser = jwtDecode(token);
+    
+    // Preserve role and other user data from token decode
+    const userData = {
+      id: decodedUser.id,
+      username: decodedUser.username,
+      email: decodedUser.email,
+      role: decodedUser.role || "user"
+    };
+    
+    // Update localStorage user data with decoded token info to keep role in sync
+    localStorage.setItem("user", JSON.stringify(userData));
+    setUser(decodedUser);
   };
 
   const logout = () => {

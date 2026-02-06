@@ -29,13 +29,11 @@ const NavBar = () => {
 
   const menuRef = useRef(null);
 
-  // Check if user is authenticated and get user data
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
       setIsAuthenticated(true);
       
-      // Get user data from localStorage (saved during login/signup)
       const userData = localStorage.getItem("user");
       if (userData) {
         try {
@@ -49,6 +47,26 @@ const NavBar = () => {
       setIsAuthenticated(false);
       setUser(null);
     }
+  }, []);
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const userData = localStorage.getItem("user");
+      if (userData) {
+        try {
+          const parsedUser = JSON.parse(userData);
+          setUser(parsedUser);
+        } catch (error) {
+          console.error("Error parsing user data:", error);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   const navItems = isAuthenticated ? baseNavAuthenticated : baseNavPublic;
@@ -74,19 +92,22 @@ const NavBar = () => {
         : navbarStyles.mobileMenuItemHover
     }`;
 
-  // // Get user initials for fallback avatar
   const getUserInitials = () => {
     if (!user || !user.username) return "U";
     return user.username.charAt(0).toUpperCase();
   };
 
-
   const getProfilePhoto = () => {
+    
+    if (user && user.profileImage) {
+      return `http://localhost:3000/${user.profileImage}`;
+    }
+    
     if (user && user.username) {
-      
       return `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=0369a1&color=fff&size=128&bold=true`;
     }
-    return null;
+    
+    return `https://ui-avatars.com/api/?name=U&background=0369a1&color=fff&size=128&bold=true`;
   };
 
   return (
@@ -103,7 +124,7 @@ const NavBar = () => {
     >
       <div className={navbarStyles.container}>
         <div className={navbarStyles.innerContainer}>
-          {/* Logo */}
+          
           <div className="flex items-center gap-3 select-none">
             <img src={logo} alt="Logo" className="w-12 h-12" />
             <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-700 to-cyan-600">
@@ -111,7 +132,7 @@ const NavBar = () => {
             </span>
           </div>
 
-          {/* Desktop Navigation */}
+        
           <div className={navbarStyles.desktop}>
             <div className={navbarStyles.desktopNavContainer}>
               {navItems.map((item) => {
@@ -134,7 +155,6 @@ const NavBar = () => {
             </div>
           </div>
 
-          {/* Desktop Auth Section */}
           <div className="hidden md:flex items-center gap-4 ml-6">
             {!isAuthenticated ? (
               <>
@@ -154,14 +174,18 @@ const NavBar = () => {
               </>
             ) : (
               <div className="relative group">
-                {/* User Avatar with Photo */}
+               
                 <img 
                   src={getProfilePhoto()} 
                   alt={user?.username || "User"} 
                   className="w-10 h-10 rounded-full border-2 border-sky-500 cursor-pointer object-cover"
+                  onError={(e) => {
+                    
+                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'U')}&background=0369a1&color=fff&size=128&bold=true`;
+                  }}
                 />
 
-                {/* Avatar Dropdown */}
+              
                 <div className="absolute right-0 mt-3 w-48 bg-white rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
                   <div className="px-4 py-3 border-b border-gray-100">
                     <p className="font-semibold text-gray-800">{user?.username || "User"}</p>
@@ -250,6 +274,10 @@ const NavBar = () => {
                       src={getProfilePhoto()} 
                       alt={user?.username || "User"} 
                       className="w-10 h-10 rounded-full object-cover"
+                      onError={(e) => {
+                     
+                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'U')}&background=0369a1&color=fff&size=128&bold=true`;
+                      }}
                     />
                     <div className="text-left">
                       <p className="font-semibold text-gray-800">{user?.username || "User"}</p>
@@ -277,8 +305,7 @@ const NavBar = () => {
           </div>
         </div>
       </div>
-
-      {/* Background Pattern */}
+      
       <div className={navbarStyles.backgroundPattern}>
         <div className={navbarStyles.pattern}></div>
       </div>

@@ -1,25 +1,33 @@
-import express from "express"
-import {  signin,signUp } from "../controllers/authController.js"
-// import passport from "passport"
+import express from "express";
+import multer from "multer";
+import path from "path";
+import { signin, signUp, forgotPassword, changePassword } from "../controllers/authController.js";
+import { getProfile, updateProfile, deleteAccount } from "../controllers/profileController.js";
+import { protect } from "../Middleware/authmiddleware.js"; 
 
-const router = express.Router()
-router.post("/signin",signin)
-router.post("/signup",signUp)
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, path.join(process.cwd(), 'uploads', 'profiles')),
+  filename: (req, file, cb) => {
+    const unique = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const ext = path.extname(file.originalname);
+    cb(null, `profile-${unique}${ext}`);
+  },
+});
 
+const upload = multer({ storage });
 
-// router.get(
-//   "/google",
-//   passport.authenticate("google", { scope: ["profile", "email"],session: false })
-// );
-// router.get(
-//   "/google/callback",
-//   passport.authenticate("google", { session: false ,failureRedirect: "http://localhost:5173/login" }),
-//   googleCallback
-// );
-// router.get("/me", protect, (req, res) => {
-//   res.json({
-//     message: "Token valid",
-//     user: req.user,
-//   });
-// });
-export default router
+const router = express.Router();
+
+// Authentication routes
+router.post("/signin", signin);
+router.post("/signup", signUp);
+
+router.post("/forgot-password", forgotPassword);
+
+router.put("/change-password", protect, changePassword);
+
+router.get("/profile", protect, getProfile);
+router.put("/profile", protect, upload.single("profileImage"), updateProfile);
+router.delete("/profile", protect, deleteAccount);
+
+export default router;

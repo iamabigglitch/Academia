@@ -18,7 +18,7 @@ export const User = sequelize.define("users", {
         allowNull: false,
         unique: true,
         validate: {
-            isEmail: true
+        isEmail: true
         }
     },
     role: {
@@ -37,5 +37,17 @@ export const User = sequelize.define("users", {
     googleId: {
         type: DataTypes.STRING(),
         allowNull: true
-    }
+    },
+    profileImage: {
+        type: DataTypes.STRING(),
+        allowNull: true,
+    },
+    resetToken: {
+        type: DataTypes.STRING(),
+        allowNull: true,
+    },
+    resetTokenExpiry: {
+        type: DataTypes.DATE,
+        allowNull: true,
+    },
 });

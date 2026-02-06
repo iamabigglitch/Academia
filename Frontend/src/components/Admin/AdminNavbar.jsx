@@ -155,6 +155,15 @@ const AdminNavbar = () => {
                   <p className="text-xs text-gray-500">{user?.email || ""}</p>
                   <p className="text-xs font-medium mt-1" style={{ color: PRIMARY_COLOR }}>Administrator</p>
                 </div>
+
+                   <NavLink
+                    to="/profile"
+                    onClick={() => setIsOpen(false)}
+                    className="block text-center px-4 py-3 rounded-xl font-semibold text-sky-700 border border-sky-200 hover:bg-sky-50 transition"
+                    >
+                    My Profile
+                   </NavLink>
+
                 <button
                   onClick={handleLogout}
                   className="block w-full text-left px-4 py-2 hover:bg-red-50 rounded-b-xl text-red-500 transition-colors"
