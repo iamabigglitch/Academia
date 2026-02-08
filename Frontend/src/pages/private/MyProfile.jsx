@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Camera, Edit2, Save, X, User, Mail, Shield, AlertCircle, Trash2, Lock, Eye, EyeOff, Send } from "lucide-react";
+import { Camera, Edit2, Save, X, User, Mail, Shield, AlertCircle, Trash2, Lock, Eye, EyeOff, Send, CheckCircle, Contact } from "lucide-react";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
 import { ClipLoader } from "react-spinners";
@@ -40,6 +40,7 @@ function MyProfile() {
   });
   const [passwordErrors, setPasswordErrors] = useState({});
   const [changingPassword, setChangingPassword] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // Forgot password state
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -119,6 +120,7 @@ function MyProfile() {
         return;
       }
 
+      setIsUploadingImage(true);
       setFormData((prev) => ({
         ...prev,
         profileImage: file,
@@ -127,6 +129,7 @@ function MyProfile() {
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
+        setIsUploadingImage(false);
       };
       reader.readAsDataURL(file);
     }
@@ -240,7 +243,6 @@ function MyProfile() {
 
       toast.success("Password changed successfully!");
       
-      // Reset password form
       setPasswordData({
         currentPassword: "",
         newPassword: "",
@@ -285,7 +287,6 @@ function MyProfile() {
       const updatedProfile = res.data.data || res.data;
       setProfile(updatedProfile);
       
-      // Preserve role when updating localStorage
       const currentUserData = JSON.parse(localStorage.getItem("user") || "{}");
       const userDataWithRole = {
         ...updatedProfile,
@@ -314,11 +315,10 @@ function MyProfile() {
 
       const token = localStorage.getItem("token");
       if (token && login) {
-        login(token);
+        login(token, userDataWithRole);
       }
 
       toast.success("Profile updated successfully!");
-      navigate("/courses");
       
     } catch (error) {
       const errorMessage = error.response?.data?.message || "Failed to update profile";
@@ -357,30 +357,35 @@ function MyProfile() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-4">
-        <ClipLoader size={50} color="#3b82f6" />
-        <p className="text-gray-600 text-lg">Loading Profile...</p>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col items-center justify-center gap-6 p-4">
+        <div className="relative">
+          <div className="w-24 h-24 bg-[#4f46e5] rounded-full animate-pulse"></div>
+          <ClipLoader size={60} color="#4f46e5" className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+        </div>
+        <p className="text-gray-700 text-xl font-semibold animate-pulse">Loading Your Profile...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-5xl mx-auto pt-20">
         {/* HEADER */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Profile</h1>
-          <p className="text-gray-600">Manage your personal information and account settings</p>
+        <div className="mb-10 text-center sm:text-left animate-fadeIn">
+          <h1 className="text-4xl sm:text-5xl font-bold text-[#1c398e] mb-3">
+            My Profile
+          </h1>
+          <p className="text-gray-600 text-lg">Manage your personal information and preferences</p>
         </div>
 
-        {/* MAIN CARD */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          {/* PROFILE SECTION */}
-          <div className="p-8 border-b border-gray-200">
-            <div className="flex flex-col sm:flex-row items-center gap-6">
+        {/* MAIN PROFILE CARD */}
+        <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden mb-8 animate-slideUp">
+          {/* PROFILE CONTENT */}
+          <div className="px-6 sm:px-10 pb-10 pt-10">
+            <div className="flex flex-col items-center sm:flex-row sm:items-end gap-8 mb-10">
               {/* PROFILE IMAGE */}
-              <div className="relative group">
-                <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-gray-100 shadow-md">
+              <div className="relative group flex-shrink-0">
+                <div className="w-40 h-40 sm:w-48 sm:h-48 rounded-full ring-8 ring-white shadow-2xl overflow-hidden">
                   {imagePreview ? (
                     <img
                       src={imagePreview}
@@ -388,25 +393,31 @@ function MyProfile() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                      <User className="w-16 h-16 text-white" />
+                    <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                      <User className="w-20 h-20 sm:w-24 sm:h-24 text-white" />
                     </div>
                   )}
                 </div>
 
                 {isEditing && (
-                  <div className="absolute bottom-0 right-0 flex gap-2">
+                  <div className="absolute bottom-2 right-2 flex gap-2">
                     <button
                       onClick={() => fileInputRef.current?.click()}
-                      className="w-10 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center shadow-lg transition"
-                      title="Upload new photo"
+                      disabled={isUploadingImage}
+                      className="w-11 h-11 bg-[#4f46e5] hover:bg-indigo-700 text-white rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Upload photo"
                     >
-                      <Camera className="w-5 h-5" />
+                      {isUploadingImage ? (
+                        <ClipLoader size={16} color="#ffffff" />
+                      ) : (
+                        <Camera className="w-5 h-5" />
+                      )}
                     </button>
                     {imagePreview && (
                       <button
                         onClick={handleRemoveImage}
-                        className="w-10 h-10 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center shadow-lg transition"
+                        disabled={isUploadingImage}
+                        className="w-11 h-11 bg-red-600 hover:bg-red-700 text-white rounded-full flex items-center justify-center shadow-lg transition-all hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Remove photo"
                       >
                         <Trash2 className="w-5 h-5" />
@@ -426,11 +437,14 @@ function MyProfile() {
 
               {/* USER INFO */}
               <div className="flex-1 text-center sm:text-left">
-                <h2 className="text-2xl font-bold text-gray-900 mb-1">
+                <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
                   {profile?.username || "User"}
                 </h2>
-                <p className="text-gray-600 mb-3">{profile?.email}</p>
-                <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm font-medium">
+                <p className="text-gray-600 mb-4 flex items-center gap-2 justify-center sm:justify-start flex-wrap">
+                  <Mail className="w-4 h-4 flex-shrink-0" />
+                  <span className="break-all">{profile?.email}</span>
+                </p>
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full text-sm font-semibold shadow-md">
                   <Shield className="w-4 h-4" />
                   <span className="capitalize">{profile?.role || "User"}</span>
                 </div>
@@ -438,189 +452,197 @@ function MyProfile() {
 
               {/* EDIT BUTTON */}
               {!isEditing && (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition flex items-center gap-2 shadow-sm"
-                >
-                  <Edit2 className="w-4 h-4" />
-                  Edit Profile
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* FORM SECTION */}
-          <div className="p-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">Account Information</h3>
-
-            <div className="space-y-6">
-              {/* USERNAME */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Username
-                </label>
-                {isEditing ? (
-                  <div>
-                    <input
-                      type="text"
-                      value={formData.username}
-                      onChange={(e) => handleInputChange("username", e.target.value)}
-                      className={`w-full px-4 py-3 text-base border ${
-                        errors.username ? "border-red-300 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"
-                      } rounded-lg focus:outline-none focus:ring-2 transition`}
-                      placeholder="Enter your username"
-                    />
-                    {errors.username && (
-                      <p className="text-red-600 text-sm mt-1.5 flex items-center gap-1">
-                        <AlertCircle className="w-4 h-4" />
-                        {errors.username}
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 text-base">
-                    {profile?.username}
-                  </div>
-                )}
-              </div>
-
-              {/* EMAIL */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address
-                </label>
-                {isEditing ? (
-                  <div>
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => handleInputChange("email", e.target.value)}
-                      className={`w-full px-4 py-3 text-base border ${
-                        errors.email ? "border-red-300 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"
-                      } rounded-lg focus:outline-none focus:ring-2 transition`}
-                      placeholder="Enter your email"
-                    />
-                    {errors.email && (
-                      <p className="text-red-600 text-sm mt-1.5 flex items-center gap-1">
-                        <AlertCircle className="w-4 h-4" />
-                        {errors.email}
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 text-base">
-                    {profile?.email}
-                  </div>
-                )}
-              </div>
-
-              {/* PHONE NUMBER */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Phone Number
-                </label>
-                {isEditing ? (
-                  <div>
-                    <input
-                      type="text"
-                      value={formData.number}
-                      onChange={(e) => handleInputChange("number", e.target.value)}
-                      className={`w-full px-4 py-3 text-base border ${
-                        errors.number ? "border-red-300 focus:ring-red-500" : "border-gray-300 focus:ring-blue-500"
-                      } rounded-lg focus:outline-none focus:ring-2 transition`}
-                      placeholder="Enter your phone number"
-                      maxLength={10}
-                    />
-                    {errors.number && (
-                      <p className="text-red-600 text-sm mt-1.5 flex items-center gap-1">
-                        <AlertCircle className="w-4 h-4" />
-                        {errors.number}
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 text-base">
-                    {profile?.number || "Not set"}
-                  </div>
-                )}
-              </div>
-
-              {/* GOOGLE ACCOUNT INFO */}
-              {profile?.googleId && (
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <Mail className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-blue-900">Google Account</p>
-                      <p className="text-sm text-blue-700 mt-0.5">
-                        You're signed in with your Google account
-                      </p>
-                    </div>
-                  </div>
+                <div className="sm:ml-auto">
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="px-6 py-3 bg-[#4f46e5] hover:bg-indigo-700 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl hover:scale-105 flex items-center gap-2"
+                  >
+                    <Edit2 className="w-5 h-5" />
+                    Edit Profile
+                  </button>
                 </div>
               )}
             </div>
 
-            {/* ACTION BUTTONS (only in edit mode) */}
-            {isEditing && (
-              <div className="flex gap-3 mt-8 pt-6 border-t border-gray-200">
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="flex-1 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {saving ? (
-                    <>
-                      <ClipLoader size={16} color="#ffffff" />
-                      <span>Saving...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4" />
-                      <span>Save Changes</span>
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={handleCancel}
-                  disabled={saving}
-                  className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition disabled:opacity-50 flex items-center gap-2"
-                >
-                  <X className="w-4 h-4" />
-                  <span>Cancel</span>
-                </button>
+            {/* FORM SECTION */}
+            <div className="space-y-8">
+              <div className="flex items-center gap-3">
+                <div className="w-1 h-8 bg-gradient-to-b from-indigo-600 to-purple-600 rounded-full"></div>
+                <h3 className="text-2xl font-bold text-gray-900">Account Information</h3>
               </div>
-            )}
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* USERNAME */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <User className="w-4 h-4 text-indigo-600" />
+                    Username
+                  </label>
+                  {isEditing ? (
+                    <div>
+                      <input
+                        type="text"
+                        value={formData.username}
+                        onChange={(e) => handleInputChange("username", e.target.value)}
+                        className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all ${
+                          errors.username ? "border-red-500" : "border-gray-200 hover:border-indigo-300"
+                        }`}
+                        placeholder="Enter your username"
+                      />
+                      {errors.username && (
+                        <p className="text-red-600 text-sm mt-2 flex items-center gap-1.5">
+                          <AlertCircle className="w-4 h-4" />
+                          {errors.username}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-xl text-gray-900 font-medium">
+                      {profile?.username}
+                    </div>
+                  )}
+                </div>
+
+                {/* EMAIL */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <Mail className="w-4 h-4 text-indigo-600" />
+                    Email Address
+                  </label>
+                  {isEditing ? (
+                    <div>
+                      <input
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => handleInputChange("email", e.target.value)}
+                        className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all ${
+                          errors.email ? "border-red-500" : "border-gray-200 hover:border-indigo-300"
+                        }`}
+                        placeholder="Enter your email"
+                      />
+                      {errors.email && (
+                        <p className="text-red-600 text-sm mt-2 flex items-center gap-1.5">
+                          <AlertCircle className="w-4 h-4" />
+                          {errors.email}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-xl text-gray-900 font-medium break-all">
+                      {profile?.email}
+                    </div>
+                  )}
+                </div>
+
+                {/* PHONE NUMBER */}
+                <div className="space-y-2 lg:col-span-2">
+                  <label className="block text-sm font-semibold text-gray-700 flex items-center gap-2">
+                    <Contact className="w-4 h-4 text-indigo-600" />
+                    Phone Number
+                  </label>
+                  {isEditing ? (
+                    <div>
+                      <input
+                        type="text"
+                        value={formData.number}
+                        onChange={(e) => handleInputChange("number", e.target.value)}
+                        className={`w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all ${
+                          errors.number ? "border-red-500" : "border-gray-200 hover:border-indigo-300"
+                        }`}
+                        placeholder="Enter 10-digit phone number"
+                        maxLength={10}
+                      />
+                      {errors.number && (
+                        <p className="text-red-600 text-sm mt-2 flex items-center gap-1.5">
+                          <AlertCircle className="w-4 h-4" />
+                          {errors.number}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="px-4 py-3 bg-gray-50 border-2 border-gray-100 rounded-xl text-gray-900 font-medium">
+                      {profile?.number || "Not set"}
+                    </div>
+                  )}
+                </div>
+
+                {/* GOOGLE ACCOUNT INFO */}
+                {profile?.googleId && (
+                  <div className="lg:col-span-2 p-5 bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-xl">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md">
+                        <Mail className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-indigo-900 mb-1">Google Account Connected</p>
+                        <p className="text-sm text-indigo-700">
+                          You're signed in with your Google account. Some settings may be managed by Google.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* ACTION BUTTONS */}
+              {isEditing && (
+                <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t-2 border-gray-100">
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="flex-1 px-8 py-4 bg-[#4f46e5] hover:bg-indigo-700 text-white rounded-xl font-bold text-lg transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+                  >
+                    {saving ? (
+                      <>
+                        <ClipLoader size={20} color="#ffffff" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-5 h-5" />
+                        <span>Save Changes</span>
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={handleCancel}
+                    disabled={saving}
+                    className="flex-1 sm:flex-none px-8 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold text-lg transition-all disabled:opacity-50 flex items-center justify-center gap-3"
+                  >
+                    <X className="w-5 h-5" />
+                    <span>Cancel</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* PASSWORD & SECURITY SECTION */}
         {profile && !profile.googleId && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mt-6">
-            <div className="p-8">
-              <div className="flex items-center justify-between mb-6">
+          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden animate-slideUp">
+            <div className="p-6 sm:p-10">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-1 h-8 bg-gradient-to-b from-indigo-600 to-purple-600 rounded-full"></div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Password & Security</h3>
-                  <p className="text-sm text-gray-600 mt-1">Manage your password settings</p>
+                  <h3 className="text-2xl font-bold text-gray-900">Password & Security</h3>
+                  <p className="text-sm text-gray-600 mt-1">Manage your password and security settings</p>
                 </div>
               </div>
 
-              {/* PASSWORD OPTIONS */}
-              <div className="space-y-4">
-                {/* CHANGE PASSWORD BUTTON */}
+              <div className="space-y-6">
+                {/* INITIAL BUTTONS */}
                 {!showPasswordSection && !showForgotPassword && (
-                  <div className="flex gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <button
                       onClick={() => {
                         setShowPasswordSection(true);
                         setShowForgotPassword(false);
                       }}
-                      className="flex-1 px-4 py-3 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg font-medium transition flex items-center justify-center gap-2 border border-blue-200"
+                      className="px-6 py-4 bg-[#4f46e5] hover:bg-indigo-700 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3"
                     >
-                      <Lock className="w-4 h-4" />
-                      Change Password
+                      <Lock className="w-5 h-5" />
+                      <span>Change Password</span>
                     </button>
                     <button
                       onClick={() => {
@@ -628,51 +650,59 @@ function MyProfile() {
                         setShowPasswordSection(false);
                         setResetEmail(profile?.email || "");
                       }}
-                      className="flex-1 px-4 py-3 bg-gray-50 hover:bg-gray-100 text-gray-700 rounded-lg font-medium transition flex items-center justify-center gap-2 border border-gray-200"
+                      className="px-6 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-3"
                     >
-                      <Send className="w-4 h-4" />
-                      Reset via Email
+                      <Send className="w-5 h-5" />
+                      <span>Reset via Email</span>
                     </button>
                   </div>
                 )}
 
                 {/* FORGOT PASSWORD SECTION */}
                 {showForgotPassword && (
-                  <div className="space-y-4 pt-6 border-t border-gray-200">
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <p className="text-sm text-blue-900 font-medium mb-1">Reset Password via Email</p>
-                      <p className="text-sm text-blue-700">
-                        We'll send a password reset link to your email address.
-                      </p>
+                  <div className="space-y-6 pt-6 border-t-2 border-gray-100">
+                    <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-xl p-5">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                          <Send className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-indigo-900 mb-1">Reset Password via Email</p>
+                          <p className="text-sm text-indigo-700">
+                            We'll send a password reset link to your email address.
+                          </p>
+                        </div>
+                      </div>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-indigo-600" />
                         Email Address
                       </label>
                       <input
                         type="email"
                         value={resetEmail}
                         onChange={(e) => setResetEmail(e.target.value)}
-                        className="w-full px-4 py-3 text-base border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                        className="w-full px-4 py-3 border-2 border-gray-200 hover:border-indigo-300 focus:border-indigo-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
                         placeholder="Enter your email"
                       />
                     </div>
 
-                    <div className="flex gap-3">
+                    <div className="flex flex-col sm:flex-row gap-3">
                       <button
                         onClick={handleForgotPassword}
                         disabled={sendingResetEmail}
-                        className="flex-1 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className="flex-1 px-6 py-4 bg-[#4f46e5] hover:bg-indigo-700 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
                         {sendingResetEmail ? (
                           <>
-                            <ClipLoader size={16} color="#ffffff" />
+                            <ClipLoader size={18} color="#ffffff" />
                             <span>Sending...</span>
                           </>
                         ) : (
                           <>
-                            <Send className="w-4 h-4" />
+                            <Send className="w-5 h-5" />
                             <span>Send Reset Link</span>
                           </>
                         )}
@@ -683,9 +713,9 @@ function MyProfile() {
                           setResetEmail("");
                         }}
                         disabled={sendingResetEmail}
-                        className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition disabled:opacity-50 flex items-center gap-2"
+                        className="flex-1 sm:flex-none px-6 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-5 h-5" />
                         <span>Cancel</span>
                       </button>
                     </div>
@@ -694,10 +724,11 @@ function MyProfile() {
 
                 {/* CHANGE PASSWORD SECTION */}
                 {showPasswordSection && (
-                  <div className="space-y-6 pt-6 border-t border-gray-200">
+                  <div className="space-y-6 pt-6 border-t-2 border-gray-100">
                     {/* Current Password */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <Lock className="w-4 h-4 text-indigo-600" />
                         Current Password
                       </label>
                       <div className="relative">
@@ -705,21 +736,21 @@ function MyProfile() {
                           type={showPasswords.current ? "text" : "password"}
                           value={passwordData.currentPassword}
                           onChange={(e) => handlePasswordChange("currentPassword", e.target.value)}
-                          className={`w-full px-4 py-3 pr-12 text-base border ${
-                            passwordErrors.currentPassword ? "border-red-300" : "border-gray-300"
-                          } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
+                          className={`w-full px-4 py-3 pr-12 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all ${
+                            passwordErrors.currentPassword ? "border-red-500" : "border-gray-200 hover:border-indigo-300"
+                          }`}
                           placeholder="Enter current password"
                         />
                         <button
                           type="button"
                           onClick={() => setShowPasswords(prev => ({ ...prev, current: !prev.current }))}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-indigo-600 transition-colors"
                         >
                           {showPasswords.current ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                         </button>
                       </div>
                       {passwordErrors.currentPassword && (
-                        <p className="text-red-600 text-sm mt-1.5 flex items-center gap-1">
+                        <p className="text-red-600 text-sm mt-2 flex items-center gap-1.5">
                           <AlertCircle className="w-4 h-4" />
                           {passwordErrors.currentPassword}
                         </p>
@@ -728,7 +759,8 @@ function MyProfile() {
 
                     {/* New Password */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <Lock className="w-4 h-4 text-indigo-600" />
                         New Password
                       </label>
                       <div className="relative">
@@ -736,21 +768,21 @@ function MyProfile() {
                           type={showPasswords.new ? "text" : "password"}
                           value={passwordData.newPassword}
                           onChange={(e) => handlePasswordChange("newPassword", e.target.value)}
-                          className={`w-full px-4 py-3 pr-12 text-base border ${
-                            passwordErrors.newPassword ? "border-red-300" : "border-gray-300"
-                          } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
+                          className={`w-full px-4 py-3 pr-12 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all ${
+                            passwordErrors.newPassword ? "border-red-500" : "border-gray-200 hover:border-indigo-300"
+                          }`}
                           placeholder="Enter new password"
                         />
                         <button
                           type="button"
                           onClick={() => setShowPasswords(prev => ({ ...prev, new: !prev.new }))}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-indigo-600 transition-colors"
                         >
                           {showPasswords.new ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                         </button>
                       </div>
                       {passwordErrors.newPassword && (
-                        <p className="text-red-600 text-sm mt-1.5 flex items-center gap-1">
+                        <p className="text-red-600 text-sm mt-2 flex items-center gap-1.5">
                           <AlertCircle className="w-4 h-4" />
                           {passwordErrors.newPassword}
                         </p>
@@ -759,7 +791,8 @@ function MyProfile() {
 
                     {/* Confirm Password */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-indigo-600" />
                         Confirm New Password
                       </label>
                       <div className="relative">
@@ -767,21 +800,21 @@ function MyProfile() {
                           type={showPasswords.confirm ? "text" : "password"}
                           value={passwordData.confirmPassword}
                           onChange={(e) => handlePasswordChange("confirmPassword", e.target.value)}
-                          className={`w-full px-4 py-3 pr-12 text-base border ${
-                            passwordErrors.confirmPassword ? "border-red-300" : "border-gray-300"
-                          } rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition`}
+                          className={`w-full px-4 py-3 pr-12 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all ${
+                            passwordErrors.confirmPassword ? "border-red-500" : "border-gray-200 hover:border-indigo-300"
+                          }`}
                           placeholder="Confirm new password"
                         />
                         <button
                           type="button"
                           onClick={() => setShowPasswords(prev => ({ ...prev, confirm: !prev.confirm }))}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-indigo-600 transition-colors"
                         >
                           {showPasswords.confirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                         </button>
                       </div>
                       {passwordErrors.confirmPassword && (
-                        <p className="text-red-600 text-sm mt-1.5 flex items-center gap-1">
+                        <p className="text-red-600 text-sm mt-2 flex items-center gap-1.5">
                           <AlertCircle className="w-4 h-4" />
                           {passwordErrors.confirmPassword}
                         </p>
@@ -789,32 +822,42 @@ function MyProfile() {
                     </div>
 
                     {/* Password Requirements */}
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <p className="text-sm text-blue-900 font-medium mb-2">
+                    <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-xl p-5">
+                      <p className="text-sm font-bold text-indigo-900 mb-3 flex items-center gap-2">
+                        <Shield className="w-4 h-4" />
                         Password Requirements:
                       </p>
-                      <ul className="text-sm text-blue-800 space-y-1">
-                        <li>• At least 6 characters long</li>
-                        <li>• Must contain at least one number</li>
-                        <li>• Must be different from current password</li>
+                      <ul className="text-sm text-indigo-800 space-y-2">
+                        <li className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></div>
+                          <span>At least 6 characters long</span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></div>
+                          <span>Must contain at least one number</span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full"></div>
+                          <span>Must be different from current password</span>
+                        </li>
                       </ul>
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex gap-3 pt-4">
+                    <div className="flex flex-col sm:flex-row gap-3 pt-4">
                       <button
                         onClick={handleChangePassword}
                         disabled={changingPassword}
-                        className="flex-1 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className="flex-1 px-6 py-4 bg-[#4f46e5] hover:bg-indigo-700 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
                         {changingPassword ? (
                           <>
-                            <ClipLoader size={16} color="#ffffff" />
+                            <ClipLoader size={18} color="#ffffff" />
                             <span>Changing...</span>
                           </>
                         ) : (
                           <>
-                            <Lock className="w-4 h-4" />
+                            <Lock className="w-5 h-5" />
                             <span>Change Password</span>
                           </>
                         )}
@@ -830,9 +873,9 @@ function MyProfile() {
                           setPasswordErrors({});
                         }}
                         disabled={changingPassword}
-                        className="px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition disabled:opacity-50 flex items-center gap-2"
+                        className="flex-1 sm:flex-none px-6 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-5 h-5" />
                         <span>Cancel</span>
                       </button>
                     </div>
@@ -843,6 +886,27 @@ function MyProfile() {
           </div>
         )}
       </div>
+
+      {/* CSS Animations */}
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-fadeIn {
+          animation: fadeIn 0.5s ease-out;
+        }
+        
+        .animate-slideUp {
+          animation: slideUp 0.6s ease-out;
+        }
+      `}</style>
     </div>
   );
 }

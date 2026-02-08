@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { BrowserRouter, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, useLocation, useNavigate } from "react-router-dom";
 import './App.css';
 import NavBar from "./components/Navbar.jsx";
 import AdminNavbar from "./components/Admin/AdminNavbar.jsx";
@@ -7,6 +7,8 @@ import { ArrowUp } from "lucide-react";
 import PublicRoutes from "./routes/publicRoutes";
 import UserRoutes from "./routes/userRoutes";
 import AdminRoutes from "./routes/adminRoutes";
+import { AuthProvider, useAuth } from "./context/authContext";
+
 
 // Scroll to top button
 const ScrollTopButton = ({ threshold = 200 }) => {
@@ -33,7 +35,22 @@ const ScrollTopButton = ({ threshold = 200 }) => {
 
 const AppContent = () => {
   const location = useLocation();
-  const isAdminRoute = location.pathname.startsWith('/admin');
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  
+  const isAdminRoute = location.pathname.startsWith('/admin') || user?.role === 'admin';
+
+  useEffect(() => {
+    
+    if (location.pathname === '/' && user) {
+      console.log('Auto-redirect: User detected, redirecting based on role');
+      if (user.role === 'admin') {
+        navigate('/admin/dashboard', { replace: true });
+      } else {
+        navigate('/courses', { replace: true });
+      }
+    }
+  }, [user, navigate, location.pathname]);
 
   return (
     <>
@@ -51,7 +68,9 @@ const AppContent = () => {
 const App = () => {
   return (
     <BrowserRouter>
-      <AppContent />
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </BrowserRouter>
   );
 };

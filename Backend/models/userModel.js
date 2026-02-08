@@ -34,10 +34,6 @@ export const User = sequelize.define("users", {
         type: DataTypes.STRING(100),
         allowNull: true
     },
-    googleId: {
-        type: DataTypes.STRING(),
-        allowNull: true
-    },
     profileImage: {
         type: DataTypes.STRING(),
         allowNull: true,

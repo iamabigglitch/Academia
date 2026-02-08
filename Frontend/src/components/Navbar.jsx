@@ -1,8 +1,9 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { navbarStyles } from "../assets/dummyStyles";
 import logo from "../assets/logo.png";
-import { BookOpen, Home, BookMarked, Users, Phone, Menu, X, BookOpenText, User as UserIcon } from "lucide-react";
+import { BookOpen, Home, BookMarked, Users, Phone, Menu, X, BookOpenText, User } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/authContext";
 
 const baseNavPublic = [
   { name: "Home", icon: Home, href: "/" },
@@ -21,63 +22,20 @@ const baseNavAuthenticated = [
 
 const NavBar = () => {
   const navigate = useNavigate();
+  const { user: contextUser, logout: contextLogout } = useAuth();
+  
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showNavbar, setShowNavbar] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState(null);
 
   const menuRef = useRef(null);
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      setIsAuthenticated(true);
-      
-      const userData = localStorage.getItem("user");
-      if (userData) {
-        try {
-          const parsedUser = JSON.parse(userData);
-          setUser(parsedUser);
-        } catch (error) {
-          console.error("Error parsing user data:", error);
-        }
-      }
-    } else {
-      setIsAuthenticated(false);
-      setUser(null);
-    }
-  }, []);
-
-  useEffect(() => {
-    const handleStorageChange = () => {
-      const userData = localStorage.getItem("user");
-      if (userData) {
-        try {
-          const parsedUser = JSON.parse(userData);
-          setUser(parsedUser);
-        } catch (error) {
-          console.error("Error parsing user data:", error);
-        }
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, []);
-
+  const isAuthenticated = !!contextUser;
   const navItems = isAuthenticated ? baseNavAuthenticated : baseNavPublic;
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setIsAuthenticated(false);
-    setUser(null);
     setIsOpen(false);
-    navigate("/");
+    contextLogout();
   };
 
   const desktopLinkClass = (isActive) =>
@@ -92,19 +50,13 @@ const NavBar = () => {
         : navbarStyles.mobileMenuItemHover
     }`;
 
-  const getUserInitials = () => {
-    if (!user || !user.username) return "U";
-    return user.username.charAt(0).toUpperCase();
-  };
-
   const getProfilePhoto = () => {
-    
-    if (user && user.profileImage) {
-      return `http://localhost:3000/${user.profileImage}`;
+    if (contextUser && contextUser.profileImage) {
+      return `http://localhost:3000/${contextUser.profileImage}`;
     }
     
-    if (user && user.username) {
-      return `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=0369a1&color=fff&size=128&bold=true`;
+    if (contextUser && contextUser.username) {
+      return `https://ui-avatars.com/api/?name=${encodeURIComponent(contextUser.username)}&background=0369a1&color=fff&size=128&bold=true`;
     }
     
     return `https://ui-avatars.com/api/?name=U&background=0369a1&color=fff&size=128&bold=true`;
@@ -132,7 +84,6 @@ const NavBar = () => {
             </span>
           </div>
 
-        
           <div className={navbarStyles.desktop}>
             <div className={navbarStyles.desktopNavContainer}>
               {navItems.map((item) => {
@@ -174,41 +125,56 @@ const NavBar = () => {
               </>
             ) : (
               <div className="relative group">
-               
                 <img 
                   src={getProfilePhoto()} 
-                  alt={user?.username || "User"} 
-                  className="w-10 h-10 rounded-full border-2 border-sky-500 cursor-pointer object-cover"
+                  alt={contextUser?.username || "User"} 
+                  className="w-10 h-10 rounded-full border-2 border-sky-500 cursor-pointer object-cover transition-all hover:scale-110 hover:shadow-lg"
                   onError={(e) => {
-                    
-                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'U')}&background=0369a1&color=fff&size=128&bold=true`;
+                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(contextUser?.username || 'U')}&background=0369a1&color=fff&size=128&bold=true`;
                   }}
                 />
 
-              
-                <div className="absolute right-0 mt-3 w-48 bg-white rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                  <div className="px-4 py-3 border-b border-gray-100">
-                    <p className="font-semibold text-gray-800">{user?.username || "User"}</p>
-                    <p className="text-xs text-gray-500">{user?.email || ""}</p>
+                {/* Enhanced Dropdown */}
+                <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-100 overflow-hidden">
+                  {/* User Info Header */}
+                  <div className="px-5 py-4 border-b border-gray-100 bg-gradient-to-br from-sky-50 to-cyan-50">
+                    <p className="font-bold text-gray-900 text-base">{contextUser?.username || "User"}</p>
+                    <p className="text-xs text-gray-600 mt-0.5">{contextUser?.email || ""}</p>
+                    <div className="mt-2 inline-block px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-sky-600 to-cyan-600 text-white">
+                      Student
+                    </div>
                   </div>
+
+                  {/* Profile Link */}
                   <NavLink
                     to="/profile"
-                    className="block px-4 py-2 hover:bg-sky-50 text-gray-700"
+                    className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 text-gray-700 font-medium transition-colors group/item"
                   >
-                    Profile
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-sky-100 transition-colors">
+                      <User size={16} className="text-sky-600" />
+                    </div>
+                    <span className="group-hover/item:translate-x-1 transition-transform">My Profile</span>
                   </NavLink>
+
+                  {/* Logout Button */}
                   <button
                     onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 hover:bg-sky-50 rounded-b-xl text-red-500"
+                    className="flex items-center gap-3 w-full px-5 py-3 hover:bg-red-50 text-red-600 font-medium transition-colors rounded-b-2xl group/item"
                   >
-                    Logout
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-red-50 transition-colors group-hover/item:bg-red-100">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                      </svg>
+                    </div>
+                    <span className="group-hover/item:translate-x-1 transition-transform">Logout</span>
                   </button>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Mobile Toggle */}
           <button
             onClick={() => setIsOpen(!isOpen)}
             className={navbarStyles.mobileMenuButton}
@@ -247,7 +213,6 @@ const NavBar = () => {
               );
             })}
 
-            {/* Mobile Auth */}
             <div className="mt-6 space-y-3">
               {!isAuthenticated ? (
                 <>
@@ -269,35 +234,46 @@ const NavBar = () => {
                 </>
               ) : (
                 <>
-                  <div className="flex items-center justify-center gap-3 px-4 py-3 rounded-xl bg-sky-50">
+                  {/* Enhanced User Info Card */}
+                  <div className="flex items-center gap-3 px-4 py-4 rounded-xl shadow-sm border bg-gradient-to-br from-sky-50 to-cyan-50 border-sky-200">
                     <img 
                       src={getProfilePhoto()} 
-                      alt={user?.username || "User"} 
-                      className="w-10 h-10 rounded-full object-cover"
+                      alt={contextUser?.username || "User"} 
+                      className="w-12 h-12 rounded-full object-cover border-2 border-sky-500 shadow-md"
                       onError={(e) => {
-                     
-                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.username || 'U')}&background=0369a1&color=fff&size=128&bold=true`;
+                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(contextUser?.username || 'U')}&background=0369a1&color=fff&size=128&bold=true`;
                       }}
                     />
-                    <div className="text-left">
-                      <p className="font-semibold text-gray-800">{user?.username || "User"}</p>
-                      <p className="text-xs text-gray-500">{user?.email || ""}</p>
+                    <div className="flex-1">
+                      <p className="font-bold text-gray-900">{contextUser?.username || "User"}</p>
+                      <p className="text-xs text-gray-600">{contextUser?.email || ""}</p>
+                      <div className="mt-1 inline-block px-2 py-0.5 rounded-full text-xs font-semibold bg-gradient-to-r from-sky-600 to-cyan-600 text-white">
+                        Student
+                      </div>
                     </div>
                   </div>
 
+                  {/* Profile Link */}
                   <NavLink
                     to="/profile"
                     onClick={() => setIsOpen(false)}
-                    className="block text-center px-4 py-3 rounded-xl font-semibold text-sky-700 border border-sky-200 hover:bg-sky-50 transition"
+                    className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold transition-all shadow-sm bg-gradient-to-r from-sky-600 to-cyan-600 text-white"
                   >
-                    My Profile
+                    <User size={18} />
+                    <span>My Profile</span>
                   </NavLink>
                   
+                  {/* Logout Button */}
                   <button
                     onClick={handleLogout}
-                    className="block w-full text-center px-4 py-3 rounded-xl font-semibold text-red-500 border border-red-200 hover:bg-red-50 transition"
+                    className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl font-semibold text-red-600 border-2 border-red-200 hover:bg-red-50 transition-all"
                   >
-                    Logout
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                      <polyline points="16 17 21 12 16 7"/>
+                      <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    <span>Logout</span>
                   </button>
                 </>
               )}

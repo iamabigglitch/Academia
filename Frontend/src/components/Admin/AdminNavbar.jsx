@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { navbarStyles } from "../../assets/dummyStyles";
 import logo from "../../assets/logo.png";
-import { LayoutDashboard, PlusCircle, ListChecks, ShoppingBag, Menu, X } from "lucide-react";
+import { LayoutDashboard, PlusCircle, ListChecks, ShoppingBag, Menu, X, User } from "lucide-react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/authContext";
 
 const PRIMARY_COLOR = "#1c398e";
 const PRIMARY_LIGHT = "#2d4db5";
@@ -17,10 +18,11 @@ const adminNav = [
 
 const AdminNavbar = () => {
   const navigate = useNavigate();
+  const { user: contextUser, logout: contextLogout } = useAuth();
+  
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showNavbar, setShowNavbar] = useState(true);
-  const [user, setUser] = useState(null);
 
   const menuRef = useRef(null);
 
@@ -33,29 +35,20 @@ const AdminNavbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Get user data
-  useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (userData) {
-      try {
-        setUser(JSON.parse(userData));
-      } catch (error) {
-        console.error("Error parsing user data:", error);
-      }
-    }
-  }, []);
-
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("user");
-    navigate("/login");
+    setIsOpen(false);
+    contextLogout(); 
   };
 
   const getProfilePhoto = () => {
-    if (user && user.username) {
-      return `https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=1c398e&color=fff&size=128&bold=true`;
+    if (contextUser && contextUser.profileImage) {
+      return `http://localhost:3000/${contextUser.profileImage}`;
     }
+    
+    if (contextUser && contextUser.username) {
+      return `https://ui-avatars.com/api/?name=${encodeURIComponent(contextUser.username)}&background=1c398e&color=fff&size=128&bold=true`;
+    }
+    
     return "https://ui-avatars.com/api/?name=Admin&background=1c398e&color=fff&size=128&bold=true";
   };
 
@@ -143,32 +136,49 @@ const AdminNavbar = () => {
               {/* User Avatar with Photo */}
               <img 
                 src={getProfilePhoto()} 
-                alt={user?.username || "Admin"} 
-                className="w-10 h-10 rounded-full border-2 cursor-pointer object-cover transition-all hover:scale-110"
+                alt={contextUser?.username || "Admin"} 
+                className="w-10 h-10 rounded-full border-2 cursor-pointer object-cover transition-all hover:scale-110 hover:shadow-lg"
                 style={{ borderColor: PRIMARY_COLOR }}
+                onError={(e) => {
+                  e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(contextUser?.username || 'Admin')}&background=1c398e&color=fff&size=128&bold=true`;
+                }}
               />
 
-              {/* Avatar Dropdown */}
-              <div className="absolute right-0 mt-3 w-48 bg-white rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 border border-gray-100">
-                <div className="px-4 py-3 border-b border-gray-100">
-                  <p className="font-semibold text-gray-800">{user?.username || "Admin"}</p>
-                  <p className="text-xs text-gray-500">{user?.email || ""}</p>
-                  <p className="text-xs font-medium mt-1" style={{ color: PRIMARY_COLOR }}>Administrator</p>
+              {/* Avatar Dropdown - FIXED POSITIONING */}
+              <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 border border-gray-100 overflow-hidden">
+                {/* User Info Header */}
+                <div className="px-5 py-4 border-b border-gray-100" style={{ backgroundColor: `${PRIMARY_COLOR}08` }}>
+                  <p className="font-bold text-gray-900 text-base">{contextUser?.username || "Admin"}</p>
+                  <p className="text-xs text-gray-600 mt-0.5">{contextUser?.email || ""}</p>
+                  <div className="mt-2 inline-block px-3 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: PRIMARY_COLOR, color: 'white' }}>
+                    Administrator
+                  </div>
                 </div>
 
-                   <NavLink
-                    to="/profile"
-                    onClick={() => setIsOpen(false)}
-                    className="block text-center px-4 py-3 rounded-xl font-semibold text-sky-700 border border-sky-200 hover:bg-sky-50 transition"
-                    >
-                    My Profile
-                   </NavLink>
+                {/* Profile Link */}
+                <NavLink
+                  to="/admin/profile"
+                  className="flex items-center gap-3 px-5 py-3 hover:bg-gray-50 text-gray-700 font-medium transition-colors group/item"
+                >
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors" style={{ backgroundColor: `${PRIMARY_COLOR}15` }}>
+                    <User size={16} style={{ color: PRIMARY_COLOR }} />
+                  </div>
+                  <span className="group-hover/item:translate-x-1 transition-transform">My Profile</span>
+                </NavLink>
 
+                {/* Logout Button */}
                 <button
                   onClick={handleLogout}
-                  className="block w-full text-left px-4 py-2 hover:bg-red-50 rounded-b-xl text-red-500 transition-colors"
+                  className="flex items-center gap-3 w-full px-5 py-3 hover:bg-red-50 text-red-600 font-medium transition-colors rounded-b-2xl group/item"
                 >
-                  Logout
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-red-50 transition-colors group-hover/item:bg-red-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                      <polyline points="16 17 21 12 16 7"/>
+                      <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                  </div>
+                  <span className="group-hover/item:translate-x-1 transition-transform">Logout</span>
                 </button>
               </div>
             </div>
@@ -223,28 +233,57 @@ const AdminNavbar = () => {
 
             {/* Mobile Auth */}
             <div className="mt-6 space-y-3">
+              {/* User Info Card */}
               <div 
-                className="flex items-center justify-center gap-3 px-4 py-3 rounded-xl"
-                style={{ backgroundColor: `${PRIMARY_COLOR}15` }}
+                className="flex items-center gap-3 px-4 py-4 rounded-xl shadow-sm border"
+                style={{ 
+                  backgroundColor: `${PRIMARY_COLOR}08`,
+                  borderColor: `${PRIMARY_COLOR}20`
+                }}
               >
                 <img 
                   src={getProfilePhoto()} 
-                  alt={user?.username || "Admin"} 
-                  className="w-10 h-10 rounded-full object-cover border-2"
+                  alt={contextUser?.username || "Admin"} 
+                  className="w-12 h-12 rounded-full object-cover border-2 shadow-md"
                   style={{ borderColor: PRIMARY_COLOR }}
+                  onError={(e) => {
+                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(contextUser?.username || 'Admin')}&background=1c398e&color=fff&size=128&bold=true`;
+                  }}
                 />
-                <div className="text-left">
-                  <p className="font-semibold text-gray-800">{user?.username || "Admin"}</p>
-                  <p className="text-xs text-gray-500">{user?.email || ""}</p>
-                  <p className="text-xs font-medium" style={{ color: PRIMARY_COLOR }}>Administrator</p>
+                <div className="flex-1">
+                  <p className="font-bold text-gray-900">{contextUser?.username || "Admin"}</p>
+                  <p className="text-xs text-gray-600">{contextUser?.email || ""}</p>
+                  <div className="mt-1 inline-block px-2 py-0.5 rounded-full text-xs font-semibold" style={{ backgroundColor: PRIMARY_COLOR, color: 'white' }}>
+                    Admin
+                  </div>
                 </div>
               </div>
+
+              {/* Profile Link */}
+              <NavLink
+                to="/admin/profile"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold transition-all shadow-sm"
+                style={{ 
+                  backgroundColor: PRIMARY_COLOR,
+                  color: 'white'
+                }}
+              >
+                <User size={18} />
+                <span>My Profile</span>
+              </NavLink>
               
+              {/* Logout Button */}
               <button
                 onClick={handleLogout}
-                className="block w-full text-center px-4 py-3 rounded-xl font-semibold text-red-500 border border-red-200 hover:bg-red-50 transition"
+                className="flex items-center justify-center gap-2 w-full px-4 py-3 rounded-xl font-semibold text-red-600 border-2 border-red-200 hover:bg-red-50 transition-all"
               >
-                Logout
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                <span>Logout</span>
               </button>
             </div>
           </div>

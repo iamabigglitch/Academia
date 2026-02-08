@@ -3,9 +3,11 @@ import { Eye, EyeOff, User, Lock, BookOpen, GraduationCap, Users, Award } from '
 import { useNavigate, Link } from 'react-router-dom';
 import { Toaster, toast } from 'react-hot-toast';
 import api from '../../api/axios.js';
+import { useAuth } from '../../context/authContext';
 
 const Login = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -16,7 +18,6 @@ const Login = () => {
     password: ''
   });
 
-  // Validate form
   const validateForm = () => {
     const newErrors = {};
     
@@ -45,13 +46,20 @@ const Login = () => {
 
     try {
       const res = await api.post("/auth/signin", loginData);
-      console.log(res.data.token);
-      console.log('User role:', res.data);
       
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
+      console.log("=== LOGIN RESPONSE ===");
+      console.log("Full response:", res.data);
+      console.log("Token:", res.data.token);
+      console.log("User:", res.data.user);
+      console.log("User role:", res.data.user.role);
+      console.log("=====================");
+      
+      // Use context login function
+      login(res.data.token, res.data.user);
+      
       toast.success(res.data.message || "Login successful!");
-      console.log(res.data.user.role)
+      
+      // Navigate based on role
       if (res.data.user.role === 'admin') {
         navigate('/admin/dashboard');
       } else {
@@ -226,7 +234,6 @@ const Login = () => {
         </div>
       </div>
 
-      {/* Custom CSS for animations */}
       <style>{`
         @keyframes fadeIn {
           from {

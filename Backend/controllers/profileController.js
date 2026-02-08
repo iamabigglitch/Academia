@@ -94,8 +94,9 @@ export const updateProfile = async (req, res) => {
         }
       }
 
-      // Save new image path (normalize slashes)
-      user.profileImage = req.file.path.replace(/\\/g, "/");
+      // Save new image path as relative path (normalize slashes)
+      const relativePath = path.relative(path.join(__dirname, ".."), req.file.path).replace(/\\/g, "/");
+      user.profileImage = relativePath;
     }
 
     await user.save();
