@@ -9,6 +9,7 @@ dotenv.config();
 import authrouter from "./routes/authRoutes.js";
 import courseRoute from "./routes/courseRoute.js";
 import bookingRoute from "./routes/bookingRoute.js";
+import paymentRoute from "./routes/paymentRoute.js";
 import { connection } from "./database/db.js";
 
 const app = express()
@@ -31,6 +32,7 @@ app.use('/uploads', express.static('uploads'));
 app.use("/auth", authrouter) 
 app.use('/api/course', courseRoute);
 app.use('/api/booking', bookingRoute);
+app.use('/api/payments', paymentRoute);
 
 connection();
 

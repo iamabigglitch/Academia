@@ -57,16 +57,11 @@ export const getAllBookings = async (req, res) => {
 
 
 export const checkEnrollment = async (req, res) => {
-  console.log("api hit for checking enrollment")
   try {
     const userId = req.user?.id;
-    console.log(userId)
-    // if (!userId) {
-    //   return res.status(401).json({ success: false, message: "Unauthorized" });
-    // }
 
     const { id:courseId} = req.params;
-console.log(courseId)
+
     if (!courseId) {
       return res.status(400).json({ 
         success: false, 
@@ -74,16 +69,18 @@ console.log(courseId)
       });
     }
 
+    // Check if user has ANY booking for this course
     const booking = await Booking.findOne({
       where: { 
         userId, 
-        courseId,
-        orderStatus: "Completed",
-        paymentStatus: "Paid"
+        courseId
       }
     });
 
-    const enrolled = !!booking;
+    // User is only considered enrolled if booking is Completed
+    const enrolled = booking && 
+      booking.orderStatus === "Completed" && 
+      booking.paymentStatus === "Paid";
 
     res.json({ 
       success: true, 
@@ -97,10 +94,9 @@ console.log(courseId)
 };
 
 export const createBooking = async (req, res) => {
-  console.log("creta booking api hit")
   try {
     const userId = req.user?.id;
-    console.log(userId)
+
     if (!userId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }

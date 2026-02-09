@@ -456,68 +456,76 @@ const CourseDetailPage = () => {
 
     if (isEnrolling) return;
 
-    setIsEnrolling(true);
-    try {
-      const numericPrice = salePrice != null ? salePrice : originalPrice != null ? originalPrice : 0;
-      const payload = {
-        courseId: course.id || courseId,
-        courseName: course.name,
-        teacherName: course.teacher || "",
-        price: numericPrice,
-      };
-
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE}/api/booking/create`, {
-        method: "POST",
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload),
+    // Check if user already has a paid booking for this course
+    if (bookingInfo && bookingInfo.paymentStatus === "Paid") {
+      setToast({
+        message: "You already have a booking for this course. Status is Pending Admin Approval.",
+        type: "info",
       });
+      return;
+    }
 
-      const data = await res.json();
+    // Get numeric price
+    const numericPrice = salePrice != null ? salePrice : originalPrice != null ? originalPrice : 0;
+    
+    // For free courses, enroll directly without payment
+    if (numericPrice === 0) {
+      setIsEnrolling(true);
+      try {
+        const payload = {
+          courseId: course.id || courseId,
+          courseName: course.name,
+          teacherName: course.teacher || "",
+          price: 0,
+        };
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.message || "Failed to create booking");
-      }
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_BASE}/api/booking/create`, {
+          method: "POST",
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload),
+        });
 
-      // If checkout URL (for paid courses), redirect
-      if (data.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-        return;
-      }
+        const data = await res.json();
 
-      // For free courses or confirmed bookings
-      if (data.booking) {
-        setBookingInfo(data.booking);
-        
-        // Re-check enrollment status after creating booking
-        await checkEnrollmentStatus();
-        
-        if (numericPrice === 0) {
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || "Enrollment failed");
+        }
+
+        if (data.booking) {
+          setIsEnrolled(true);
           setToast({
-            message: "Enrolled successfully!",
-            type: "info",
-          });
-        } else if (data.booking.paymentStatus === "Paid" && data.booking.orderStatus === "Completed") {
-          setToast({
-            message: "Enrolled successfully!",
-            type: "info",
-          });
-        } else {
-          setToast({
-            message: "Booking created - please complete payment",
+            message: "Enrolled successfully! Welcome to the course.",
             type: "info",
           });
         }
+      } catch (err) {
+        console.error("Free course enrollment error:", err);
+        setToast({ message: err.message || "Enrollment failed", type: "error" });
+      } finally {
+        setIsEnrolling(false);
       }
-    } catch (err) {
-      console.error("Enroll error:", err);
-      setToast({ message: err.message || "Enrollment failed", type: "error" });
-    } finally {
-      setIsEnrolling(false);
+      return;
     }
+
+    // For paid courses, navigate to payment page
+    navigate("/payment", {
+      state: {
+        courseId: course.id || courseId,
+        courseDetails: {
+          _id: course.id,
+          title: course.name,
+          price: numericPrice,
+          image: course.image,
+          instructor: course.teacher,
+          courseName: course.name,
+          teacherName: course.teacher || ""
+        }
+      }
+    });
   };
 
   if (loading) return <div className="p-6 text-center">Loading course...</div>;
@@ -988,61 +996,28 @@ const CourseDetailPage = () => {
 
               <div className="mt-6">
                 {!isEnrolled ? (
-                  bookingPendingPayment ? (
-                    <div className="flex flex-col gap-2">
-                      <button
-                        onClick={() => handleEnroll()}
-                        disabled={isEnrolling}
-                        className={`${courseDetailStyles.enrollButton} ${courseDetailStyles.enrollPaidButton}`}
-                      >
-                        {isEnrolling ? (
-                          <>
-                            <div
-                              className={courseDetailStyles.enrollSpinner}
-                            ></div>
-                            Processing...
-                          </>
-                        ) : (
-                          <>
-                            <Play className={courseDetailStyles.enrollIcon} />
-                            Complete Payment
-                            <ArrowRight
-                              className={courseDetailStyles.enrollArrow}
-                            />
-                          </>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => navigate("/mycourses")}
-                        className="text-sm underline text-gray-600 hover:text-gray-800"
-                      >
-                        View booking status
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={handleEnroll}
-                      disabled={isEnrolling}
-                      className={`${courseDetailStyles.enrollButton} ${courseDetailStyles.enrollPaidButton}`}
-                    >
-                      {isEnrolling ? (
-                        <>
-                          <div
-                            className={courseDetailStyles.enrollSpinner}
-                          ></div>
-                          Enrolling...
-                        </>
-                      ) : (
-                        <>
-                          <Play className={courseDetailStyles.enrollIcon} />
-                          {courseIsFree ? "Enroll (Free)" : "Enroll Now"}
-                          <ArrowRight
-                            className={courseDetailStyles.enrollArrow}
-                          />
-                        </>
-                      )}
-                    </button>
-                  )
+                  <button
+                    onClick={handleEnroll}
+                    disabled={isEnrolling}
+                    className={`${courseDetailStyles.enrollButton} ${courseDetailStyles.enrollPaidButton}`}
+                  >
+                    {isEnrolling ? (
+                      <>
+                        <div
+                          className={courseDetailStyles.enrollSpinner}
+                        ></div>
+                        Enrolling...
+                      </>
+                    ) : (
+                      <>
+                        <Play className={courseDetailStyles.enrollIcon} />
+                        {courseIsFree ? "Enroll (Free)" : "Enroll Now"}
+                        <ArrowRight
+                          className={courseDetailStyles.enrollArrow}
+                        />
+                      </>
+                    )}
+                  </button>
                 ) : (
                   <button
                     disabled

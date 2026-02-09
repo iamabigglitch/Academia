@@ -1,7 +1,27 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Search, User, BookOpen, BadgeDollarSign, GraduationCap, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { Search, User, BookOpen, BadgeDollarSign, GraduationCap, AlertCircle, CheckCircle, XCircle, X } from 'lucide-react';
 
 const API_BASE = "http://localhost:3000";
+
+const Toast = ({ message, type = "info", onClose }) => {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 4000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  const bgColor = type === "success" ? "bg-green-500/90" : type === "error" ? "bg-red-500/90" : "bg-indigo-500/90";
+  
+  return (
+    <div className={`fixed top-6 right-6 p-4 rounded-2xl shadow-2xl backdrop-blur-md transform transition-all duration-500 z-50 animate-slideInRight ${bgColor} text-white`}>
+      <div className="flex items-center gap-3">
+        <span>{message}</span>
+        <button onClick={onClose} className="hover:scale-110 transition-transform">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const BookingPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -11,6 +31,7 @@ const BookingPage = () => {
   const [page] = useState(1);
   const limit = 200;
   const [processingBookingId, setProcessingBookingId] = useState(null);
+  const [toast, setToast] = useState(null);
 
   const debounceRef = useRef(null);
   const abortRef = useRef(null);
@@ -115,12 +136,19 @@ const BookingPage = () => {
         throw new Error(data.message || "Failed to approve booking");
       }
 
-      await fetchBookings(searchTerm.trim());
+      // Update the booking in state instead of refetching
+      setBookings(prevBookings =>
+        prevBookings.map(booking =>
+          booking.bookingId === bookingId
+            ? { ...booking, orderStatus: "Completed" }
+            : booking
+        )
+      );
       
-      alert("Booking approved successfully!");
+      setToast({ message: "Booking approved successfully!", type: "success" });
     } catch (err) {
       console.error("Approve booking error:", err);
-      alert(err.message || "Failed to approve booking");
+      setToast({ message: err.message || "Failed to approve booking", type: "error" });
     } finally {
       setProcessingBookingId(null);
     }
@@ -149,12 +177,19 @@ const BookingPage = () => {
         throw new Error(data.message || "Failed to reject booking");
       }
 
-      await fetchBookings(searchTerm.trim());
+      // Update the booking in state instead of refetching
+      setBookings(prevBookings =>
+        prevBookings.map(booking =>
+          booking.bookingId === bookingId
+            ? { ...booking, orderStatus: "Cancelled" }
+            : booking
+        )
+      );
       
-      alert("Booking rejected successfully!");
+      setToast({ message: "Booking rejected successfully!", type: "success" });
     } catch (err) {
       console.error("Reject booking error:", err);
-      alert(err.message || "Failed to reject booking");
+      setToast({ message: err.message || "Failed to reject booking", type: "error" });
     } finally {
       setProcessingBookingId(null);
     }
@@ -212,6 +247,13 @@ const BookingPage = () => {
 
   return (
     <div className="min-h-screen bg-[#F1F5F9] pt-24 pb-8">
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <h1 className="text-3xl text-base text-center text-[#1c398e] sm:text-4xl font-bold mb-2" style={{ fontFamily: "'Inter', sans-serif" }}>

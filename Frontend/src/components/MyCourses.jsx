@@ -83,9 +83,13 @@ const MyCourses = () => {
         const teacher = b.teacherName || course.teacher || "Instructor";
         const image = getImageUrl(course.image || b.image);
         const isPaid = (b.paymentStatus || "").toLowerCase() === "paid";
-        const isConfirmed =
-          (b.orderStatus || "").toLowerCase() === "confirmed" ||
-          (b.orderStatus || "").toLowerCase() === "completed";
+        const isCompleted =
+          (b.orderStatus || "").toLowerCase() === "completed" ||
+          (b.orderStatus || "").toLowerCase() === "confirmed";
+
+        // Course is accessible only when admin has approved (orderStatus is completed)
+        // Both paid and free courses need admin approval with the new flow
+        const isAccessible = isPaid && isCompleted;
 
         return {
           id: b.id,
@@ -98,7 +102,7 @@ const MyCourses = () => {
           paymentStatus: b.paymentStatus || "Unpaid",
           orderStatus: b.orderStatus || "Pending",
           enrolledAt: b.createdAt,
-          isAccessible: isPaid || isConfirmed || (b.price ?? 0) === 0,
+          isAccessible,
         };
       });
 
