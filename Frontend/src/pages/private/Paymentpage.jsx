@@ -166,69 +166,70 @@ const PaymentPage = () => {
     return (
       <div style={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        padding: '2rem 1rem',
+        background: 'linear-gradient(135deg, #1c398e 0%, #0f1f4d 100%)',
+        padding: '6rem 1rem 2rem',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
       }}>
         <div style={{
-          maxWidth: '800px',
+          maxWidth: '900px',
+          width: '100%',
           background: 'white',
-          borderRadius: '1.5rem',
-          padding: '3rem',
-          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.2)',
-          textAlign: 'center',
+          borderRadius: '1rem',
+          padding: '2.5rem',
+          boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
         }}>
-          <div style={{ marginBottom: '2rem' }}>
+          {/* Success Icon and Header */}
+          <div style={{ marginBottom: '2rem', textAlign: 'center' }} className="no-print">
             <div style={{
-              width: '100px',
-              height: '100px',
+              width: '80px',
+              height: '80px',
               background: 'linear-gradient(135deg, #48bb78, #38a169)',
               borderRadius: '50%',
               display: 'inline-flex',
               alignItems: 'center',
               justifyContent: 'center',
+              marginBottom: '1rem',
             }}>
-              <CheckCircle2 size={48} color="white" strokeWidth={3} />
+              <CheckCircle2 size={40} color="white" strokeWidth={3} />
             </div>
+            <h1 style={{ fontSize: '2rem', color: '#2d3748', marginBottom: '0.5rem', fontWeight: '700' }}>
+              Payment Successful!
+            </h1>
+            <p style={{ fontSize: '1rem', color: '#718096', marginBottom: '0' }}>
+              Your payment has been processed. Your booking status is <strong>Pending Admin Approval</strong>.
+            </p>
           </div>
 
-          <h1 style={{ fontSize: '2.5rem', color: '#2d3748', marginBottom: '0.5rem', fontWeight: '700' }}>
-            Payment Successful!
-          </h1>
-          <p style={{ fontSize: '1.125rem', color: '#718096', marginBottom: '2rem' }}>
-            Your payment has been processed. Your booking status is <strong>Pending Admin Approval</strong>. You will be able to access the course once the admin approves your enrollment.
-          </p>
-
+          {/* Transaction Details - Printable */}
           <div style={{
             background: '#f7fafc',
-            borderRadius: '1rem',
-            padding: '2rem',
+            borderRadius: '0.75rem',
+            padding: '1.5rem',
             marginBottom: '2rem',
-            textAlign: 'left',
           }}>
-            <h3 style={{ fontSize: '1.25rem', color: '#2d3748', marginBottom: '1.5rem', textAlign: 'center' }}>
+            <h3 style={{ fontSize: '1.125rem', color: '#2d3748', marginBottom: '1rem', textAlign: 'center', fontWeight: '600' }}>
               Transaction Details
             </h3>
             
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid #e2e8f0' }}>
-              <span style={{ color: '#718096', fontWeight: '500' }}>Transaction ID:</span>
-              <span style={{ color: '#2d3748', fontWeight: '600' }}>{transactionId}</span>
+              <span style={{ color: '#718096', fontWeight: '500', fontSize: '0.9rem' }}>Transaction ID:</span>
+              <span style={{ color: '#2d3748', fontWeight: '600', fontSize: '0.9rem' }}>{transactionId}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid #e2e8f0' }}>
-              <span style={{ color: '#718096', fontWeight: '500' }}>Course:</span>
-              <span style={{ color: '#2d3748', fontWeight: '600' }}>{courseDetails.title}</span>
+              <span style={{ color: '#718096', fontWeight: '500', fontSize: '0.9rem' }}>Course:</span>
+              <span style={{ color: '#2d3748', fontWeight: '600', fontSize: '0.9rem' }}>{courseDetails.title}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid #e2e8f0' }}>
-              <span style={{ color: '#718096', fontWeight: '500' }}>Amount Paid:</span>
-              <span style={{ color: '#48bb78', fontWeight: '600', fontSize: '1.125rem' }}>
+              <span style={{ color: '#718096', fontWeight: '500', fontSize: '0.9rem' }}>Amount Paid:</span>
+              <span style={{ color: '#1c398e', fontWeight: '700', fontSize: '1.125rem' }}>
                 ₹{(courseDetails.price * 1.18).toFixed(2)}
               </span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 0' }}>
-              <span style={{ color: '#718096', fontWeight: '500' }}>Date:</span>
-              <span style={{ color: '#2d3748', fontWeight: '600' }}>
+              <span style={{ color: '#718096', fontWeight: '500', fontSize: '0.9rem' }}>Date:</span>
+              <span style={{ color: '#2d3748', fontWeight: '600', fontSize: '0.9rem' }}>
                 {new Date().toLocaleDateString('en-IN', {
                   year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
                 })}
@@ -236,63 +237,79 @@ const PaymentPage = () => {
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
+          {/* Action Buttons - Not printable */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }} className="no-print">
             <button onClick={() => navigate('/mycourses')} style={{
-              padding: '1rem 2rem', borderRadius: '0.75rem', fontSize: '1rem', fontWeight: '600', cursor: 'pointer',
+              padding: '0.875rem 1.5rem', borderRadius: '0.5rem', fontSize: '0.95rem', fontWeight: '600', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', border: 'none',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white',
+              background: '#1c398e', color: 'white', transition: 'all 0.2s',
             }}>
-              <PlayCircle size={20} /> View My Courses
+              <PlayCircle size={18} /> View My Courses
             </button>
             <button onClick={() => window.print()} style={{
-              padding: '1rem 2rem', borderRadius: '0.75rem', fontSize: '1rem', fontWeight: '600', cursor: 'pointer',
+              padding: '0.875rem 1.5rem', borderRadius: '0.5rem', fontSize: '0.95rem', fontWeight: '600', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-              background: 'white', color: '#667eea', border: '2px solid #667eea',
+              background: 'white', color: '#1c398e', border: '2px solid #1c398e', transition: 'all 0.2s',
             }}>
-              <Download size={20} /> Download Receipt
+              <Download size={18} /> Download Receipt
             </button>
             <button onClick={() => navigate('/')} style={{
-              padding: '1rem 2rem', borderRadius: '0.75rem', fontSize: '1rem', fontWeight: '600', cursor: 'pointer',
+              padding: '0.875rem 1.5rem', borderRadius: '0.5rem', fontSize: '0.95rem', fontWeight: '600', cursor: 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
-              background: '#edf2f7', color: '#4a5568', border: 'none',
+              background: '#f7fafc', color: '#4a5568', border: 'none', transition: 'all 0.2s',
             }}>
-              <Home size={20} /> Back to Home
+              <Home size={18} /> Back to Home
             </button>
           </div>
 
-          <div style={{ marginTop: '2rem' }}>
-            <h3 style={{ fontSize: '1.5rem', color: '#2d3748', marginBottom: '1.5rem' }}>What's Next?</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
-              <div style={{ padding: '1.5rem', background: 'linear-gradient(135deg, #f7fafc, #edf2f7)', borderRadius: '1rem' }}>
-                <div style={{ marginBottom: '1rem' }}>
-                  <Mail size={32} color="#667eea" />
+          {/* What's Next Section - Not printable */}
+          <div style={{ marginTop: '1.5rem' }} className="no-print">
+            <h3 style={{ fontSize: '1.25rem', color: '#2d3748', marginBottom: '1rem', fontWeight: '600' }}>What's Next?</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+              <div style={{ padding: '1.25rem', background: 'linear-gradient(135deg, #f0f4ff, #e6eeff)', borderRadius: '0.75rem' }}>
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <Mail size={28} color="#1c398e" />
                 </div>
-                <h4 style={{ fontSize: '1rem', color: '#2d3748', marginBottom: '0.5rem' }}>Check Your Email</h4>
-                <p style={{ fontSize: '0.875rem', color: '#718096', lineHeight: '1.5' }}>
-                  We've sent a confirmation email with your payment receipt and booking details
+                <h4 style={{ fontSize: '0.95rem', color: '#2d3748', marginBottom: '0.4rem', fontWeight: '600' }}>Check Your Email</h4>
+                <p style={{ fontSize: '0.8rem', color: '#718096', lineHeight: '1.4', margin: 0 }}>
+                  Confirmation email with receipt sent
                 </p>
               </div>
-              <div style={{ padding: '1.5rem', background: 'linear-gradient(135deg, #fff5f5, #fef2f2)', borderRadius: '1rem' }}>
-                <div style={{ marginBottom: '1rem' }}>
-                  <AlertCircle size={32} color="#f56565" />
+              <div style={{ padding: '1.25rem', background: 'linear-gradient(135deg, #fff5f5, #fef2f2)', borderRadius: '0.75rem' }}>
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <AlertCircle size={28} color="#e53e3e" />
                 </div>
-                <h4 style={{ fontSize: '1rem', color: '#2d3748', marginBottom: '0.5rem' }}>Pending Approval</h4>
-                <p style={{ fontSize: '0.875rem', color: '#718096', lineHeight: '1.5' }}>
-                  Your booking is pending admin approval. Check "My Courses" for status updates
+                <h4 style={{ fontSize: '0.95rem', color: '#2d3748', marginBottom: '0.4rem', fontWeight: '600' }}>Pending Approval</h4>
+                <p style={{ fontSize: '0.8rem', color: '#718096', lineHeight: '1.4', margin: 0 }}>
+                  Check "My Courses" for status updates
                 </p>
               </div>
-              <div style={{ padding: '1.5rem', background: 'linear-gradient(135deg, #f7fafc, #edf2f7)', borderRadius: '1rem' }}>
-                <div style={{ marginBottom: '1rem' }}>
-                  <Trophy size={32} color="#667eea" />
+              <div style={{ padding: '1.25rem', background: 'linear-gradient(135deg, #f0f4ff, #e6eeff)', borderRadius: '0.75rem' }}>
+                <div style={{ marginBottom: '0.75rem' }}>
+                  <Trophy size={28} color="#1c398e" />
                 </div>
-                <h4 style={{ fontSize: '1rem', color: '#2d3748', marginBottom: '0.5rem' }}>Start Learning</h4>
-                <p style={{ fontSize: '0.875rem', color: '#718096', lineHeight: '1.5' }}>
-                  Once approved, you can access the course and earn your certificate
+                <h4 style={{ fontSize: '0.95rem', color: '#2d3748', marginBottom: '0.4rem', fontWeight: '600' }}>Start Learning</h4>
+                <p style={{ fontSize: '0.8rem', color: '#718096', lineHeight: '1.4', margin: 0 }}>
+                  Access course once approved
                 </p>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Print Styles */}
+        <style>{`
+          @media print {
+            * { margin: 0; padding: 0; }
+            body { margin: 0; padding: 0; background: white !important; }
+            .no-print { display: none !important; }
+            nav { display: none !important; }
+            header { display: none !important; }
+            [class*="navbar"] { display: none !important; }
+            [class*="Navbar"] { display: none !important; }
+            div[style*="background: linear-gradient"] { background: white !important; }
+          }
+        `}</style>
       </div>
     );
   }
@@ -301,63 +318,64 @@ const PaymentPage = () => {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      padding: '2rem 1rem',
+      background: 'linear-gradient(135deg, #1c398e 0%, #8d95ad 100%)',
+      padding: '6rem 1rem 2rem',
     }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
         <div style={{ textAlign: 'center', color: 'white', marginBottom: '2rem' }}>
-          <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem', fontWeight: '700' }}>Complete Your Payment</h1>
-          <p style={{ fontSize: '1.1rem', opacity: '0.9' }}>Secure payment for your course enrollment</p>
+          <h1 style={{ fontSize: '2rem', marginBottom: '0.5rem', fontWeight: '700' }}>Complete Your Payment</h1>
+          <p style={{ fontSize: '1rem', opacity: '0.95' }}>Secure payment for your course enrollment</p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '2rem', alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '1.5rem', alignItems: 'start' }}>
           {/* Order Summary */}
           <div style={{
             background: 'white',
-            borderRadius: '1rem',
-            padding: '2rem',
-            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
+            borderRadius: '0.75rem',
+            padding: '1.75rem',
+            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
+            height: 'fit-content',
           }}>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', color: '#2d3748' }}>Order Summary</h2>
+            <h2 style={{ fontSize: '1.25rem', marginBottom: '1.25rem', color: '#2d3748', fontWeight: '600' }}>Order Summary</h2>
             
             <div style={{
-              display: 'flex', gap: '1rem', marginBottom: '1.5rem',
-              paddingBottom: '1.5rem', borderBottom: '1px solid #e2e8f0',
+              display: 'flex', gap: '1rem', marginBottom: '1.25rem',
+              paddingBottom: '1.25rem', borderBottom: '1px solid #e2e8f0',
             }}>
               <img 
                 src={courseDetails.image || '/default-course.jpg'} 
                 alt={courseDetails.title}
-                style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: '0.5rem' }}
+                style={{ width: '70px', height: '70px', objectFit: 'cover', borderRadius: '0.5rem' }}
               />
               <div>
-                <h3 style={{ fontSize: '1rem', color: '#2d3748', marginBottom: '0.25rem' }}>{courseDetails.title}</h3>
-                <p style={{ fontSize: '0.875rem', color: '#718096' }}>{courseDetails.instructor}</p>
+                <h3 style={{ fontSize: '0.95rem', color: '#2d3748', marginBottom: '0.25rem', fontWeight: '600' }}>{courseDetails.title}</h3>
+                <p style={{ fontSize: '0.85rem', color: '#718096', margin: 0 }}>{courseDetails.instructor}</p>
               </div>
             </div>
             
-            <div style={{ marginBottom: '1.5rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', color: '#4a5568' }}>
+            <div style={{ marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem', color: '#4a5568', fontSize: '0.9rem' }}>
                 <span>Course Price</span>
-                <span>₹{courseDetails.price}</span>
+                <span>Rs: {courseDetails.price}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', color: '#4a5568' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem', color: '#4a5568', fontSize: '0.9rem' }}>
                 <span>Tax (18% GST)</span>
-                <span>₹{(courseDetails.price * 0.18).toFixed(2)}</span>
+                <span>Rs: {(courseDetails.price * 0.18).toFixed(2)}</span>
               </div>
               <div style={{
-                display: 'flex', justifyContent: 'space-between', fontWeight: '700', fontSize: '1.25rem',
-                color: '#2d3748', paddingTop: '1rem', borderTop: '2px solid #e2e8f0', marginTop: '1rem',
+                display: 'flex', justifyContent: 'space-between', fontWeight: '700', fontSize: '1.15rem',
+                color: '#2d3748', paddingTop: '0.875rem', borderTop: '2px solid #e2e8f0', marginTop: '0.875rem',
               }}>
                 <span>Total Amount</span>
-                <span>₹{(courseDetails.price * 1.18).toFixed(2)}</span>
+                <span style={{ color: '#1c398e' }}>₹{(courseDetails.price * 1.18).toFixed(2)}</span>
               </div>
             </div>
             
             <div style={{
               display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#48bb78',
-              fontSize: '0.875rem', background: '#f0fdf4', padding: '0.75rem', borderRadius: '0.5rem',
+              fontSize: '0.825rem', background: '#f0fdf4', padding: '0.75rem', borderRadius: '0.5rem',
             }}>
-              <Lock size={16} />
+              <Lock size={14} />
               <span>Secured by 256-bit SSL encryption</span>
             </div>
           </div>
@@ -365,99 +383,101 @@ const PaymentPage = () => {
           {/* Payment Form */}
           <div style={{
             background: 'white',
-            borderRadius: '1rem',
-            padding: '2rem',
-            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.1)',
+            borderRadius: '0.75rem',
+            padding: '1.75rem',
+            boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
+            maxHeight: 'calc(100vh - 200px)',
+            overflowY: 'auto',
           }}>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', color: '#2d3748' }}>Payment Method</h2>
+            <h2 style={{ fontSize: '1.25rem', marginBottom: '1.25rem', color: '#2d3748', fontWeight: '600' }}>Payment Method</h2>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.875rem', marginBottom: '1.5rem' }}>
               <button onClick={() => setPaymentMethod('card')} style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem',
-                padding: '1.5rem 1rem', borderRadius: '0.75rem', cursor: 'pointer', fontSize: '0.875rem',
-                border: paymentMethod === 'card' ? '2px solid #667eea' : '2px solid #e2e8f0',
-                background: paymentMethod === 'card' ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1))' : 'white',
-                color: paymentMethod === 'card' ? '#667eea' : '#4a5568',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem',
+                padding: '1.25rem 0.75rem', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.85rem',
+                border: paymentMethod === 'card' ? '2px solid #1c398e' : '2px solid #e2e8f0',
+                background: paymentMethod === 'card' ? 'rgba(28, 57, 142, 0.05)' : 'white',
+                color: paymentMethod === 'card' ? '#1c398e' : '#4a5568', fontWeight: '600',
               }}>
-                <CreditCard size={24} />
+                <CreditCard size={22} />
                 <span>Card</span>
               </button>
               
               <button onClick={() => setPaymentMethod('upi')} style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem',
-                padding: '1.5rem 1rem', borderRadius: '0.75rem', cursor: 'pointer', fontSize: '0.875rem',
-                border: paymentMethod === 'upi' ? '2px solid #667eea' : '2px solid #e2e8f0',
-                background: paymentMethod === 'upi' ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1))' : 'white',
-                color: paymentMethod === 'upi' ? '#667eea' : '#4a5568',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem',
+                padding: '1.25rem 0.75rem', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.85rem',
+                border: paymentMethod === 'upi' ? '2px solid #1c398e' : '2px solid #e2e8f0',
+                background: paymentMethod === 'upi' ? 'rgba(28, 57, 142, 0.05)' : 'white',
+                color: paymentMethod === 'upi' ? '#1c398e' : '#4a5568', fontWeight: '600',
               }}>
-                <Smartphone size={24} />
+                <Smartphone size={22} />
                 <span>UPI</span>
               </button>
               
               <button onClick={() => setPaymentMethod('netbanking')} style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem',
-                padding: '1.5rem 1rem', borderRadius: '0.75rem', cursor: 'pointer', fontSize: '0.875rem',
-                border: paymentMethod === 'netbanking' ? '2px solid #667eea' : '2px solid #e2e8f0',
-                background: paymentMethod === 'netbanking' ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1))' : 'white',
-                color: paymentMethod === 'netbanking' ? '#667eea' : '#4a5568',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem',
+                padding: '1.25rem 0.75rem', borderRadius: '0.5rem', cursor: 'pointer', fontSize: '0.85rem',
+                border: paymentMethod === 'netbanking' ? '2px solid #1c398e' : '2px solid #e2e8f0',
+                background: paymentMethod === 'netbanking' ? 'rgba(28, 57, 142, 0.05)' : 'white',
+                color: paymentMethod === 'netbanking' ? '#1c398e' : '#4a5568', fontWeight: '600',
               }}>
-                <Building2 size={24} />
+                <Building2 size={22} />
                 <span>Banking</span>
               </button>
             </div>
 
-            <form onSubmit={handlePayment} style={{ marginTop: '2rem' }}>
+            <form onSubmit={handlePayment}>
               {paymentMethod === 'card' && (
                 <div>
-                  <div style={{ marginBottom: '1.5rem' }}>
+                  <div style={{ marginBottom: '1.25rem' }}>
                     <label style={{
-                      display: 'block', marginBottom: '0.5rem', color: '#2d3748', fontWeight: '600', fontSize: '0.875rem'
+                      display: 'block', marginBottom: '0.4rem', color: '#2d3748', fontWeight: '600', fontSize: '0.85rem'
                     }}>Card Number</label>
                     <input type="text" name="cardNumber" value={cardDetails.cardNumber}
                       onChange={handleCardChange} placeholder="1234 5678 9012 3456" required
                       style={{
-                        width: '100%', padding: '0.875rem 1rem', border: '2px solid #e2e8f0',
-                        borderRadius: '0.5rem', fontSize: '1rem', boxSizing: 'border-box',
+                        width: '100%', padding: '0.75rem 0.875rem', border: '2px solid #e2e8f0',
+                        borderRadius: '0.5rem', fontSize: '0.95rem', boxSizing: 'border-box',
                       }}
                     />
                   </div>
 
-                  <div style={{ marginBottom: '1.5rem' }}>
+                  <div style={{ marginBottom: '1.25rem' }}>
                     <label style={{
-                      display: 'block', marginBottom: '0.5rem', color: '#2d3748', fontWeight: '600', fontSize: '0.875rem'
+                      display: 'block', marginBottom: '0.4rem', color: '#2d3748', fontWeight: '600', fontSize: '0.85rem'
                     }}>Card Holder Name</label>
                     <input type="text" name="cardHolder" value={cardDetails.cardHolder}
-                      onChange={handleCardChange} placeholder="JOHN DOE" required
+                      onChange={handleCardChange} placeholder="Enter Your Full Name" required
                       style={{
-                        width: '100%', padding: '0.875rem 1rem', border: '2px solid #e2e8f0',
-                        borderRadius: '0.5rem', fontSize: '1rem', boxSizing: 'border-box',
+                        width: '100%', padding: '0.75rem 0.875rem', border: '2px solid #e2e8f0',
+                        borderRadius: '0.5rem', fontSize: '0.95rem', boxSizing: 'border-box',
                       }}
                     />
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                    <div style={{ marginBottom: '1.5rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
+                    <div style={{ marginBottom: '1.25rem' }}>
                       <label style={{
-                        display: 'block', marginBottom: '0.5rem', color: '#2d3748', fontWeight: '600', fontSize: '0.875rem'
+                        display: 'block', marginBottom: '0.4rem', color: '#2d3748', fontWeight: '600', fontSize: '0.85rem'
                       }}>Expiry Date</label>
                       <input type="text" name="expiryDate" value={cardDetails.expiryDate}
                         onChange={handleCardChange} placeholder="MM/YY" required
                         style={{
-                          width: '100%', padding: '0.875rem 1rem', border: '2px solid #e2e8f0',
-                          borderRadius: '0.5rem', fontSize: '1rem', boxSizing: 'border-box',
+                          width: '100%', padding: '0.75rem 0.875rem', border: '2px solid #e2e8f0',
+                          borderRadius: '0.5rem', fontSize: '0.95rem', boxSizing: 'border-box',
                         }}
                       />
                     </div>
 
-                    <div style={{ marginBottom: '1.5rem' }}>
+                    <div style={{ marginBottom: '1.25rem' }}>
                       <label style={{
-                        display: 'block', marginBottom: '0.5rem', color: '#2d3748', fontWeight: '600', fontSize: '0.875rem'
+                        display: 'block', marginBottom: '0.4rem', color: '#2d3748', fontWeight: '600', fontSize: '0.85rem'
                       }}>CVV</label>
                       <input type="text" name="cvv" value={cardDetails.cvv}
                         onChange={handleCardChange} placeholder="123" required
                         style={{
-                          width: '100%', padding: '0.875rem 1rem', border: '2px solid #e2e8f0',
-                          borderRadius: '0.5rem', fontSize: '1rem', boxSizing: 'border-box',
+                          width: '100%', padding: '0.75rem 0.875rem', border: '2px solid #e2e8f0',
+                          borderRadius: '0.5rem', fontSize: '0.95rem', boxSizing: 'border-box',
                         }}
                       />
                     </div>
@@ -467,19 +487,19 @@ const PaymentPage = () => {
 
               {paymentMethod === 'upi' && (
                 <div>
-                  <div style={{ marginBottom: '1.5rem' }}>
+                  <div style={{ marginBottom: '1.25rem' }}>
                     <label style={{
-                      display: 'block', marginBottom: '0.5rem', color: '#2d3748', fontWeight: '600', fontSize: '0.875rem'
+                      display: 'block', marginBottom: '0.4rem', color: '#2d3748', fontWeight: '600', fontSize: '0.85rem'
                     }}>UPI ID</label>
                     <input type="text" value={upiId} onChange={(e) => setUpiId(e.target.value)}
                       placeholder="yourname@upi" required
                       style={{
-                        width: '100%', padding: '0.875rem 1rem', border: '2px solid #e2e8f0',
-                        borderRadius: '0.5rem', fontSize: '1rem', boxSizing: 'border-box',
+                        width: '100%', padding: '0.75rem 0.875rem', border: '2px solid #e2e8f0',
+                        borderRadius: '0.5rem', fontSize: '0.95rem', boxSizing: 'border-box',
                       }}
                     />
-                    <p style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: '#718096' }}>
-                      Enter your UPI ID (e.g., username@paytm)
+                    <p style={{ marginTop: '0.4rem', fontSize: '0.75rem', color: '#718096', margin: '0.4rem 0 0 0' }}>
+                      Enter your UPI ID 
                     </p>
                   </div>
                 </div>
@@ -487,14 +507,14 @@ const PaymentPage = () => {
 
               {paymentMethod === 'netbanking' && (
                 <div>
-                  <div style={{ marginBottom: '1.5rem' }}>
+                  <div style={{ marginBottom: '1.25rem' }}>
                     <label style={{
-                      display: 'block', marginBottom: '0.5rem', color: '#2d3748', fontWeight: '600', fontSize: '0.875rem'
+                      display: 'block', marginBottom: '0.4rem', color: '#2d3748', fontWeight: '600', fontSize: '0.85rem'
                     }}>Select Your Bank</label>
                     <select value={selectedBank} onChange={(e) => setSelectedBank(e.target.value)} required
                       style={{
-                        width: '100%', padding: '0.875rem 1rem', border: '2px solid #e2e8f0',
-                        borderRadius: '0.5rem', fontSize: '1rem', boxSizing: 'border-box',
+                        width: '100%', padding: '0.75rem 0.875rem', border: '2px solid #e2e8f0',
+                        borderRadius: '0.5rem', fontSize: '0.95rem', boxSizing: 'border-box',
                       }}
                     >
                       <option value="">Choose a bank</option>
@@ -509,18 +529,19 @@ const PaymentPage = () => {
 
               {error && (
                 <div style={{
-                  display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', borderRadius: '0.5rem',
-                  marginBottom: '1.5rem', background: '#fff5f5', color: '#c53030', border: '1px solid #feb2b2',
+                  display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0.875rem', borderRadius: '0.5rem',
+                  marginBottom: '1.25rem', background: '#fff5f5', color: '#c53030', border: '1px solid #feb2b2',
+                  fontSize: '0.875rem',
                 }}>
-                  <AlertCircle size={20} />
+                  <AlertCircle size={18} />
                   <span>{error}</span>
                 </div>
               )}
 
               <button type="submit" disabled={loading} style={{
-                width: '100%', padding: '1rem', border: 'none', borderRadius: '0.5rem',
-                fontSize: '1.125rem', fontWeight: '600', marginBottom: '1rem',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white',
+                width: '100%', padding: '0.875rem', border: 'none', borderRadius: '0.5rem',
+                fontSize: '1rem', fontWeight: '600', marginBottom: '0.875rem',
+                background: '#1c398e', color: 'white',
                 cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? '0.6' : '1',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
               }}>
@@ -528,15 +549,15 @@ const PaymentPage = () => {
                   <>Processing...</>
                 ) : (
                   <>
-                    <Lock size={18} />
-                    Pay ₹{(courseDetails.price * 1.18).toFixed(2)}
+                    <Lock size={16} />
+                    Pay Rs:{(courseDetails.price * 1.18).toFixed(2)}
                   </>
                 )}
               </button>
 
-              <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#718096' }}>
+              <p style={{ textAlign: 'center', fontSize: '0.75rem', color: '#718096', margin: 0 }}>
                 By completing this payment, you agree to our{' '}
-                <a href="/terms" style={{ color: '#667eea', textDecoration: 'none' }}>Terms of Service</a>
+                <a href="/terms" style={{ color: '#1c398e', textDecoration: 'none' }}>Terms of Service</a>
               </p>
             </form>
           </div>
