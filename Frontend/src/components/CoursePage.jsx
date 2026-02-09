@@ -278,7 +278,6 @@ const CoursePage = () => {
     navigate(`/course/${courseId}`);
   };
 
-  // Returns "Free" | { current: "Rs: X", original: "Rs: Y" | null }
   const getPriceDisplay = (course) => {
     if (course.isFree) return "Free";
 
@@ -315,11 +314,8 @@ if (error)
         <div className="mb-6 flex justify-center">
           <BookOpen className="w-32 h-32 text-blue-600" strokeWidth={1.5} />
         </div>
-        <h2 className="text-3xl font-bold text-gray-800 mb-4">Courses Coming Soon!</h2>
+        <h2 className="text-3xl font-bold text-gray-800 mb-4">Courses Comming Soon!</h2>
         <p className="text-gray-600 mb-4">The course management system is being set up by the admin.</p>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-          <p className="text-sm text-red-600 font-mono">{error}</p>
-        </div>
         <button
           onClick={() => navigate('/home')}
           className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 transition-all shadow-lg"

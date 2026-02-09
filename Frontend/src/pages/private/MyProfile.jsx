@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { Camera, Edit2, Save, X, User, Mail, Shield, AlertCircle, Trash2, Lock, Eye, EyeOff, Send, CheckCircle, Contact } from "lucide-react";
+import { Camera, Edit2, Save, X, User, Mail, Shield, AlertCircle, Trash2, Lock, Eye, EyeOff, CheckCircle, Contact } from "lucide-react";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
 import { ClipLoader } from "react-spinners";
@@ -41,11 +41,6 @@ function MyProfile() {
   const [passwordErrors, setPasswordErrors] = useState({});
   const [changingPassword, setChangingPassword] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-
-  // Forgot password state
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [resetEmail, setResetEmail] = useState("");
-  const [sendingResetEmail, setSendingResetEmail] = useState(false);
 
   // Load profile data
   useEffect(() => {
@@ -197,33 +192,6 @@ function MyProfile() {
 
     setPasswordErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-
-  // Send forgot password email
-  const handleForgotPassword = async () => {
-    if (!resetEmail) {
-      toast.error("Please enter your email address");
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(resetEmail)) {
-      toast.error("Please enter a valid email address");
-      return;
-    }
-
-    setSendingResetEmail(true);
-    try {
-      await api.post("/auth/forgot-password", { email: resetEmail });
-      toast.success("Password reset link sent! Check your email.");
-      setShowForgotPassword(false);
-      setResetEmail("");
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || "Failed to send reset link";
-      toast.error(errorMessage);
-    } finally {
-      setSendingResetEmail(false);
-    }
   };
 
   // Change password
@@ -614,111 +582,33 @@ function MyProfile() {
                   </button>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
 
-        {/* PASSWORD & SECURITY SECTION */}
-        {profile && !profile.googleId && (
-          <div className="bg-white rounded-3xl shadow-xl border border-gray-100 overflow-hidden animate-slideUp">
-            <div className="p-6 sm:p-10">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="w-1 h-8 bg-gradient-to-b from-indigo-600 to-purple-600 rounded-full"></div>
-                <div>
-                  <h3 className="text-2xl font-bold text-gray-900">Password & Security</h3>
-                  <p className="text-sm text-gray-600 mt-1">Manage your password and security settings</p>
-                </div>
-              </div>
+              {/* DIVIDER */}
+              {profile && !profile.googleId && (
+                <div className="my-10 border-t-2 border-gray-100"></div>
+              )}
 
-              <div className="space-y-6">
-                {/* INITIAL BUTTONS */}
-                {!showPasswordSection && !showForgotPassword && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* PASSWORD & SECURITY SECTION */}
+              {profile && !profile.googleId && (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-1 h-8 bg-gradient-to-b from-indigo-600 to-purple-600 rounded-full"></div>
+                    <h3 className="text-2xl font-bold text-gray-900">Password & Security</h3>
+                  </div>
+
+                  {/* INITIAL BUTTONS */}
+                  {!showPasswordSection && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <button
                       onClick={() => {
                         setShowPasswordSection(true);
-                        setShowForgotPassword(false);
                       }}
                       className="px-6 py-4 bg-[#4f46e5] hover:bg-indigo-700 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3"
                     >
                       <Lock className="w-5 h-5" />
                       <span>Change Password</span>
                     </button>
-                    <button
-                      onClick={() => {
-                        setShowForgotPassword(true);
-                        setShowPasswordSection(false);
-                        setResetEmail(profile?.email || "");
-                      }}
-                      className="px-6 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-3"
-                    >
-                      <Send className="w-5 h-5" />
-                      <span>Reset via Email</span>
-                    </button>
-                  </div>
-                )}
 
-                {/* FORGOT PASSWORD SECTION */}
-                {showForgotPassword && (
-                  <div className="space-y-6 pt-6 border-t-2 border-gray-100">
-                    <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-xl p-5">
-                      <div className="flex items-start gap-3">
-                        <div className="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                          <Send className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-indigo-900 mb-1">Reset Password via Email</p>
-                          <p className="text-sm text-indigo-700">
-                            We'll send a password reset link to your email address.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-indigo-600" />
-                        Email Address
-                      </label>
-                      <input
-                        type="email"
-                        value={resetEmail}
-                        onChange={(e) => setResetEmail(e.target.value)}
-                        className="w-full px-4 py-3 border-2 border-gray-200 hover:border-indigo-300 focus:border-indigo-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                        placeholder="Enter your email"
-                      />
-                    </div>
-
-                    <div className="flex flex-col sm:flex-row gap-3">
-                      <button
-                        onClick={handleForgotPassword}
-                        disabled={sendingResetEmail}
-                        className="flex-1 px-6 py-4 bg-[#4f46e5] hover:bg-indigo-700 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                      >
-                        {sendingResetEmail ? (
-                          <>
-                            <ClipLoader size={18} color="#ffffff" />
-                            <span>Sending...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Send className="w-5 h-5" />
-                            <span>Send Reset Link</span>
-                          </>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setShowForgotPassword(false);
-                          setResetEmail("");
-                        }}
-                        disabled={sendingResetEmail}
-                        className="flex-1 sm:flex-none px-6 py-4 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                      >
-                        <X className="w-5 h-5" />
-                        <span>Cancel</span>
-                      </button>
-                    </div>
                   </div>
                 )}
 
@@ -882,9 +772,10 @@ function MyProfile() {
                   </div>
                 )}
               </div>
+            )}
             </div>
           </div>
-        )}
+        </div>
       </div>
 
       {/* CSS Animations */}

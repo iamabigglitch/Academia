@@ -63,9 +63,9 @@ export const getPublicCourses = async (req, res) => {
 
     // Build where clause
     const where = {};
-    if (home === "true") where.courseType = "top";
-    else if (type === "top") where.courseType = "top";
+    if (type === "top") where.courseType = "top";
     else if (type === "regular") where.courseType = "regular";
+    // Note: home=true doesn't filter by courseType, shows all courses
 
     // Fetch courses
     const courses = await Course.findAll({

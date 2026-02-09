@@ -49,7 +49,7 @@ const HomeCourses = () => {
     setLoading(true);
     setError(null);
 
-    fetch(`${API_BASE}/api/course/public?home=true&limit=8`)
+    fetch(`${API_BASE}/api/course/public?home=true&limit=9`)
       .then(async (res) => {
         if (!res.ok) {
           const text = await res.text();
@@ -65,14 +65,11 @@ const HomeCourses = () => {
           name: c.name || "Untitled Course",
           teacher: c.teacher || "Instructor",
           image: getImageUrl(c.image),
-          price: c.price || {
-            original: c.price?.original,
-            sale: c.price?.sale,
-          },
+          priceOriginal: c.priceOriginal || 0,
+          priceSale: c.priceSale || 0,
           isFree:
             c.pricingType === "free" ||
-            !c.price ||
-            (c.price && !c.price.sale && !c.price.original),
+            (c.priceOriginal <= 0 && c.priceSale <= 0),
           avgRating:
             typeof c.avgRating !== "undefined" ? c.avgRating : c.rating || 0,
           totalRatings:
@@ -265,13 +262,13 @@ const HomeCourses = () => {
           <>
             <div className={homeCoursesStyles.coursesGrid}>
               {courses.map((course) => {
-                const isFree = !!course.isFree || !course.price;
+                const isFree = !!course.isFree || (course.priceSale <= 0 && course.priceOriginal <= 0);
 
                 return (
                   <div
                     key={course.id}
                     onClick={() => handleCourseClick(course.id)}
-                    className={homeCoursesStyles.coursesCard}
+                    className={homeCoursesStyles.courseCard}
                   >
                     <div className={`${homeCoursesStyles.imageContainer} aspect-video bg-gray-100`}>
                       <img
@@ -314,16 +311,9 @@ const HomeCourses = () => {
                             Free
                           </span>
                         ) : (
-                          <>
-                            <span className={homeCoursesStyles.salePrice}>
-                              Rs: {course.price?.sale ?? "-"}
-                            </span>
-                            {course.price?.original && (
-                              <span className={homeCoursesStyles.originalPrice}>
-                                Rs: {course.price.original}
-                              </span>
-                            )}
-                          </>
+                          <span className={homeCoursesStyles.salePrice}>
+                            Rs: {course.priceSale || course.priceOriginal || "-"}
+                          </span>
                         )}
                       </div>
                     </div>

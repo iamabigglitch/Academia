@@ -8,6 +8,7 @@ import Faculty from "../pages/private/Faculty";
 import Courses from "../pages/private/Courses";
 import Login from "../pages/public/Login";
 import Signup from "../pages/public/Signup";
+import ForgotPassword from "../pages/public/ForgotPassword";
 
 const PublicRoutes = () => (
   <>
@@ -20,6 +21,7 @@ const PublicRoutes = () => (
 
     <Route path="/login" element={<GuestOnlyRoute><Login /></GuestOnlyRoute>} />
     <Route path="/signup" element={<GuestOnlyRoute><Signup /></GuestOnlyRoute>} />
+    <Route path="/forgot-password" element={<GuestOnlyRoute><ForgotPassword /></GuestOnlyRoute>} />
   </>
 );
 

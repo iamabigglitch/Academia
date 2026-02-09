@@ -195,13 +195,34 @@ const forgotPassword = async (req, res) => {
       `,
     };
 
-    // Send email
-    await transporter.sendMail(mailOptions);
+    // Send email - if email sending fails, log it but still respond success
+    try {
+      await transporter.sendMail(mailOptions);
 
-    res.status(200).json({
-      success: true,
-      message: "Password reset link has been sent to your email.",
-    });
+      return res.status(200).json({
+        success: true,
+        message: "Password reset link has been sent to your email.",
+      });
+    } catch (mailErr) {
+      console.error("Forgot password - email send failed:", mailErr);
+
+      // Also log the reset URL so developer/admin can copy it while email isn't configured
+      console.info("Password reset URL (dev):", resetUrl);
+
+      // Graceful fallback: token was generated and saved. Return success to avoid a poor UX.
+      // In development mode return the resetUrl in the response to allow direct testing.
+      const responsePayload = {
+        success: true,
+        message:
+          "Password reset token generated but we were unable to send the email. Please contact support or try again later.",
+      };
+
+      if (process.env.NODE_ENV !== "production") {
+        responsePayload.resetUrl = resetUrl;
+      }
+
+      return res.status(200).json(responsePayload);
+    }
   } catch (error) {
     console.error("Forgot password error:", error);
     res.status(500).json({

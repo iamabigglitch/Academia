@@ -29,9 +29,9 @@ const AdminDashboardPage = () => {
       }
     });
 
-    // Count courses that have at least one booking as "top courses"
+    // Count courses marked as "top" type
     const topCourseCount = (courses || []).filter(
-      (c) => c.bookingStats && c.bookingStats.totalBookings > 0
+      (c) => c.courseType === "top"
     ).length;
 
     return [
@@ -126,13 +126,13 @@ const AdminDashboardPage = () => {
           const students = purchases;
 
           let priceDisplay = "Free";
-          if (c.priceSale != null || c.priceOriginal != null) {
-            const sale = c.priceSale != null ? Number(c.priceSale) : null;
-            const orig = c.priceOriginal != null ? Number(c.priceOriginal) : null;
+          if (c.priceSale > 0 || c.priceOriginal > 0) {
+            const sale = Number(c.priceSale) || 0;
+            const orig = Number(c.priceOriginal) || 0;
             priceDisplay =
-              sale != null
+              sale > 0
                 ? fmtCurrency(sale)
-                : orig != null
+                : orig > 0
                 ? fmtCurrency(orig)
                 : "Free";
           } else if (c.pricingType && c.pricingType !== "free") {

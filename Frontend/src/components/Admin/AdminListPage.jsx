@@ -142,9 +142,9 @@ const AdminListPage = () => {
     totalDurationMinutes: c.totalDurationMinutes ?? 0,
     description: c.overview ?? "No description provided.",
     courseType: c.courseType ?? "regular",
-    price: c.priceSale ?? 0,
-    originalPrice: c.priceOriginal ?? 0,
-    isFree: c.pricingType === "free",
+    price: c.priceSale > 0 ? c.priceSale : (c.priceOriginal > 0 ? c.priceOriginal : 0),
+    originalPrice: c.priceOriginal > 0 ? c.priceOriginal : 0,
+    isFree: c.pricingType === "free" || (c.priceSale <= 0 && c.priceOriginal <= 0),
     bookingStats: c.bookingStats || { totalBookings: 0, totalRevenue: 0, totalProfit: 0 },
   };
 });
@@ -358,7 +358,7 @@ await axios.delete(
 
                     <div className={listStyles.courseActions}>
                       <div className={listStyles.priceContainer}>
-                        <div className="flex items-center gap-1 sm:gap-2">
+                        <div className="flex items-center gap-2 sm:gap-2">
                           {course.isFree ? (
                             <span className={listStyles.priceFree}>Free</span>
                           ) : (
@@ -456,7 +456,7 @@ await axios.delete(
     </div>
 
     {expandedLectures[`${course.id}-${lecture.id}`] && (
-      <div className={listStyles.expandedLecture}>
+      < div className={listStyles.expandedLecture}>
         <div className={listStyles.chapterList}>
           {(lecture.chapters || []).map((chapter) => (
             <div key={chapter.id} className={listStyles.chapterCard}>
