@@ -3,10 +3,10 @@ import { User } from "../models/userModel.js";
 import Course from "../models/courseModel.js";
 import { v4 as uuidv4 } from 'uuid';
 
-// Process payment
 export const processPayment = async (req, res) => {
   try {
-    const { paymentMethod, amount, courseId, cardDetails, upiId, bank, courseName, teacherName } = req.body;
+    const { paymentMethod, amount, courseId, cardDetails, upiId, bank, courseName, teacherName } = 
+    req.body;
     const userId = req.user?.id;
 
     if (!paymentMethod || !amount || !courseId) {

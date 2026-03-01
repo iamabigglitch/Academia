@@ -3,7 +3,7 @@ import { User } from "../models/userModel.js";
 import Course from "../models/courseModel.js";
 import { Op } from "sequelize";
 import { sequelize } from "../database/db.js";
-// GET /api/booking - Get all bookings (for admin)
+
 export const getAllBookings = async (req, res) => {
   try {
     const { search, limit = 200, page = 1 } = req.query;

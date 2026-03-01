@@ -209,8 +209,7 @@ const forgotPassword = async (req, res) => {
       // Also log the reset URL so developer/admin can copy it while email isn't configured
       console.info("Password reset URL (dev):", resetUrl);
 
-      // Graceful fallback: token was generated and saved. Return success to avoid a poor UX.
-      // In development mode return the resetUrl in the response to allow direct testing.
+
       const responsePayload = {
         success: true,
         message:

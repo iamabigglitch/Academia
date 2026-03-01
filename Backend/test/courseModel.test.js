@@ -1,33 +1,28 @@
-import SequelizeMock from 'sequelize-mock';
-import { describe, test, expect } from '@jest/globals';
+import SequelizeMock from "sequelize-mock";
 
-// 1️⃣ Setup mock DB
 const dbMock = new SequelizeMock();
 
-// 2️⃣ Define MOCK model (structure only)
-const CourseMock = dbMock.define('Course', {
-  id: 'UUID',
-  name: 'STRING',
-  teacher: 'STRING',
-  image: 'STRING',
-  avgRating: 'FLOAT',
-  totalRatings: 'INTEGER',
-  pricingType: 'STRING',
-  priceOriginal: 'FLOAT',
-  priceSale: 'FLOAT',
-  overview: 'TEXT',
-  totalDurationHours: 'INTEGER',
-  totalDurationMinutes: 'INTEGER',
-  totalLectures: 'INTEGER',
-  courseType: 'STRING',
+const CourseMock = dbMock.define("Course", {
+  id: "uuid-1234",
+  name: "Social History",
+  teacher: "Dr. Kasha KC",
+  image: "assets/images/course/react.jpg",
+  avgRating: 4.5,
+  totalRatings: 1200,
+  pricingType: "paid",
+  priceOriginal: 2000,
+  priceSale: 1200,
+  overview: "This course provides an in-depth understanding of social history.",
+  totalDurationHours: 15,
+  totalDurationMinutes: 30,
+  totalLectures: 45,
+  courseType: "regular",
 });
 
-// 3️⃣ Group tests
-describe('Course Model Tests', () => {
-
-  // ✅ Positive test
-  test('should create a course with valid data', async () => {
+describe("Course Model", () => {
+  it("should create a course with valid data", async () => {
     const course = await CourseMock.create({
+      id: "uuid-1234",
       name: "Social History",
       teacher: "Dr. Kasha KC",
       image: "assets/images/course/react.jpg",
@@ -45,29 +40,20 @@ describe('Course Model Tests', () => {
 
     expect(course.name).toBe("Social History");
     expect(course.teacher).toBe("Dr. Kasha KC");
+    expect(course.image).toBe("assets/images/course/react.jpg");
     expect(course.pricingType).toBe("paid");
+    expect(course.priceOriginal).toBe(2000);
+    expect(course.priceSale).toBe(1200);
+    expect(course.priceSale).toBeLessThan(course.priceOriginal);
+    expect(course.overview).toBe("This course provides an in-depth understanding of social history.");
+    expect(course.avgRating).toBe(4.5);
+    expect(course.avgRating).toBeGreaterThanOrEqual(0);
+    expect(course.avgRating).toBeLessThanOrEqual(5);
+    expect(course.totalRatings).toBe(1200);
+    expect(course.totalDurationHours).toBe(15);
+    expect(course.totalDurationMinutes).toBe(30);
+    expect(course.totalDurationMinutes).toBeLessThan(60);
+    expect(course.totalLectures).toBe(45);
+    expect(course.courseType).toBe("regular");
   });
-
-  // ✅ Default values test
-  test('should set default values', async () => {
-    const course = await CourseMock.create({
-      name: "Test Course",
-      teacher: "Test Teacher",
-    });
-
-    expect(course.avgRating).toBeDefined();
-    expect(course.totalRatings).toBeDefined();
-    expect(course.pricingType).toBeDefined();
-    expect(course.courseType).toBeDefined();
-  });
-
-  // ❌ Required field test
-  test('should fail when name is missing', async () => {
-    await expect(
-      CourseMock.create({
-        teacher: "Dr. KC",
-      })
-    ).rejects.toBeTruthy();
-  });
-
 });

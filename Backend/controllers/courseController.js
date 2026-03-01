@@ -60,20 +60,16 @@ export const getPublicCourses = async (req, res) => {
     console.log("api for public courses hit")
   try {
     const { home, type = "all", limit } = req.query;
-
     // Build where clause
     const where = {};
     if (type === "top") where.courseType = "top";
     else if (type === "regular") where.courseType = "regular";
-    // Note: home=true doesn't filter by courseType, shows all courses
-
     // Fetch courses
     const courses = await Course.findAll({
       where,
       order: [["createdAt", "DESC"]],
       limit: limit ? Number(limit) : undefined
     });
-
     // Map courses with absolute image URLs
     const items = courses.map(c => ({
       ...c.toJSON(),
@@ -178,7 +174,6 @@ export const getCourseById = async (req, res) => {
   }
 };
 
-// POST /courses
 // POST /courses
 export const createCourse = async (req, res) => {
   console.log("create course api hitting");
