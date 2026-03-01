@@ -166,7 +166,7 @@ const PaymentPage = () => {
     return (
       <div style={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #1c398e 0%, #0f1f4d 100%)',
+        background: 'linear-gradient(135deg, #48557e 0%, #626e94 100%)',
         padding: '6rem 1rem 2rem',
         display: 'flex',
         alignItems: 'center',
