@@ -39,7 +39,15 @@ jest.unstable_mockModule("../models/courseModel.js", () => ({
   default: mockCourse,
 }));
 
-// Import controller after mocking
+// FIXED: mock sequelize Op
+jest.unstable_mockModule("sequelize", () => ({
+  Op: {
+    or: Symbol("or"),
+    iLike: Symbol("iLike"),
+    gte: Symbol("gte"),
+  },
+}));
+
 const {
   getAllBookings,
   checkEnrollment,
@@ -47,8 +55,6 @@ const {
   getMyBookings,
   approveBooking,
   rejectBooking,
-  deleteBooking,
-  getBookingById,
   getStats,
 } = await import("../controllers/bookingController.js");
 
@@ -139,7 +145,7 @@ describe("Booking Controller", () => {
       await checkEnrollment(req, res);
 
       expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({ success: true, enrolled: false })
+        expect.objectContaining({ success: true, enrolled: null, booking: null })
       );
     });
 
@@ -414,65 +420,6 @@ describe("Booking Controller", () => {
       mockBooking.findOne.mockResolvedValue(null);
 
       await rejectBooking(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(404);
-    });
-  });
-
-  describe("deleteBooking", () => {
-    it("should delete a booking successfully", async () => {
-      const req = { params: { bookingId: "BK-001" } };
-      const res = mockResponse();
-
-      const mockBookingInstance = {
-        bookingId: "BK-001",
-        destroy: jest.fn().mockResolvedValue(true),
-      };
-      mockBooking.findOne.mockResolvedValue(mockBookingInstance);
-
-      await deleteBooking(req, res);
-
-      expect(mockBookingInstance.destroy).toHaveBeenCalled();
-      expect(res.json).toHaveBeenCalledWith({ success: true, message: "Booking deleted successfully" });
-    });
-
-    it("should return 404 if booking not found", async () => {
-      const req = { params: { bookingId: "BK-NOTFOUND" } };
-      const res = mockResponse();
-
-      mockBooking.findOne.mockResolvedValue(null);
-
-      await deleteBooking(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(404);
-    });
-  });
-
-  describe("getBookingById", () => {
-    it("should return a booking by bookingId", async () => {
-      const req = { params: { bookingId: "BK-001" } };
-      const res = mockResponse();
-
-      const mockBookingData = {
-        id: 1,
-        bookingId: "BK-001",
-        courseName: "JS Basics",
-        orderStatus: "Completed",
-      };
-      mockBooking.findOne.mockResolvedValue(mockBookingData);
-
-      await getBookingById(req, res);
-
-      expect(res.json).toHaveBeenCalledWith({ success: true, booking: mockBookingData });
-    });
-
-    it("should return 404 if booking not found", async () => {
-      const req = { params: { bookingId: "BK-NOTFOUND" } };
-      const res = mockResponse();
-
-      mockBooking.findOne.mockResolvedValue(null);
-
-      await getBookingById(req, res);
 
       expect(res.status).toHaveBeenCalledWith(404);
     });

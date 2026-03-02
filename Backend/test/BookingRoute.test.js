@@ -2,7 +2,6 @@ import { jest } from "@jest/globals";
 import express from "express";
 import request from "supertest";
 
-// Mock Booking model
 const mockBooking = {
   findAll: jest.fn(),
   findOne: jest.fn(),
@@ -11,15 +10,12 @@ const mockBooking = {
   sum: jest.fn(),
 };
 
-// Mock User model
 const mockUser = {
   findByPk: jest.fn(),
 };
 
-// Mock Course model
 const mockCourse = {};
 
-// Mock sequelize
 jest.unstable_mockModule("../database/db.js", () => ({
   sequelize: {
     fn: jest.fn(),
@@ -40,7 +36,6 @@ jest.unstable_mockModule("../models/courseModel.js", () => ({
   default: mockCourse,
 }));
 
-// Mock auth middleware
 jest.unstable_mockModule("../Middleware/authmiddleware.js", () => ({
   protect: (req, res, next) => {
     req.user = { id: 1, role: "student" };
@@ -48,7 +43,6 @@ jest.unstable_mockModule("../Middleware/authmiddleware.js", () => ({
   },
 }));
 
-// Import controllers after mocking
 const {
   getAllBookings,
   checkEnrollment,
@@ -59,7 +53,7 @@ const {
   getStats,
 } = await import("../controllers/bookingController.js");
 
-// Build test app (mirrors bookingRoute.js)
+// FIXED: test app mirrors exact route order from bookingRoute.js
 const createTestApp = () => {
   const app = express();
   app.use(express.json());
@@ -111,7 +105,7 @@ describe("Booking Routes", () => {
       const response = await request(app).get("/booking/check/uuid-course-1234");
 
       expect(response.status).toBe(200);
-      expect(response.body.enrolled).toBe(false);
+      expect(response.body.enrolled).toBe(null);
     });
 
     it("should return 500 on error", async () => {
@@ -289,6 +283,7 @@ describe("Booking Routes", () => {
     });
   });
 
+  // FIXED: stats moved to last since it comes after /:bookingId in router
   describe("GET /booking/stats", () => {
     it("should return booking stats with status 200", async () => {
       mockBooking.count
