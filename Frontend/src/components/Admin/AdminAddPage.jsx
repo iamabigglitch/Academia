@@ -35,7 +35,6 @@ const computeCourseTotals = (lectures = []) => {
       chapters: Array.isArray(lecture?.chapters) ? [...lecture.chapters] : [],
     };
 
-    // compute chapter totals and sum
     let chaptersMinutes = 0;
     lec.chapters = lec.chapters.map((ch) => {
       const chHours = Number(ch?.duration?.hours) || 0;
@@ -49,7 +48,6 @@ const computeCourseTotals = (lectures = []) => {
       };
     });
 
-    // rule: chapters override lecture.duration when present
     let lectureTotalMinutes = 0;
     if (lec.chapters.length > 0) {
       lectureTotalMinutes = chaptersMinutes;
@@ -61,7 +59,6 @@ const computeCourseTotals = (lectures = []) => {
       );
     }
 
-    // normalize lecture.duration from computed total
     const lh = Math.floor(lectureTotalMinutes / 60);
     const lm = lectureTotalMinutes % 60;
 
@@ -123,7 +120,6 @@ const AddPage = () => {
   const [expandedLectures, setExpandedLectures] = useState([]);
   const [selectedLectureIndex, setSelectedLectureIndex] = useState(null);
 
-  // Toggle lectures
   const toggleLecture = (index) =>
     setExpandedLectures((prev) =>
       prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
@@ -159,7 +155,6 @@ const AddPage = () => {
     );
   };
 
-  // Image handling
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -219,7 +214,6 @@ const AddPage = () => {
 
   const formatTotalDuration = () => formatDuration(formData.totalDuration);
 
-  // Validate form fields
   const validateForm = () => {
     if (!formData.name?.trim()) {
       toast.error("Please enter course name");
@@ -253,7 +247,6 @@ const AddPage = () => {
         toast.error("Please enter valid original price for paid course");
         return false;
       }
-     
       if (formData.price.sale && parseFloat(formData.price.sale) >= parseFloat(formData.price.original)) {
         toast.error("Sale price should be less than original price");
         return false;
@@ -281,9 +274,7 @@ const AddPage = () => {
     return true;
   };
 
-  // Add lecture
   const addLecture = () => {
-
     if (!currentLecture.title?.trim()) {
       toast.error("Please enter lecture title");
       return;
@@ -333,7 +324,6 @@ const AddPage = () => {
     toast.success("Lecture added successfully!");
   };
 
-  // Add chapter
   const addChapter = () => {
     if (!currentChapter.name?.trim()) {
       toast.error("Please enter chapter name");
@@ -449,13 +439,12 @@ const AddPage = () => {
     toast.success("Chapter removed");
   };
 
-  // Submit
   const submitToBackend = async () => {
     console.log("submut to backend function called sucesslyy")
     if (!validateForm()) return;
 
     setLoading(true);
-     console.log(formData)
+    console.log(formData)
     try {
       const computed = computeCourseTotals(formData.lectures);
       const fd = new FormData();
@@ -484,7 +473,7 @@ const AddPage = () => {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: fd,
       });
-// console.log("message from backedn" ,res.data.sucesss)
+
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
@@ -510,20 +499,16 @@ const AddPage = () => {
     await submitToBackend();
   };
 
-
-
   const PRIMARY_COLOR = "#4F46E5";
   const SUCCESS_COLOR = "#22C55E";
   const WARNING_COLOR = "#F59E0B";
   const DANGER_COLOR = "#EF4444";
   
   return (
-    
     <div className="min-h-screen bg-[#F1F5F9] pt-24 pb-8 px-4 sm:px-6 lg:px-8">
       <Toaster position='top-right' toastOptions={{ duration: 3000 }} />
 
       <div className="max-w-5xl mx-auto">
-       
         <div className="mb-8">
           <h1 className="text-center text-3xl text-[#1c398e] sm:text-4xl font-bold mb-2" style={{ fontFamily: "'Inter', sans-serif" }}>
             Create New Course
@@ -535,9 +520,9 @@ const AddPage = () => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
+
           {/* Course Type */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-
             <div className="flex items-start gap-3 mb-5">
               <div className="p-2.5 rounded-lg bg-indigo-50">
                 <BookOpenText className="text-indigo-600" size={20} />
@@ -645,6 +630,7 @@ const AddPage = () => {
                   required
                 />
               </div>
+
               {/* Total Duration */}
               <div>
                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
@@ -816,7 +802,8 @@ const AddPage = () => {
 
           {/* Lectures Section */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="flex items-start justify-between mb-5">
+           
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5">
               <div className="flex items-start gap-3">
                 <div className="p-2.5 rounded-lg bg-indigo-50">
                   <Video className="text-indigo-600" size={20} />
@@ -835,7 +822,7 @@ const AddPage = () => {
               <button
                 type="button"
                 onClick={() => setShowLectureForm(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-[#4F46E5] text-white rounded-lg text-sm font-medium transition-all hover:bg-indigo-700 shadow-sm"
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-[#4F46E5] text-white rounded-lg text-sm font-medium transition-all hover:bg-indigo-700 shadow-sm w-full sm:w-auto"
               >
                 <Plus size={16} /> Add Lecture
               </button>
@@ -845,12 +832,13 @@ const AddPage = () => {
             <div className="space-y-3">
               {formData.lectures.map((lecture, lectureIndex) => (
                 <div key={lecture.id} className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                  <div className="flex items-center justify-between p-4 bg-gray-50">
+                 
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-gray-50 gap-2">
                     <div className="flex items-center gap-3 flex-1">
                       <button
                         type="button"
                         onClick={() => toggleLecture(lectureIndex)}
-                        className="text-gray-500 hover:text-gray-700 transition-colors"
+                        className="text-gray-500 hover:text-gray-700 transition-colors flex-shrink-0"
                       >
                         {expandedLectures.includes(lectureIndex) ? (
                           <ChevronUp size={18} />
@@ -858,15 +846,16 @@ const AddPage = () => {
                           <ChevronDown size={18} />
                         )}
                       </button>
-                      <div className="flex-1">
-                        <h3 className="text-sm font-medium text-gray-900">{lecture.title}</h3>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-sm font-medium text-gray-900 truncate">{lecture.title}</h3>
                         <p className="text-xs text-gray-600 mt-0.5 flex items-center gap-1">
                           <Clock size={12} /> {formatDuration(lecture.duration)}
                           {lecture.chapters?.length > 0 && ` • ${lecture.chapters.length} chapters`}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                
+                    <div className="flex items-center gap-2 self-end sm:self-auto">
                       <button
                         type="button"
                         onClick={() => openAddChapter(lectureIndex)}
@@ -892,20 +881,21 @@ const AddPage = () => {
                           key={chapter.id}
                           className="flex items-start justify-between p-3 border border-gray-100 rounded-lg hover:border-gray-200 transition-colors bg-gray-50/50"
                         >
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-0">
                             <h4 className="text-sm font-medium text-gray-900">{chapter.name}</h4>
                             <p className="text-xs text-gray-600 mt-0.5">{chapter.topic}</p>
-                            <div className="flex items-center gap-3 mt-1.5">
+                            <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                               <span className="text-xs text-gray-500 flex items-center gap-1">
                                 <Clock size={11} /> {formatDuration(chapter.duration)}
                               </span>
-                              <p className="text-xs text-gray-400 truncate max-w-xs">{chapter.videoUrl}</p>
+                             
+                              <p className="text-xs text-gray-400 truncate max-w-[120px] sm:max-w-xs">{chapter.videoUrl}</p>
                             </div>
                           </div>
                           <button
                             type="button"
                             onClick={() => removeChapter(lectureIndex, chapterIndex)}
-                            className="p-1 text-[#EF4444] hover:bg-red-50 rounded transition-colors ml-2"
+                            className="p-1 text-[#EF4444] hover:bg-red-50 rounded transition-colors ml-2 flex-shrink-0"
                           >
                             <X size={14} />
                           </button>
@@ -918,11 +908,10 @@ const AddPage = () => {
             </div>
           </div>
 
-          {/* Submit Button */}
           <div className="flex justify-end">
             <button
               type="submit"
-              className="relative px-8 py-3 bg-[#4F46E5] text-white rounded-lg font-medium text-base transition-all hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden group shadow-lg shadow-indigo-500/30"
+              className="relative w-full sm:w-auto px-8 py-3 bg-[#4F46E5] text-white rounded-lg font-medium text-base transition-all hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden group shadow-lg shadow-indigo-500/30"
               disabled={loading}
             >
               <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>

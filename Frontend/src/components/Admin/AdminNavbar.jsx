@@ -186,10 +186,10 @@ const AdminNavbar = () => {
 
           {/* Mobile Toggle */}
           <button
-            onClick={() => setIsOpen(!isOpen)}
-            className={navbarStyles.mobileMenuButton}
-            style={{ borderColor: PRIMARY_COLOR }}
-          >
+          onClick={() => setIsOpen(!isOpen)}
+          className={`${navbarStyles.mobileMenuButton} md:hidden`}
+          style={{ borderColor: PRIMARY_COLOR }}
+        >
             {isOpen ? <X size={20} style={{ color: PRIMARY_COLOR }} /> : <Menu size={20} style={{ color: PRIMARY_COLOR }} />}
           </button>
         </div>

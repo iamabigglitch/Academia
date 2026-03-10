@@ -11,8 +11,10 @@ import {
   Star,
   Play,
 } from "lucide-react";
+import { useAuth } from "../context/authContext";
 
 const API_BASE = "http://localhost:3000";
+
 
 const getImageUrl = (imagePath) => {
   if (!imagePath) return "https://via.placeholder.com/400x240?text=Course";
@@ -41,6 +43,12 @@ const MyCourses = () => {
   const [enrolledCourses, setEnrolledCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const { user: contextUser, logout: contextLogout } = useAuth();
+const handleLogout = () => {
+  contextLogout();
+  navigate("/login");
+};
 
   const fetchMyBookings = useCallback(async () => {
     setLoading(true);
@@ -167,10 +175,10 @@ const MyCourses = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => navigate("/login")}
+                  onClick={handleLogout}
                   className="inline-flex items-center justify-center gap-2 px-5 py-2.5 border-2 border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors"
                 >
-                  Go to Login
+                  Logout
                 </button>
               </div>
             </div>

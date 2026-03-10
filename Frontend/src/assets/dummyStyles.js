@@ -563,7 +563,6 @@ export const bannerStyles = {
   priceCurrent: "text-lg font-bold text-indigo-600",
   priceOriginal: "text-sm text-gray-400 line-through ml-2",
 
-  // ── show more (kept for reference; CoursePage renders its own button) ──
   showMoreContainer: "mt-10 flex justify-center px-2 sm:px-0",
   showMoreButton:
     "px-6 py-3 rounded-full cursor-pointer bg-white/80 backdrop-blur-sm border border-gray-200 " +
@@ -571,8 +570,6 @@ export const bannerStyles = {
     "flex items-center space-x-3 w-full sm:w-auto justify-center",
   showMoreText: "text-sm font-semibold text-gray-700",
 };
-  
-  // Add these to your existing assets/dummyStyles.js
   
   export const myCoursesStyles = {
     // Layout and container styles
@@ -659,7 +656,6 @@ export const bannerStyles = {
     }
   `;
   
-  // Add these to the existing dummyStyles.js file
   export const facultyStyles = {
     // Layout & Container
     container: "min-h-screen pt-12 sm:pt-16 bg-gradient-to-br from-blue-50 via-white to-purple-50",
@@ -735,8 +731,6 @@ export const bannerStyles = {
       }
     `
   };
-  
-  // Add these to your existing assets/dummyStyles.js
   
   export const footerStyles = {
     // Layout and container styles
@@ -854,7 +848,6 @@ export const bannerStyles = {
     }
   `;
   
-  // Add these to the existing dummyStyles.js file
   export const homeCoursesStyles = {
     // Layout & Container
     container: "bg-gradient-to-b from-indigo-50 to-pink-50 min-h-screen py-10 sm:py-14 px-4 sm:px-6 lg:px-12",
@@ -923,7 +916,6 @@ export const bannerStyles = {
     `
   };
   
-  // Add these to the existing dummyStyles.js file
   export const navbarStyles = {
     // Main Navbar
     navbar: "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
@@ -939,12 +931,13 @@ export const bannerStyles = {
     // Logo
     logo: "flex items-center space-x-3 group cursor-pointer flex-shrink-0",
     logoIconContainer: "relative",
-    logoIcon: "w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center transform  transition-all duration-300 shadow-sm",
+    logoIcon: "w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center transform transition-all duration-300 shadow-sm",
     logoIconGlow: "absolute -inset-1 bg-blue-200 rounded-lg blur opacity-30 group-hover:opacity-50 transition-opacity duration-300",
     logoText: "font-bold text-lg bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent",
     
-    // Desktop Navigation
-    desktopNav: "hidden lg:flex items-center justify-center flex-1 max-w-2xl",
+    // Desktop Navigation 
+    desktopNav: "hidden md:flex items-center justify-center flex-1 max-w-2xl",
+    desktop: "hidden md:flex items-center justify-center flex-1 max-w-2xl",
     desktopNavContainer: "flex items-center space-x-1 bg-white/80 backdrop-blur-sm rounded-2xl p-1.5 shadow-sm border border-gray-200",
     desktopNavItem: "group relative px-4 py-2 rounded-xl transition-all duration-300 flex items-center space-x-2",
     desktopNavItemActive: "bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-600 shadow-md",
@@ -952,16 +945,16 @@ export const bannerStyles = {
     desktopNavText: "text-sm font-medium text-gray-700 group-hover:text-blue-600",
     
     // Auth Buttons
-    authContainer: "flex items-center space-x-3 flex-shrink-0",
-    loginButton: "hidden lg:flex items-center space-x-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold shadow-sm hover:shadow-md transform transition-all duration-300 group",
-    logoutButton: "hidden lg:flex items-center space-x-2 px-4 py-2 rounded-xl bg-white text-sm font-semibold shadow-sm hover:shadow-md transform transition-all duration-300 group border border-gray-200",
+    authContainer: "hidden md:flex items-center space-x-3 flex-shrink-0",
+    loginButton: "hidden md:flex items-center space-x-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-semibold shadow-sm hover:shadow-md transform transition-all duration-300 group",
+    logoutButton: "hidden md:flex items-center space-x-2 px-4 py-2 rounded-xl bg-white text-sm font-semibold shadow-sm hover:shadow-md transform transition-all duration-300 group border border-gray-200",
     
-    // Mobile Menu Button
-    mobileMenuButton: "lg:hidden p-2 rounded-xl bg-white shadow-sm border border-gray-200 text-gray-600 hover:text-blue-600 hover:shadow-md transition-all duration-300",
+    // Mobile Menu Button 
+    mobileMenuContainer: "bg-white/90 backdrop-blur-xl rounded-2xl p-4 shadow-lg border border-gray-200 overflow-y-auto max-h-[80vh]",
     
     // Mobile Menu
-    mobileMenu: "lg:hidden transition-all duration-500 overflow-hidden",
-    mobileMenuOpen: "max-h-[500px] opacity-100 mt-3",
+    mobileMenu: "md:hidden transition-all duration-500 overflow-hidden",
+    mobileMenuOpen: "max-h-[80vh] opacity-100 mt-3",
     mobileMenuClosed: "max-h-0 opacity-0",
     mobileMenuContainer: "bg-white/90 backdrop-blur-xl rounded-2xl p-4 shadow-lg border border-gray-200",
     mobileMenuItems: "space-y-2",
@@ -981,8 +974,6 @@ export const bannerStyles = {
     pattern: "absolute inset-0 bg-[radial-gradient(#60a5fa_1px,transparent_1px)] [background-size:16px_16px]"
   };
   
-  
-  // Add these to your existing assets/dummyStyles.js
   
   export const signUpPageStyles = {
     // Layout and container styles

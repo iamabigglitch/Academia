@@ -131,7 +131,6 @@ const CoursePage = () => {
         const raw = json.items || json.courses || [];
 
         const mapped = raw.map((c) => {
-          // API returns priceSale / priceOriginal / pricingType at the top level
           const sale = c.priceSale != null ? Number(c.priceSale) : null;
           const original = c.priceOriginal != null ? Number(c.priceOriginal) : null;
           const isFree = c.pricingType === "free" || (sale == null && original == null);
@@ -143,7 +142,6 @@ const CoursePage = () => {
             category: c.category || "",
             image: c.image || "",
             isFree,
-            // Normalise into { sale, original } so getPriceDisplay works cleanly
             price: { sale, original },
             avgRating:
               typeof c.avgRating === "number"
@@ -399,13 +397,8 @@ if (error)
             </button>
           </div>
         ) : (
-          <div className={coursePageStyles.coursesGridContainer} style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))',
-            gap: '2rem',
-            maxWidth: '1400px',
-            margin: '0 auto'
-          }}>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 max-w-[1400px] mx-auto w-full">
             {visibleCourses.map((course, index) => {
               const userRating = ratings[course.id] || 0;
               const priceDisplay = getPriceDisplay(course);
@@ -420,15 +413,13 @@ if (error)
                     if (e.key === "Enter") openCourse(course.id);
                   }}
                   className={coursePageStyles.courseCard}
-                  style={{ 
-                    animationDelay: `${index * 80}ms`,
-                    minHeight: '480px',
-                    width: '100%'
-                  }}
+                  style={{ animationDelay: `${index * 80}ms` }}
                 >
                   <div className={coursePageStyles.courseCardInner}>
                     <div className={coursePageStyles.courseCardContent}>
-                      <div className={coursePageStyles.courseImageContainer} style={{ height: '260px' }}>
+
+                      {/* ✅ FIX: image height responsive — shorter on mobile */}
+                      <div className={coursePageStyles.courseImageContainer}>
                         <img
                           src={course.image}
                           alt={course.name}
@@ -436,19 +427,19 @@ if (error)
                         />
                       </div>
 
-                      <div className={coursePageStyles.courseInfo} style={{ padding: '1.25rem' }}>
-                        <h3 className={coursePageStyles.courseName} style={{ fontSize: '1.25rem', marginBottom: '0.75rem' }}>
+                      <div className={coursePageStyles.courseInfo}>
+                        <h3 className={coursePageStyles.courseName}>
                           {course.name}
                         </h3>
 
-                        <div className={coursePageStyles.teacherContainer} style={{ marginBottom: '1rem' }}>
+                        <div className={coursePageStyles.teacherContainer}>
                           <UserIcon />
                           <span className={coursePageStyles.teacherName}>
                             {course.teacher}
                           </span>
                         </div>
 
-                        <div className={coursePageStyles.ratingContainer} style={{ marginBottom: '1rem' }}>
+                        <div className={coursePageStyles.ratingContainer}>
                           <RatingStars
                             courseId={course.id}
                             userRating={userRating}
@@ -461,12 +452,12 @@ if (error)
                         <div className={coursePageStyles.priceContainer}>
                           <div className="flex items-center space-x-2">
                             {course.isFree ? (
-                              <span className={coursePageStyles.priceFree} style={{ fontSize: '1.125rem' }}>
+                              <span className={coursePageStyles.priceFree}>
                                 Free
                               </span>
                             ) : (
                               <>
-                                <span className={coursePageStyles.priceCurrent} style={{ fontSize: '1.125rem' }}>
+                                <span className={coursePageStyles.priceCurrent}>
                                   {typeof priceDisplay === "object"
                                     ? priceDisplay.current
                                     : priceDisplay}

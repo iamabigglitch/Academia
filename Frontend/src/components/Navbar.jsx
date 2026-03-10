@@ -37,6 +37,7 @@ const NavBar = () => {
     setIsOpen(false);
     contextLogout();
   };
+  
 
   const desktopLinkClass = (isActive) =>
     `${navbarStyles.desktopNavItem}${
@@ -176,11 +177,11 @@ const NavBar = () => {
           </div>
 
           <button
-            onClick={() => setIsOpen(!isOpen)}
-            className={navbarStyles.mobileMenuButton}
-          >
-            {isOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
+          onClick={() => setIsOpen(!isOpen)}
+          className={`${navbarStyles.mobileMenuButton} md:hidden`}
+        >
+          {isOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
         </div>
       </div>
 
